@@ -1,3 +1,5 @@
+import { DEMO_MODE, getMockApiResponse } from "./demo-mode";
+
 function getApiBase(): string {
   if (typeof window !== "undefined") {
     return "/api/v1";
@@ -18,28 +20,46 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  // A FormData body (file upload) must NOT get a manual Content-Type — the
-  // browser sets one with the multipart boundary itself; forcing
-  // application/json here makes the upload arrive unparseable server-side.
   const isFormData = options.body instanceof FormData;
   const apiBase = getApiBase();
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const res = await fetch(`${apiBase}${normalizedPath}`, {
-    ...options,
-    credentials: "include",
-    headers: {
-      ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      ...options.headers,
-    },
-  });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ message: res.statusText }));
-    throw new ApiError(body.message ?? "Request failed", res.status, body.issues, body.code);
+  // When DEMO_MODE is active, immediately serve pre-filled mock data
+  if (DEMO_MODE) {
+    const mock = getMockApiResponse(normalizedPath, options);
+    if (mock !== undefined) {
+      return Promise.resolve(mock as T);
+    }
   }
 
-  if (res.status === 204) return undefined as T;
-  return res.json();
+  try {
+    const res = await fetch(`${apiBase}${normalizedPath}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...options.headers,
+      },
+    });
+
+    if (!res.ok) {
+      if (DEMO_MODE) {
+        const mock = getMockApiResponse(normalizedPath, options);
+        if (mock !== undefined) return mock as T;
+      }
+      const body = await res.json().catch(() => ({ message: res.statusText }));
+      throw new ApiError(body.message ?? "Request failed", res.status, body.issues, body.code);
+    }
+
+    if (res.status === 204) return undefined as T;
+    return res.json();
+  } catch (err) {
+    if (DEMO_MODE) {
+      const mock = getMockApiResponse(normalizedPath, options);
+      if (mock !== undefined) return mock as T;
+    }
+    throw err;
+  }
 }
 
 export const api = {

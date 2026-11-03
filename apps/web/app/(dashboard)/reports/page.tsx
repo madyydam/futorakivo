@@ -37,12 +37,10 @@ export default function ReportsPage() {
     to: iso(new Date()),
   }));
 
-  const { data: rawCatalog } = useQuery({
+  const { data: catalog } = useQuery({
     queryKey: ["reports", "catalog"],
     queryFn: () => api.get<CatalogEntry[]>("/reports"),
   });
-  const catalog = Array.isArray(rawCatalog) ? rawCatalog : [];
-
   const qs = `branchId=${branchId}&from=${range.from}&to=${range.to}`;
   const { data, isLoading, error } = useQuery({
     queryKey: ["reports", key, branchId, range.from, range.to],
@@ -51,7 +49,7 @@ export default function ReportsPage() {
     retry: false,
   });
 
-  const groups = [...new Set(catalog.map((c) => c.group))];
+  const groups = [...new Set(catalog?.map((c) => c.group))];
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,7 +64,7 @@ export default function ReportsPage() {
             <div key={g} className="flex flex-col gap-1">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{g}</p>
               {catalog
-                .filter((c) => c.group === g)
+                ?.filter((c) => c.group === g)
                 .map((c) => (
                   <button
                     key={c.key}
@@ -104,7 +102,7 @@ export default function ReportsPage() {
           </div>
 
           <Card className="overflow-x-auto p-4">
-            <h2 className="mb-3 text-lg font-semibold text-foreground">{data?.title ?? catalog.find((c) => c.key === key)?.title ?? "Report"}</h2>
+            <h2 className="mb-3 text-lg font-semibold text-foreground">{data?.title ?? catalog?.find((c) => c.key === key)?.title}</h2>
             <p className="mb-3 hidden text-xs text-muted-foreground print:block">
               {range.from} to {range.to}
             </p>
@@ -112,11 +110,11 @@ export default function ReportsPage() {
               <Skeleton className="h-32" />
             ) : error ? (
               <p className="text-sm text-destructive">{error instanceof ApiError ? error.message : "Could not load report"}</p>
-            ) : data && Array.isArray(data.rows) && data.rows.length > 0 ? (
+            ) : data && data.rows.length > 0 ? (
               <table className="w-full text-sm">
                 <thead className="text-left text-xs text-muted-foreground">
                   <tr>
-                    {(data.columns ?? []).map((c) => (
+                    {data.columns.map((c) => (
                       <th key={c} className="py-1 pr-4 font-medium">{c}</th>
                     ))}
                   </tr>
@@ -124,7 +122,7 @@ export default function ReportsPage() {
                 <tbody>
                   {data.rows.map((r, i) => (
                     <tr key={i} className="border-t border-border">
-                      {(r ?? []).map((cell, j) => (
+                      {r.map((cell, j) => (
                         <td key={j} className="py-1.5 pr-4 tabular-nums">{cell ?? "—"}</td>
                       ))}
                     </tr>
@@ -140,7 +138,7 @@ export default function ReportsPage() {
             <SchedulesPanel
               branchId={branchId}
               reportKey={key}
-              titles={Object.fromEntries(catalog.map((c) => [c.key, c.title]))}
+              titles={Object.fromEntries((catalog ?? []).map((c) => [c.key, c.title]))}
             />
           )}
         </div>

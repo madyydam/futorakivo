@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { AlertCircle, Zap } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,18 +28,13 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginDto>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "admin@royalspice.com",
-      password: "password123",
-    },
-  });
+  } = useForm<LoginDto>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = (dto: LoginDto) => {
     setError(null);
     login.mutate(dto, {
       onSuccess: (data) => {
+        // A delivery rider has no back-office screens: open their deliveries.
         const user = (data as { user?: { roleName?: string; permissions?: string[] } }).user;
         const rider = user?.roleName === "DELIVERY_STAFF" && user.permissions?.includes("delivery.rider");
         router.push(rider ? "/my-deliveries" : "/dashboard");
@@ -49,20 +44,15 @@ export default function LoginPage() {
           setNeedsCode(true);
           return;
         }
-        // In demo mode fallback: never block user from opening dashboard
-        router.push("/dashboard");
+        if (err instanceof ApiError && err.status >= 500) {
+          setError("The server is having a problem right now. Please try again in a minute.");
+        } else if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError("Can't reach the server. Check your internet connection and try again.");
+        }
       },
     });
-  };
-
-  const handleQuickDemo = () => {
-    login.mutate(
-      { email: "admin@royalspice.com", password: "password123" },
-      {
-        onSuccess: () => router.push("/dashboard"),
-        onError: () => router.push("/dashboard"),
-      }
-    );
   };
 
   return (
@@ -77,7 +67,7 @@ export default function LoginPage() {
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-sm"
       >
-        <div className="mb-8 flex flex-col items-center gap-2 text-center">
+        <div className="mb-10 flex flex-col items-center gap-2 text-center">
           <Link href="/">
             <Logo size={44} />
           </Link>
@@ -87,23 +77,7 @@ export default function LoginPage() {
           <p className="text-sm text-muted-foreground">Sign in to manage your restaurant</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleQuickDemo}
-            className="flex h-11 w-full items-center justify-center gap-2 border-primary/30 bg-primary/10 text-sm font-semibold text-primary transition-all hover:bg-primary/15"
-          >
-            <Zap className="h-4 w-4 fill-primary" />
-            1-Click Demo Login (Instant Access)
-          </Button>
-
-          <div className="relative my-1 flex items-center justify-center text-xs text-muted-foreground">
-            <span className="w-full border-t border-border" />
-            <span className="bg-background px-2">OR</span>
-            <span className="w-full border-t border-border" />
-          </div>
-
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email or phone number</Label>
             <Input
@@ -168,7 +142,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="mt-2 h-12 text-base font-medium" disabled={login.isPending}>
+          <Button type="submit" className="mt-2 h-12 text-base" disabled={login.isPending}>
             {login.isPending ? "Signing in…" : "Sign in"}
           </Button>
         </form>

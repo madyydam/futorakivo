@@ -6,7 +6,6 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Zap } from "lucide-react";
 import { StatusNote, useNoteToast } from "@/components/ui/status-note";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
@@ -14,51 +13,26 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { useRegister } from "@/hooks/use-auth";
+import { ApiError } from "@/lib/api";
 
 export default function SignupPage() {
   const router = useRouter();
   const register = useRegister();
-  const { note, clear } = useNoteToast();
+  const { note, clear, toast } = useNoteToast();
   const prefersReducedMotion = useReducedMotion();
   const {
     register: field,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterDto>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      restaurantName: "Royal Spice Bistro",
-      branchName: "Main Branch",
-      ownerName: "Priya Sharma",
-      email: "owner@royalspice.com",
-      password: "password123",
-    },
-  });
+  } = useForm<RegisterDto>({ resolver: zodResolver(registerSchema) });
 
   const onSubmit = (dto: RegisterDto) => {
     register.mutate(dto, {
       onSuccess: () => router.push("/dashboard"),
-      onError: () => {
-        // Fallback for demo so user is NEVER blocked
-        router.push("/dashboard");
+      onError: (err) => {
+        toast.error(err instanceof ApiError ? err.message : "Something went wrong");
       },
     });
-  };
-
-  const handleQuickDemo = () => {
-    register.mutate(
-      {
-        restaurantName: "Royal Spice Bistro",
-        branchName: "Main Branch",
-        ownerName: "Priya Sharma",
-        email: "owner@royalspice.com",
-        password: "password123",
-      },
-      {
-        onSuccess: () => router.push("/dashboard"),
-        onError: () => router.push("/dashboard"),
-      }
-    );
   };
 
   return (
@@ -73,7 +47,7 @@ export default function SignupPage() {
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-sm"
       >
-        <div className="mb-8 flex flex-col items-center gap-2 text-center">
+        <div className="mb-10 flex flex-col items-center gap-2 text-center">
           <Link href="/">
             <Logo size={44} />
           </Link>
@@ -83,23 +57,7 @@ export default function SignupPage() {
           <p className="text-sm text-muted-foreground">Set up your restaurant</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleQuickDemo}
-            className="flex h-11 w-full items-center justify-center gap-2 border-primary/30 bg-primary/10 text-sm font-semibold text-primary transition-all hover:bg-primary/15"
-          >
-            <Zap className="h-4 w-4 fill-primary" />
-            1-Click Quick Demo Registration
-          </Button>
-
-          <div className="relative my-1 flex items-center justify-center text-xs text-muted-foreground">
-            <span className="w-full border-t border-border" />
-            <span className="bg-background px-2">OR</span>
-            <span className="w-full border-t border-border" />
-          </div>
-
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="restaurantName">Restaurant name</Label>
             <Input
@@ -118,6 +76,7 @@ export default function SignupPage() {
             <Input
               id="branchName"
               placeholder="Main Branch"
+              defaultValue="Main Branch"
               {...field("branchName")}
             />
             {errors.branchName && (
@@ -164,7 +123,7 @@ export default function SignupPage() {
           </div>
 
           <StatusNote note={note} onClear={clear} />
-          <Button type="submit" className="mt-2 h-11 text-base font-medium" disabled={register.isPending}>
+          <Button type="submit" className="mt-2 h-11" disabled={register.isPending}>
             {register.isPending ? "Creating your account…" : "Create account"}
           </Button>
         </form>

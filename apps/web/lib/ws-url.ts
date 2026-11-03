@@ -18,5 +18,5 @@ export function resolveWsUrl(): string {
     // kitchen tablet's live ticket updates silently fell back to polling).
     return window.location.origin;
   }
-  return "http://localhost:4001";
+  return process.env.BACKEND_URL ?? "http://localhost:4001";
 }

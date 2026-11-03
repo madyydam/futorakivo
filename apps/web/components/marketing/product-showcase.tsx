@@ -75,7 +75,7 @@ export function ProductShowcase() {
                   src="/logo.png"
                   alt="Modexsys HORECA"
                   fill
-                  className="rounded-md object-contain"
+                  className="object-contain"
                 />
               </div>
               <span className="truncate text-xs font-bold tracking-tight text-foreground sm:text-sm">

@@ -34,8 +34,11 @@ const MIN_JWT_SECRET_LENGTH = 32;
 // UPLOADS_DIR (that directory is served as static files at /api/uploads/,
 // see below; a secret has no business living anywhere web-servable even
 // if today's static middleware happens to ignore dotfiles).
+// On serverless/cloud platforms like Vercel where the root filesystem is read-only,
+// fall back to /tmp/jwt-secret unless explicitly configured.
 const JWT_SECRET_STATE_FILE =
-  process.env.JWT_SECRET_STATE_FILE ?? '/data/state/jwt-secret';
+  process.env.JWT_SECRET_STATE_FILE ??
+  (process.env.VERCEL ? '/tmp/jwt-secret' : '/data/state/jwt-secret');
 
 function isUsableSecret(secret: string): boolean {
   return (
@@ -128,10 +131,20 @@ async function bootstrap() {
   // and a website's backend calls the Integration API server-to-server, so the
   // only origin that needs CORS is the dashboard itself. Several can be listed,
   // comma-separated; never "*" (credentials are on).
-  const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:1995')
-    .split(',')
-    .map((o) => o.trim())
-    .filter((o) => o && o !== '*');
+  const extraOrigins: string[] = [];
+  if (process.env.VERCEL_URL) {
+    extraOrigins.push(`https://${process.env.VERCEL_URL}`);
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    extraOrigins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+  }
+  const corsOrigins = [
+    ...(process.env.CORS_ORIGIN ?? 'http://localhost:1995')
+      .split(',')
+      .map((o) => o.trim())
+      .filter((o) => o && o !== '*'),
+    ...extraOrigins,
+  ];
   app.enableCors({
     origin: corsOrigins,
     credentials: true,

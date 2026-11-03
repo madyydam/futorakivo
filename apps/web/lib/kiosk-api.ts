@@ -74,8 +74,13 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   let res: Response;
+  const base =
+    typeof window !== "undefined"
+      ? "/api/v1/public/kiosk"
+      : `${(process.env.BACKEND_URL ?? "http://localhost:4001").replace(/\/$/, "")}/api/v1/public/kiosk`;
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
   try {
-    res = await fetch(`/api/v1/public/kiosk/${path}`, {
+    res = await fetch(`${base}/${cleanPath}`, {
       ...init,
       signal: ctrl.signal,
       // No cookies: this surface is anonymous by design.

@@ -1,4 +1,10 @@
-const API_BASE = "/api/v1";
+function getApiBase(): string {
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+  const backendUrl = (process.env.BACKEND_URL ?? "http://localhost:4001").replace(/\/$/, "");
+  return `${backendUrl}/api/v1`;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -16,7 +22,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   // browser sets one with the multipart boundary itself; forcing
   // application/json here makes the upload arrive unparseable server-side.
   const isFormData = options.body instanceof FormData;
-  const res = await fetch(`${API_BASE}${path}`, {
+  const apiBase = getApiBase();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const res = await fetch(`${apiBase}${normalizedPath}`, {
     ...options,
     credentials: "include",
     headers: {

@@ -197,23 +197,23 @@ function renderResampled(targetSize, paddingRatio = 0.06, bgFill = null) {
   return outPng;
 }
 
-// 4. Generate all asset sizes
+// 4. Generate all asset sizes with generous padding so the logo never clips on sides or corners
 const targets = [
-  { path: 'apps/web/public/logo.png', size: 512, pad: 0.05, bg: null },
-  { path: 'apps/web/public/brand-lockup.png', size: 512, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-512.png', size: 512, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-512-maskable.png', size: 512, pad: 0.16, bg: [255, 255, 255, 255] },
-  { path: 'apps/web/public/icons/icon-384.png', size: 384, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-256.png', size: 256, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-192.png', size: 192, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-128.png', size: 128, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-96.png', size: 96, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-72.png', size: 72, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/icon-48.png', size: 48, pad: 0.05, bg: null },
-  { path: 'apps/web/public/icons/favicon-32.png', size: 32, pad: 0.04, bg: null },
-  { path: 'apps/web/public/icons/favicon-16.png', size: 16, pad: 0.02, bg: null },
-  { path: 'apps/web/app/apple-icon.png', size: 180, pad: 0.10, bg: [255, 255, 255, 255] },
-  { path: 'apps/web/app/icon.png', size: 192, pad: 0.05, bg: null },
+  { path: 'apps/web/public/logo.png', size: 512, pad: 0.10, bg: null },
+  { path: 'apps/web/public/brand-lockup.png', size: 512, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-512.png', size: 512, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-512-maskable.png', size: 512, pad: 0.20, bg: [255, 255, 255, 255] },
+  { path: 'apps/web/public/icons/icon-384.png', size: 384, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-256.png', size: 256, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-192.png', size: 192, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-128.png', size: 128, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-96.png', size: 96, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-72.png', size: 72, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/icon-48.png', size: 48, pad: 0.10, bg: null },
+  { path: 'apps/web/public/icons/favicon-32.png', size: 32, pad: 0.08, bg: null },
+  { path: 'apps/web/public/icons/favicon-16.png', size: 16, pad: 0.06, bg: null },
+  { path: 'apps/web/app/apple-icon.png', size: 180, pad: 0.16, bg: [255, 255, 255, 255] },
+  { path: 'apps/web/app/icon.png', size: 192, pad: 0.10, bg: null },
 ];
 
 targets.forEach(t => {
@@ -252,9 +252,9 @@ function buildIco(pngBuffers) {
   return Buffer.concat([header, ...dirEntries, ...pngBuffers.map(p => p.buffer)]);
 }
 
-const ico16 = PNG.sync.write(renderResampled(16, 0.02));
-const ico32 = PNG.sync.write(renderResampled(32, 0.04));
-const ico48 = PNG.sync.write(renderResampled(48, 0.05));
+const ico16 = PNG.sync.write(renderResampled(16, 0.06));
+const ico32 = PNG.sync.write(renderResampled(32, 0.08));
+const ico48 = PNG.sync.write(renderResampled(48, 0.08));
 const icoBuffer = buildIco([
   { size: 16, buffer: ico16 },
   { size: 32, buffer: ico32 },
@@ -264,7 +264,7 @@ fs.writeFileSync('apps/web/app/favicon.ico', icoBuffer);
 console.log('Generated: apps/web/app/favicon.ico (multi-resolution 16x16, 32x32, 48x48)');
 
 // 6. Update screenshots with new stylized H logo
-const logo32 = renderResampled(32, 0.04);
+const logo32 = renderResampled(32, 0.10);
 const GLYPHS = {
   H: ['#.....#','#.....#','#.....#','#######','#.....#','#.....#','#.....#','#.....#','#.....#'],
   O: ['.#####.','#.....#','#.....#','#.....#','#.....#','#.....#','#.....#','#.....#','.#####.'],

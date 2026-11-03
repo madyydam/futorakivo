@@ -619,3 +619,4 @@ export function getMockApiResponse(path: string, options: RequestInit = {}): unk
   // For any other GET request: return an empty list or clean object so UI never crashes
   return [];
 }
+

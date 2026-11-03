@@ -501,7 +501,53 @@ export function getMockApiResponse(path: string, options: RequestInit = {}): unk
     return DEMO_BRANCHES;
   }
 
+  // ---- NOTIFICATIONS ----
+  if (cleanPath === "/notifications") {
+    return {
+      data: [
+        {
+          id: "notif-1",
+          branchId: "brn-main",
+          recipientUserId: "usr-demo-owner",
+          type: "order.created",
+          title: "New Order #1044",
+          body: "Table T1 placed order for Butter Chicken and Dal Makhani",
+          entity: "Order",
+          entityId: "ord-demo-1",
+          readAt: null,
+          createdAt: new Date(Date.now() - 5 * 60000).toISOString(),
+        },
+        {
+          id: "notif-2",
+          branchId: "brn-main",
+          recipientUserId: "usr-demo-owner",
+          type: "table.seated",
+          title: "Table T4 Seated",
+          body: "4 guests seated at Table T4 (Rahul serving)",
+          entity: "Table",
+          entityId: "tbl-4",
+          readAt: new Date(Date.now() - 15 * 60000).toISOString(),
+          createdAt: new Date(Date.now() - 15 * 60000).toISOString(),
+        },
+      ],
+      total: 2,
+      unreadCount: 1,
+      page: 1,
+      pageSize: 20,
+      totalPages: 1,
+    };
+  }
+
   // ---- DASHBOARD ----
+  if (cleanPath === "/dashboard/preferences") {
+    return {
+      topOrder: ["kpis", "attention", "charts"],
+      cardOrder: ["tables", "kitchen", "recent", "channels"],
+      hidden: [],
+      trendDays: 14,
+    };
+  }
+
   if (cleanPath === "/dashboard/summary") {
     return {
       todayRevenue: 48920,
@@ -557,6 +603,49 @@ export function getMockApiResponse(path: string, options: RequestInit = {}): unk
   // ---- KDS ----
   if (cleanPath === "/kds/tickets") {
     return DEMO_KDS_TICKETS;
+  }
+
+  // ---- INVENTORY LOW STOCK ----
+  if (cleanPath === "/inventory/ingredients/low-stock") {
+    return [
+      { id: "ing-1", name: "Amul Butter", sku: "ING-001", unit: "kg", reorderLevel: "5", currentStock: "2.5", costPerUnit: "480", isActive: true },
+      { id: "ing-2", name: "Basmati Rice (Premium)", sku: "ING-002", unit: "kg", reorderLevel: "20", currentStock: "8", costPerUnit: "110", isActive: true },
+      { id: "ing-3", name: "Fresh Paneer", sku: "ING-003", unit: "kg", reorderLevel: "10", currentStock: "3", costPerUnit: "320", isActive: true },
+    ];
+  }
+
+  // ---- SYSTEM UPDATES & BACKUPS ----
+  if (cleanPath.startsWith("/system/update")) {
+    return {
+      currentVersion: "1.0.0",
+      latestVersion: "1.0.0",
+      updateAvailable: false,
+      releaseUrl: null,
+      checkedAt: new Date().toISOString(),
+    };
+  }
+
+  if (cleanPath === "/backups/status") {
+    return {
+      configured: true,
+      source: "environment",
+      endpoint: "s3.amazonaws.com",
+      bucket: "horeca-backups",
+      region: "ap-south-1",
+      accessKeyIdMasked: "AKIA••••••••",
+      intervalDays: 1,
+      retainCount: 7,
+      lastBackup: null,
+      nextScheduledAt: new Date(Date.now() + 86400000).toISOString(),
+    };
+  }
+
+  if (cleanPath === "/backups") {
+    return [];
+  }
+
+  if (cleanPath === "/orders/manage") {
+    return [];
   }
 
   // ---- SETTINGS ----
@@ -619,4 +708,3 @@ export function getMockApiResponse(path: string, options: RequestInit = {}): unk
   // For any other GET request: return an empty list or clean object so UI never crashes
   return [];
 }
-

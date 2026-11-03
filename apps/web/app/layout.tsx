@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OrderRestro",
-  description: "Offline-first restaurant management system",
+  title: "Modexsys HORECA",
+  description: "Modexsys HORECA — Offline-first Restaurant POS & Management System",
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],

@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 set -a; . ./.env; set +a
-IMG=ghcr.io/raktim94/nodedr-restaurant-pos
+IMG=ghcr.io/modexsys/horeca
 N=orderrestro-demo
 docker network inspect $N >/dev/null 2>&1 || docker network create $N >/dev/null
 docker volume inspect $N-pg >/dev/null 2>&1 || docker volume create $N-pg >/dev/null

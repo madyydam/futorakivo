@@ -24,7 +24,7 @@ import {
   integrationRewardsLookupSchema,
   createIntegrationReservationSchema,
   integrationIdempotencyKeySchema,
-} from '@nodedr-restaurant/types';
+} from '@modexsys/types';
 import { z } from 'zod';
 import { CurrentIntegrationKey } from '../common/decorators/current-integration-key.decorator';
 import { RequireScope } from '../common/decorators/require-scope.decorator';

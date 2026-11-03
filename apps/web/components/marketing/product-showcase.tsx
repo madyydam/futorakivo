@@ -13,21 +13,18 @@ const views = [
   { id: "tables", label: "Tables", src: "/screenshots/tables-light.png" },
 ] as const;
 
-// Real product screenshots (docs/screenshots/*.png, the same images the
-// repo README uses) — not mockups. A crossfade, not a hard cut, when
-// switching tabs.
 export function ProductShowcase() {
   const [active, setActive] = useState<(typeof views)[number]["id"]>("dashboard");
   const current = views.find((v) => v.id === active)!;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+    <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <Reveal className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          See it in action
+          Real Application Interfaces
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          The actual app — no staged demo data, no Photoshop.
+          The actual app running directly in production — no mockups or Photoshop.
         </p>
       </Reveal>
 
@@ -63,6 +60,9 @@ export function ProductShowcase() {
             <span className="size-2.5 rounded-full bg-destructive/50" />
             <span className="size-2.5 rounded-full bg-warning/50" />
             <span className="size-2.5 rounded-full bg-success/50" />
+            <span className="ml-3 text-xs font-mono text-muted-foreground">
+              Modexsys HORECA · {current.label} View
+            </span>
           </div>
           <div className="relative aspect-[1440/900] w-full bg-muted/20">
             <AnimatePresence mode="wait">

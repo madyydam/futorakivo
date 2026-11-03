@@ -1,18 +1,18 @@
 {
-  "name": "nodedr-orderrestro",
+  "name": "modexsys-horeca",
   "private": true,
-  "version": "0.1.0",
-  "description": "Nodedr OrderRestro — offline-first Restaurant Management System",
-  "author": "Raktim Ranjit <mail@raktimranjit.com> (https://github.com/Raktim94)",
-  "license": "AGPL-3.0-only",
+  "version": "1.0.0",
+  "description": "Modexsys HORECA — offline-first Restaurant Management System & POS",
+  "author": "Modexsys",
+  "license": "Proprietary",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Raktim94/nodedr-restaurant-pos.git"
+    "url": "https://github.com/modexsys/horeca.git"
   },
   "bugs": {
-    "url": "https://github.com/Raktim94/nodedr-restaurant-pos/issues"
+    "url": "https://github.com/modexsys/horeca/issues"
   },
-  "homepage": "https://orderrestro.nodedr.com/",
+  "homepage": "https://horeca.modexsys.com/",
   "keywords": [
     "restaurant-management",
     "restaurant-pos",
@@ -27,7 +27,9 @@
     "qr-ordering",
     "casaos",
     "nestjs",
-    "nextjs"
+    "nextjs",
+    "modexsys",
+    "horeca"
   ],
   "scripts": {
     "dev": "turbo run dev",

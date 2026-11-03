@@ -1,20 +1,20 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
-import { downloadHref } from "@/lib/downloads";
 
 const columns = [
   {
     title: "Product",
     links: [
       { href: "#features", label: "Features" },
-      { href: "#security", label: "Security" },
-      { href: "#get-started", label: "Get started" },
+      { href: "#live-demo", label: "Live System Demo" },
+      { href: "#showcase", label: "Product Views" },
+      { href: "#security", label: "Security & offline" },
     ],
   },
   {
-    title: "Resources",
+    title: "Documentation",
     links: [
-      { href: downloadHref("github"), label: "GitHub" },
+      { href: "/docs", label: "Overview" },
       { href: "/docs/api", label: "API & MCP" },
       { href: "/docs/accessibility", label: "Accessibility statement" },
       { href: "/docs/compliance-india", label: "India compliance notes" },
@@ -37,11 +37,12 @@ export function MarketingFooter() {
           <div>
             <Link href="/" className="flex items-center gap-2.5">
               <Logo size={28} />
-              <span className="text-sm font-semibold text-foreground">OrderRestro</span>
+              <span className="text-sm font-bold text-foreground">
+                Modexsys <span className="text-primary font-semibold">HORECA</span>
+              </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Offline-first restaurant management, self-hosted on your own
-              server. Built by Nodedr Infotech Private Limited.
+              Offline-first HORECA management operating system. Fast, dependable, self-hosted on your own LAN.
             </p>
           </div>
 
@@ -66,11 +67,14 @@ export function MarketingFooter() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-6 sm:flex-row">
-          <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Nodedr Infotech Private Limited. Licensed AGPL-3.0.
-          </p>
-          <p className="text-xs text-muted-foreground">Made in India.</p>
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row">
+          <p>© {new Date().getFullYear()} Modexsys HORECA. All rights reserved.</p>
+          <div className="flex gap-4">
+            <span className="text-muted-foreground">Modexsys HORECA Suite</span>
+            <a href="/docs/accessibility" className="hover:text-foreground">
+              Accessibility
+            </a>
+          </div>
         </div>
       </div>
     </footer>

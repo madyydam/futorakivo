@@ -1,7 +1,7 @@
 import {
   createIntegrationOrderSchema,
   integrationIdempotencyKeySchema,
-} from '@nodedr-restaurant/types';
+} from '@modexsys/types';
 
 const valid = {
   type: 'DELIVERY',

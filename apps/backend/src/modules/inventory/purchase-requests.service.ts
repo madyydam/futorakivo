@@ -6,7 +6,7 @@ import {
 import type {
   PurchaseRequestDto,
   PurchaseRequestStatus,
-} from '@nodedr-restaurant/types';
+} from '@modexsys/types';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const NEXT_STATUS: Record<PurchaseRequestStatus, PurchaseRequestStatus[]> = {

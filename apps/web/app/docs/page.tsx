@@ -1,28 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DocPage, DocSection } from "@/components/marketing/doc-page";
-import { downloadHref } from "@/lib/downloads";
 
 export const metadata: Metadata = {
-  title: "Documentation — OrderRestro",
-  description: "API & MCP, accessibility, and India compliance docs for a self-hosted OrderRestro instance.",
+  title: "Documentation — Modexsys HORECA",
+  description: "API & MCP, accessibility, and India compliance docs for a self-hosted Modexsys HORECA instance.",
 };
 
 const docs = [
   {
     href: "/docs/api",
-    title: "API & MCP",
-    description: "Connect an AI client via MCP, or use OrderRestro as a backend for your own website.",
+    title: "API & MCP integrations",
+    description: "Connect an AI client via MCP, or use Modexsys HORECA as a backend for your own website.",
   },
   {
     href: "/docs/accessibility",
-    title: "Accessibility",
-    description: "How OrderRestro is built to work with keyboards, screen readers, and reduced motion.",
+    title: "Accessibility statement",
+    description: "How Modexsys HORECA is built to work with keyboards, screen readers, and reduced motion.",
   },
   {
     href: "/docs/compliance-india",
-    title: "India compliance",
-    description: "GST, receipts, and data-residency notes for running OrderRestro in India.",
+    title: "India compliance notes",
+    description: "GST, receipts, and data-residency notes for running Modexsys HORECA in India.",
   },
 ];
 
@@ -44,18 +43,11 @@ export default function DocsIndexPage() {
         </div>
       </DocSection>
 
-      <DocSection heading="Full setup & architecture docs">
+      <DocSection heading="Support & Custom Integrations">
         <p>
-          Installation, environment variables, and the full architecture reference live in the{" "}
-          <a
-            href={downloadHref("github")}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline underline-offset-4"
-          >
-            GitHub repository
-          </a>
-          &rsquo;s README and docs folder.
+          For setup assistance, specialized hardware drivers (thermal printers, barcode scanners, cash drawers),
+          and multi-branch cloud federation, contact Modexsys Enterprise Support at{" "}
+          <strong className="text-foreground">support@modexsys.com</strong>.
         </p>
       </DocSection>
     </DocPage>

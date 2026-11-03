@@ -14,10 +14,6 @@ const statusColor: Record<string, string> = {
   Ready: "bg-success/15 text-success",
 };
 
-// A stylized, illustrative mockup of the KDS/POS surface — not a screenshot
-// of a real customer's data, drawn purely from this app's own UI language
-// (see DESIGN_SYSTEM.md) so the hero has something concrete to show without
-// implying a claim about a specific deployment.
 export function PosMockup() {
   return (
     <motion.div
@@ -31,7 +27,7 @@ export function PosMockup() {
           <span className="size-2.5 rounded-full bg-destructive/50" />
           <span className="size-2.5 rounded-full bg-warning/50" />
           <span className="size-2.5 rounded-full bg-success/50" />
-          <span className="ml-3 text-xs font-medium text-muted-foreground">Kitchen Display</span>
+          <span className="ml-3 text-xs font-medium text-muted-foreground">Kitchen Display (KDS)</span>
         </div>
         <div className="grid gap-3 p-4 sm:grid-cols-3">
           {tickets.map((t, i) => (
@@ -60,8 +56,7 @@ export function PosMockup() {
         </div>
       </div>
 
-      {/* Floating KPI card — pure decoration, positioned to read as a
-          companion dashboard glance, not a data claim. */}
+      {/* Floating KPI card */}
       <motion.div
         initial={{ opacity: 0, x: 16, y: 10 }}
         animate={{ opacity: 1, x: 0, y: 0 }}

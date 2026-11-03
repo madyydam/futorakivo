@@ -25,13 +25,13 @@ const points = [
     icon: FileCheck2,
     title: "Documented compliance posture",
     description:
-      "Written accessibility and India data-protection notes — not a marketing claim, an actual document you can read.",
+      "Pre-configured accessibility postures, audit trails, and data compliance standards for enterprise HORECA operations.",
   },
 ];
 
 export function SecuritySection() {
   return (
-    <section id="security" className="border-y border-border/60 bg-muted/30 px-4 py-24 sm:px-6">
+    <section id="security" className="border-y border-border/60 bg-muted/30 px-4 py-20 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-6xl">
         <Reveal className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">

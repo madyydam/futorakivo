@@ -104,7 +104,7 @@ export default function UpdatesPage() {
           <div>
             <h2 className="text-base font-medium">Application Updates</h2>
             <p className="text-sm text-muted-foreground">
-              Check the current version against the latest release on GitHub.
+              Check the current version against the latest release on Modexsys servers.
             </p>
           </div>
           <Button

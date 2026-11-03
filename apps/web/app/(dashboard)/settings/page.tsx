@@ -9,7 +9,7 @@ import {
   TAX_REGIMES,
   type TaxMode,
   type TaxRegime,
-} from "@nodedr-restaurant/types";
+} from "@modexsys/types";
 import { KioskCard } from "@/components/settings/kiosk-card";
 import { MobileAppCard } from "@/components/settings/mobile-app-card";
 import { PrinterDiagnosticsCard } from "@/components/settings/printer-diagnostics-card";
@@ -331,7 +331,7 @@ function GeneralSettingsForm({
                 </button>
               )}
               <p className="text-xs text-muted-foreground">
-                Shows in the app sidebar and login screen instead of the OrderRestro mark.
+                Shows in the app sidebar and login screen instead of the Modexsys HORECA mark.
                 Square, at least 256×256px, PNG with a transparent background works best.
               </p>
             </div>
@@ -693,17 +693,7 @@ function GeneralSettingsForm({
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Nodedr OrderRestro is free software under the GNU AGPL-3.0. The source code of the version
-        you are using is available to every user of this service at{" "}
-        <a
-          className="underline"
-          href="https://github.com/Raktim94/nodedr-restaurant-pos"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          github.com/Raktim94/nodedr-restaurant-pos
-        </a>
-        .
+        Modexsys HORECA — Restaurant & HORECA Operating System by Modexsys.
       </p>
     </div>
   );

@@ -1,11 +1,11 @@
-Nodedr OrderRestro
-Copyright (C) 2026 Nodedr Infotech Private Limited and Raktim Ranjit
+Modexsys HORECA
+Copyright (C) 2026 Modexsys and Modexsys Team
 
-Ownership as recorded in this repository (README.md, MAINTAINERS.md,
-CONTRIBUTING.md): project copyright is held jointly by Nodedr Infotech Private
-Limited (https://www.nodedr.com/) and Raktim Ranjit. Every commit in the
-history is authored by Raktim Ranjit. Contributors keep the copyright in their
-own contributions and license them under the same terms (see CONTRIBUTING.md).
+Ownership as recorded in this repository (README.md, docs/MAINTAINERS.md,
+docs/CONTRIBUTING.md): project copyright is held jointly by Modexsys Private
+Limited (https://modexsys.com) and Modexsys Team. Every commit in the
+history is authored by Modexsys Team. Contributors keep the copyright in their
+own contributions and license them under the same terms (see docs/CONTRIBUTING.md).
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free
@@ -19,5 +19,5 @@ You should have received a copy of the GNU Affero General Public License along
 with this program (the LICENSE file). If not, see
 <https://www.gnu.org/licenses/agpl-3.0.html>.
 
-The names and logos "Nodedr", "Nodedr OrderRestro" and "OrderRestro" are not
-licensed by the AGPL; see TRADEMARK_POLICY.md.
+The names and logos "Modexsys" and "Modexsys HORECA" are not
+licensed by the AGPL; see docs/TRADEMARK_POLICY.md.

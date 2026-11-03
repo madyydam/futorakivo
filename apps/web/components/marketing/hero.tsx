@@ -1,18 +1,21 @@
 "use client";
 
-import { ArrowRight, Github } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { downloadHref } from "@/lib/downloads";
 import { PosMockup } from "@/components/marketing/pos-mockup";
+import { useCurrentUser } from "@/hooks/use-auth";
 
-const words = ["Restaurant", "software", "you", "actually", "own."];
+const words = ["HORECA", "software", "you", "actually", "own."];
 
 export function Hero() {
+  const { data: userData } = useCurrentUser();
+  const isLoggedIn = Boolean(userData?.user);
+
   return (
-    <section className="relative overflow-hidden px-4 pt-20 pb-24 sm:px-6 sm:pt-28">
-      {/* Ambient gradient glow — transform/opacity only, no layout cost */}
+    <section className="relative overflow-hidden px-4 pt-16 pb-20 sm:px-6 sm:pt-24 sm:pb-28">
+      {/* Ambient gradient glow */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] bg-[radial-gradient(60%_50%_at_50%_0%,color-mix(in_oklch,var(--primary),transparent_88%),transparent)]"
@@ -23,10 +26,10 @@ export function Hero() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary"
         >
-          <span className="size-1.5 rounded-full bg-success" />
-          Open source · AGPL-3.0 · self-hosted
+          <span className="size-2 rounded-full bg-primary animate-pulse" />
+          Modexsys HORECA · Offline-First Restaurant Operating System
         </motion.div>
 
         <h1 className="flex flex-wrap justify-center gap-x-3 text-4xl font-semibold tracking-tight text-foreground sm:text-6xl">
@@ -36,7 +39,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-              className={word === "own." ? "text-primary" : undefined}
+              className={word === "own." ? "text-primary font-bold" : undefined}
             >
               {word}
             </motion.span>
@@ -49,10 +52,9 @@ export function Hero() {
           transition={{ duration: 0.4, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground sm:text-xl"
         >
-          POS, kitchen display, tables, reservations, inventory, and CRM — one
-          self-hosted stack that runs on your own LAN. No subscription, no
-          forced cloud dependency, no vendor lock-in. Your orders, your
-          customers&rsquo; data, your server.
+          <strong className="text-foreground font-semibold">Modexsys HORECA</strong> unites high-speed POS billing,
+          live Kitchen Display (KDS), interactive floor tables, inventory costing, staff attendance, and CRM into one
+          self-hosted local LAN stack. Zero internet dependency, zero recurring fees.
         </motion.p>
 
         <motion.div
@@ -61,23 +63,31 @@ export function Hero() {
           transition={{ duration: 0.4, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
           className="mt-9 flex flex-col items-center gap-3 sm:flex-row"
         >
-          <Button size="lg" className="h-11 px-6 text-[15px]" render={<Link href="/signup" />}>
-            Get started free
-            <ArrowRight className="size-4" data-icon="inline-end" />
-          </Button>
+          {isLoggedIn ? (
+            <Button size="lg" className="h-11 px-6 text-[15px]" render={<Link href="/dashboard" />}>
+              Open Dashboard
+              <ArrowRight className="size-4" data-icon="inline-end" />
+            </Button>
+          ) : (
+            <Button size="lg" className="h-11 px-6 text-[15px]" render={<Link href="/signup" />}>
+              Get started free
+              <ArrowRight className="size-4" data-icon="inline-end" />
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="lg"
             className="h-11 px-6 text-[15px]"
-            render={<a href={downloadHref("github")} />}
+            render={<a href="#live-demo" />}
           >
-            <Github className="size-4" data-icon="inline-start" />
-            View on GitHub
+            <Play className="size-3.5 fill-current text-primary" data-icon="inline-start" />
+            Watch Live Interactive Demo
           </Button>
         </motion.div>
       </div>
 
-      <div className="mt-16 sm:mt-20">
+      <div className="mt-14 sm:mt-20">
         <PosMockup />
       </div>
     </section>

@@ -1,8 +1,7 @@
 <div align="center">
 
-<img src="apps/web/public/brand-lockup.png" alt="Nodedr OrderRestro" width="520">
+<img src="apps/web/public/brand-lockup.png" alt="Modexsys HORECA" width="520">
 
-<img src="docs/orderrestro-cover.jpg" alt="Illustrative evening scene in an independent restaurant" width="100%">
 
 **Open-source, self-hosted restaurant POS & management system** — billing
 with **UPI QR payments**, tables, kitchen display (KDS), reservations,
@@ -18,30 +17,29 @@ dine-in, takeaway, delivery and kitchen operations.
 [![NestJS](https://img.shields.io/badge/backend-NestJS-E0234E?logo=nestjs&logoColor=white)](apps/backend)
 [![Next.js](https://img.shields.io/badge/frontend-Next.js-000000?logo=next.js&logoColor=white)](apps/web)
 [![CasaOS / ZimaOS](https://img.shields.io/badge/CasaOS%20%2F%20ZimaOS-one--click%20app-1F6FEB)](casaos/README.md)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![Status](https://img.shields.io/badge/status-active%20development-orange.svg)](./ROADMAP.md)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
+[![Status](https://img.shields.io/badge/status-active%20development-orange.svg)](docs/ROADMAP.md)
 
-Developed by [NodeDR Infotech Private Limited](https://www.nodedr.com/)
+Developed by **Modexsys**
 
-**[Try OrderRestro](https://orderrestro.nodedr.com/)** · **[Case study](https://www.raktimranjit.com/projects/orderrestro)** · **[Maintainer: Raktim Ranjit](https://www.raktimranjit.com/)**
+**[Try Modexsys HORECA](https://horeca.modexsys.com/)** · **[Case study](https://horeca.modexsys.com)** · **[Maintainer: Modexsys](https://modexsys.com)**
 
 <p align="center">
-  <a href="https://orderrestro.nodedr.com/"><img src="https://img.shields.io/badge/Go%20to%20the%20OrderRestro%20website-orderrestro.nodedr.com-E0234E?style=for-the-badge" alt="Go to the OrderRestro website"></a>
+  <a href="https://horeca.modexsys.com/"><img src="https://img.shields.io/badge/Go%20to%20the%20Modexsys HORECA%20website-horeca.modexsys.com-E0234E?style=for-the-badge" alt="Go to the Modexsys HORECA website"></a>
 </p>
 
 <p align="center">
-  <img src="docs/assets/hero-animated.svg" alt="Nodedr OrderRestro: animated overview with an illustrative sample screen" width="100%">
 </p>
 
 
 [Quick Start](#quick-start) ·
-[How to use](#how-to-use-orderrestro) ·
-[Full tutorial](./TUTORIAL.md) ·
+[How to use](#how-to-use-modexsys-horeca) ·
+[Full tutorial](docs/TUTORIAL.md) ·
 [Features](#features) ·
 [Screenshots](#screenshots) ·
 [Docs](#documentation) ·
 [Contributing](#contributing) ·
-[Roadmap](./ROADMAP.md)
+[Roadmap](docs/ROADMAP.md)
 
 </div>
 
@@ -49,7 +47,7 @@ Developed by [NodeDR Infotech Private Limited](https://www.nodedr.com/)
 
 ## What this is
 
-**Nodedr OrderRestro** is a purpose-built, offline-first Restaurant
+**Modexsys HORECA** is a purpose-built, offline-first Restaurant
 Management System for restaurants, cafés, coffee shops, bakeries, fast
 food, fine dining, bars, food courts, cloud kitchens, and multi-branch
 chains. The whole stack — Postgres, API, and web app — runs on one local
@@ -57,16 +55,15 @@ server on the restaurant's own LAN: order-taking, billing, KDS, and
 printing all keep working with the WAN cable unplugged. No subscription,
 no forced cloud dependency, self-hosted by design.
 
-It's a sister project to [`nodedr-pos`](https://github.com/Raktim94/nodedr-pos)
 (the retail-shop POS), reusing its proven patterns — auth/session model,
 receipt rendering, ESC/POS printing, currency-rounding discipline — but
 built as its own codebase, because restaurant floor/kitchen/reservation
 operations and retail shop billing are different enough domains that
 forcing one schema to serve both would have compromised both. See
-[`PROJECT.md`](./PROJECT.md) for the full rationale.
+[`PROJECT.md`](docs/PROJECT.md) for the full rationale.
 
 **Non-negotiable product principles** (the short version — full detail in
-[`PROJECT.md`](./PROJECT.md)):
+[`PROJECT.md`](docs/PROJECT.md)):
 
 1. **Offline-first / self-hosted** — a single branch runs entirely on a
    local LAN server, zero internet dependency once installed.
@@ -130,12 +127,12 @@ real `windows-latest` runner) — not just "it compiled." What that CI run
 does **not** cover: a physical Windows machine (Start Menu tile look,
 taskbar icon, DPI scaling, upgrade-in-place), a real thermal printer, or
 Microsoft Store certification (WACK) — see `windows/msix/README.md` and
-[`SECURITY-AUDIT-REPORT.md`](./SECURITY-AUDIT-REPORT.md) for the full
+[`SECURITY-AUDIT-REPORT.md`](docs/SECURITY-AUDIT-REPORT.md) for the full
 verified-vs-not-tested breakdown before relying on it in production.
 
 ## Features
 
-Full field-level detail for every module lives in [`ROADMAP.md`](./ROADMAP.md).
+Full field-level detail for every module lives in [`ROADMAP.md`](docs/ROADMAP.md).
 This is the complete 20-module scope from the original brief — **not**
 all built yet; ✅ = done and verified end-to-end, 🚧 = planned, sequenced
 by phase.
@@ -175,7 +172,6 @@ costing, suppliers, purchase orders, goods receipts with batch/lot +
 expiry tracking, FIFO waste logging, and automatic ingredient deduction
 on checkout (combo-aware, never blocks a sale on a stock shortfall).
 Also shipped: printable receipts (opens the browser's print dialog, same
-"any printer, or Save as PDF" approach as [`nodedr-pos`](https://github.com/Raktim94/nodedr-pos)),
 a Settings area (restaurant + branch details, per-branch tax regime — India
 GST/US Sales Tax/EU VAT/Spain IVA, tax-inclusive or -exclusive menu
 pricing) and staff account management (create/deactivate staff, assign
@@ -183,7 +179,7 @@ roles) under **Settings** in the sidebar, photo upload on menu items, and
 an English/Spanish/French language switcher on the guest-facing QR
 ordering page and staff sidebar.
 
-## Why OrderRestro
+## Why Modexsys HORECA
 
 - **UPI-first checkout (India)** — pick UPI and a QR for the exact bill
   amount appears at the till *and* on the customer-facing screen; a
@@ -198,9 +194,9 @@ ordering page and staff sidebar.
 - **India-ready** — GST (inclusive or exclusive), UPI, ₹ formatting, plus
   US sales tax, EU VAT and Spanish IVA for other markets.
 
-## How to use OrderRestro
+## How to use Modexsys HORECA
 
-Start with the [screenshot-guided tutorial](./TUTORIAL.md) for the full
+Start with the [screenshot-guided tutorial](docs/TUTORIAL.md) for the full
 first-run walkthrough. It covers sign-up, setup, daily service, and the
 management tools with **56 screenshots of the app**.
 
@@ -223,35 +219,34 @@ management tools with **56 screenshots of the app**.
 <p align="center">
   <a href="./TUTORIAL.md"><strong>Open the complete tutorial →</strong></a>
   &nbsp; · &nbsp;
-  <a href="./docs/orderrestro-user-manual.pdf">Download the user manual</a>
 </p>
 
 ## Screenshots
 
 | | |
 |---|---|
-| ![Dashboard](docs/screenshots/dashboard-light.png) | ![Dashboard (dark)](docs/screenshots/dashboard-dark.png) |
+| ![Dashboard](apps/web/public/screenshots/dashboard-light.png) | ![Dashboard (dark)](apps/web/public/screenshots/dashboard-dark.png) |
 | Dashboard — light | Dashboard — dark |
-| ![Point of Sale](docs/screenshots/pos-light.png) | ![Kitchen Display](docs/screenshots/kds-light.png) |
+| ![Point of Sale](apps/web/public/screenshots/pos-light.png) | ![Kitchen Display](apps/web/public/screenshots/kds-light.png) |
 | Point of Sale | Kitchen Display — priority ticket, live timers |
-| ![Tables](docs/screenshots/tables-light.png) | ![Reservations](docs/screenshots/reservations-light.png) |
+| ![Tables](apps/web/public/screenshots/tables-light.png) | ![Reservations](apps/web/public/screenshots/reservations-light.png) |
 | Tables — floor view + waitlist | Reservations |
-| ![Customers](docs/screenshots/customers-light.png) | ![Menu](docs/screenshots/menu-light.png) |
+| ![Customers](apps/web/public/screenshots/customers-light.png) | ![Menu](apps/web/public/screenshots/menu-light.png) |
 | Customers — CRM + loyalty | Menu management — combo builder |
-| ![Inventory](docs/screenshots/inventory-light.png) | ![Purchase Orders](docs/screenshots/purchase-orders-light.png) |
+| ![Inventory](apps/web/public/screenshots/inventory-light.png) | ![Purchase Orders](apps/web/public/screenshots/purchase-orders-light.png) |
 | Inventory — ingredients, low-stock, weighted-average cost | Purchase orders — supplier, status, total |
 
 <details>
 <summary>Mobile (390px)</summary>
 
-![Dashboard on mobile](docs/screenshots/dashboard-mobile.png)
+![Dashboard on mobile](apps/web/public/screenshots/dashboard-mobile.png)
 
 </details>
 
 ## FAQ
 
 **Is there a free, open-source restaurant POS I can self-host?**
-Yes — OrderRestro is AGPL-3.0 and installs with `docker compose up`, or as
+Yes — Modexsys HORECA is AGPL-3.0 and installs with `docker compose up`, or as
 a one-click app on CasaOS / ZimaOS.
 
 **Does it support UPI payments and GST billing?**
@@ -274,7 +269,7 @@ daily, weekly or monthly schedule through your own SMTP server.
 **What is not built yet?** Native payment-gateway checkout, direct
 accounting-software and delivery-platform connectors, weighing-scale and
 label printers, a SQLite edition and native installers. The
-[roadmap](./ROADMAP.md) is explicit about what is done and what is not.
+[roadmap](docs/ROADMAP.md) is explicit about what is done and what is not.
 
 ## Tech stack
 
@@ -282,7 +277,7 @@ NestJS (API) + PostgreSQL/Prisma + Next.js (web) + Socket.IO (realtime) in
 a pnpm/Turborepo monorepo. Full rationale for every choice — including why
 NestJS over the plain-Express pattern its sister project uses, and why
 Postgres over the originally-specced SQLite — is in
-[`ARCHITECTURE.md`](./ARCHITECTURE.md).
+[`ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 | Layer | Choice |
 |---|---|
@@ -304,19 +299,18 @@ Postgres over the originally-specced SQLite — is in
 ## Quick start
 
 <p align="center">
-  <img src="docs/assets/install-animated.svg" alt="Animated terminal: clone the repo and run install.sh" width="100%">
 </p>
 
 
 ### One-line install (Ubuntu / Debian, amd64 and arm64)
 
 ```bash
-curl -fsSL https://orderrestro.nodedr.com/install-linux.sh | sudo bash
+curl -fsSL https://horeca.modexsys.com/install-linux.sh | sudo bash
 ```
 
-Installs the `nodedr-orderrestro` .deb (runs in Docker; installs Docker if
-missing). OrderRestro opens on port 1995. Direct downloads and checksums are on
-the [releases page](https://github.com/Raktim94/nodedr-restaurant-pos/releases/latest).
+Installs the `nodedr-modexsys-horeca` .deb (runs in Docker; installs Docker if
+missing). Modexsys HORECA opens on port 1995. Direct downloads and checksums are on
+the [releases page](https://github.com/modexsys/horeca/releases/latest).
 
 ### Installing Docker
 
@@ -358,7 +352,7 @@ already bundled, which is all this project requires.
 ### One-click install
 
 ```bash
-git clone https://github.com/Raktim94/nodedr-restaurant-pos.git && cd nodedr-restaurant-pos && ./install.sh
+git clone https://github.com/modexsys/horeca.git && cd nodedr-restaurant-pos && ./install.sh
 ```
 
 [`install.sh`](install.sh) generates a `.env` with random secrets (only if
@@ -379,7 +373,7 @@ If you'd rather run each step yourself (e.g. to set your own secrets instead
 of generated ones):
 
 ```bash
-git clone https://github.com/Raktim94/nodedr-restaurant-pos.git
+git clone https://github.com/modexsys/horeca.git
 cd nodedr-restaurant-pos
 cp .env.example .env        # edit JWT_SECRET / POSTGRES_PASSWORD for anything beyond local dev
 docker compose up -d --build
@@ -401,7 +395,7 @@ pnpm dev   # runs backend (:4001) and web (:1995) together via Turborepo
 ```
 
 Full setup detail, coding conventions, and the PR process are in
-[`CONTRIBUTING.md`](./CONTRIBUTING.md).
+[`CONTRIBUTING.md`](docs/CONTRIBUTING.md).
 
 ### Updating
 
@@ -448,18 +442,17 @@ docs/           Screenshots and supplementary docs
 
 | Doc | What's in it |
 |---|---|
-| [`PROJECT.md`](./PROJECT.md) | Source of truth — full vision, non-negotiable principles, complete 20-module scope, current status |
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Tech-stack decisions and the reasoning behind each one |
-| [`ROADMAP.md`](./ROADMAP.md) | Phased build plan / living TODO — checkboxes are the real status |
-| [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) | Visual language, tokens, type scale, component inventory, per-surface UX notes |
+| [`PROJECT.md`](docs/PROJECT.md) | Source of truth — full vision, non-negotiable principles, complete 20-module scope, current status |
+| [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Tech-stack decisions and the reasoning behind each one |
+| [`ROADMAP.md`](docs/ROADMAP.md) | Phased build plan / living TODO — checkboxes are the real status |
+| [`DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Visual language, tokens, type scale, component inventory, per-surface UX notes |
 | [`casaos/README.md`](./casaos/README.md) | CasaOS/ZimaOS one-click install, image publishing, official app store submission steps |
 | [`windows/msix/README.md`](./windows/msix/README.md) | Windows MSIX desktop client — what it is/isn't, build/validate instructions, capabilities, what's CI-verified vs. not tested on real hardware |
-| [`ACCESSIBILITY.md`](./ACCESSIBILITY.md) | WCAG 2.1 AA target, what's implemented, testing methodology, known gaps |
-| [`COMPLIANCE-INDIA.md`](./COMPLIANCE-INDIA.md) | How the architecture relates to the DPDP Act 2023, IT Rules, GST invoicing, and CCPA dark-patterns guidelines |
+| [`ACCESSIBILITY.md`](docs/ACCESSIBILITY.md) | WCAG 2.1 AA target, what's implemented, testing methodology, known gaps |
+| [`COMPLIANCE-INDIA.md`](docs/COMPLIANCE-INDIA.md) | How the architecture relates to the DPDP Act 2023, IT Rules, GST invoicing, and CCPA dark-patterns guidelines |
 | [`docs/verifactu.md`](./docs/verifactu.md) | Spain VERI*FACTU: chained invoice records, QR on the 80 mm receipt and AEAT reporting. Implemented, not certified; what is and is not verified |
 | [`docs/IMPORT.md`](./docs/IMPORT.md) | Bulk-import the menu and ingredients from CSV: columns, matching rules, example files |
-| [`SECURITY-AUDIT-REPORT.md`](./SECURITY-AUDIT-REPORT.md) | Full Critical/High/Medium/Low security audit findings + fixes, and Windows/MSIX Store-readiness status (what's verified vs. not tested) |
-| [`docs/staff-access-tutorial.html`](./docs/staff-access-tutorial.html) ([PDF](./docs/staff-access-tutorial.pdf)) | Departments, per-person access exceptions, invoice-text reading, and install steps for every platform |
+| [`SECURITY-AUDIT-REPORT.md`](docs/SECURITY-AUDIT-REPORT.md) | Full Critical/High/Medium/Low security audit findings + fixes, and Windows/MSIX Store-readiness status (what's verified vs. not tested) |
 | [`docs/KIOSK-AND-KDS.md`](./docs/KIOSK-AND-KDS.md) | Customer self-service kiosk and kitchen-display (KDS) tablet setup: URL/launch, Android notes, printer/scanner status, tests |
 | [`docs/integrations-api.md`](./docs/integrations-api.md) | MCP server (for AI clients) and the public integration REST API (for an external website's backend) — auth, endpoints, examples |
 
@@ -499,18 +492,18 @@ docs/           Screenshots and supplementary docs
 
 Contributions are very welcome — this is early-stage with a lot of open
 scope (see the feature table above). Start with
-**[`CONTRIBUTING.md`](./CONTRIBUTING.md)**: environment setup, the
+**[`CONTRIBUTING.md`](docs/CONTRIBUTING.md)**: environment setup, the
 non-negotiable conventions (money rounding, RBAC, shared schemas,
 realtime), commit/PR process, and how to propose bigger architecture
 changes without silently re-litigating a decision already recorded in
 `PROJECT.md`/`ARCHITECTURE.md`.
 
-This project follows the [Contributor Covenant](./CODE_OF_CONDUCT.md).
+This project follows the [Contributor Covenant](docs/CODE_OF_CONDUCT.md).
 
 ## License
 
-Copyright © 2026 [Nodedr Infotech Private Limited](https://www.nodedr.com/)
-and Raktim Ranjit. Licensed under the
+Copyright © 2026 [Modexsys](https://modexsys.com)
+and Modexsys. Licensed under the
 [GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0). In short:
 you're free to self-host, use, and modify this software for your
 restaurant or business. If you modify it and run that modified version
@@ -519,20 +512,20 @@ available to those users under the same license — this keeps
 improvements to a self-hosted business tool in the open rather than
 disappearing into a closed commercial fork.
 
-See [`MAINTAINERS.md`](./MAINTAINERS.md) for project maintainers.
+See [`MAINTAINERS.md`](docs/MAINTAINERS.md) for project maintainers.
 
 ---
 
 <div align="center">
-<img src="apps/web/public/logo.png" alt="Nodedr OrderRestro" width="72">
+<img src="apps/web/public/logo.png" alt="Modexsys HORECA" width="72">
 </div>
 
 
 ## Case study
 
-Read the [OrderRestro case study](https://www.raktimranjit.com/projects/orderrestro) for the product background and design decisions.
+Read the [Modexsys HORECA case study](https://horeca.modexsys.com) for the product background and design decisions.
 
-Maintainer: [Raktim Ranjit](https://www.raktimranjit.com/)
+Maintainer: [Modexsys](https://modexsys.com)
 
 ---
 
@@ -544,4 +537,4 @@ offline-first POS, NestJS, Next.js, PostgreSQL, Prisma, CasaOS, ZimaOS.</sub>
 
 ## Commercial licence
 
-Licensed under the AGPL-3.0. A [commercial licence](COMMERCIAL-LICENSE.md) is available on request for use without the AGPL obligations. The NodeDR OrderRestro name and logo are not covered by the AGPL.
+Licensed under the AGPL-3.0. A [commercial licence](docs/COMMERCIAL-LICENSE.md) is available on request for use without the AGPL obligations. The NodeDR Modexsys HORECA name and logo are not covered by the AGPL.

@@ -20,9 +20,9 @@ const features = [
   },
   {
     icon: ChefHat,
-    title: "Live Kitchen Display",
+    title: "Live Kitchen Display (KDS)",
     description:
-      "KOTs auto-routed to the right kitchen station, reprint & priority controls, and per-station prep-time reporting.",
+      "KOTs auto-routed to the right kitchen station, reprint & priority controls, and per-station prep-time reporting in real-time.",
   },
   {
     icon: QrCode,
@@ -40,13 +40,13 @@ const features = [
     icon: Gift,
     title: "CRM, loyalty & gift cards",
     description:
-      "Customer profiles, earn-and-redeem loyalty points, gift card issuance, and full visit history.",
+      "Customer profiles, earn-and-redeem loyalty points, gift card issuance, and complete visit and order history.",
   },
   {
     icon: WifiOff,
     title: "Offline-first by design",
     description:
-      "The whole stack runs on one local server. Order-taking, billing, KDS, and printing keep working with the WAN cable unplugged.",
+      "The whole stack runs on one local server. Order-taking, billing, KDS, and printing keep working even with internet disconnected.",
   },
   {
     icon: ShieldCheck,
@@ -56,36 +56,36 @@ const features = [
   },
   {
     icon: GitBranch,
-    title: "Open source, no lock-in",
+    title: "Self-hosted, no lock-in",
     description:
-      "AGPL-3.0 licensed. Self-host on Docker, CasaOS/ZimaOS, or a Windows client — your data never has to leave your building.",
+      "Deploy on your own server, mini PC, or local Docker. 100% independent — your data never has to leave your building.",
   },
   {
     icon: Plug,
-    title: "API & MCP integrations",
+    title: "API & integrations",
     description:
-      "Connect an MCP client like Claude Desktop with your own permissions, or issue a scoped API key so your website can browse the menu, place orders, and book tables through OrderRestro directly.",
+      "Connect third-party kiosks, order aggregator webhooks, or external delivery channels via secured, scoped API keys.",
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+    <section id="features" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <Reveal className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Everything a real dine-in operation needs
+          Everything a real HORECA operation needs
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           Not a retail POS bolted onto a restaurant — purpose-built for
-          dine-in, takeaway, and kitchen operations from day one.
+          fine dining, cafés, quick service, bars, and cloud kitchens.
         </p>
       </Reveal>
 
-      <RevealGroup className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <RevealGroup className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f) => (
           <RevealItem
             key={f.title}
-            className="group rounded-2xl border border-border/60 bg-card p-6 transition-colors hover:border-primary/40"
+            className="group rounded-2xl border border-border/60 bg-card p-6 transition-all hover:border-primary/40 hover:shadow-lg"
           >
             <div className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               <f.icon className="size-5" />

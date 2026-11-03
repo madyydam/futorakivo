@@ -2,6 +2,6 @@
 set -e
 systemctl daemon-reload >/dev/null 2>&1 || true
 if [ "$1" = purge ]; then
-  echo "nodedr-orderrestro: your data stays in Docker volumes (nodedr-orderrestro_pg_data, nodedr-orderrestro_uploads_data, nodedr-orderrestro_state) and your settings and generated passwords in /etc/nodedr-orderrestro/nodedr-orderrestro.env, so a later reinstall picks up where you left off. To delete everything for good: sudo docker compose --project-name nodedr-orderrestro down -v ; sudo rm -rf /etc/nodedr-orderrestro" >&2
+  echo "modexsys-horeca: your data stays in Docker volumes (modexsys-horeca_pg_data, modexsys-horeca_uploads_data, modexsys-horeca_state) and your settings and generated passwords in /etc/modexsys-horeca/modexsys-horeca.env, so a later reinstall picks up where you left off. To delete everything for good: sudo docker compose --project-name modexsys-horeca down -v ; sudo rm -rf /etc/modexsys-horeca" >&2
 fi
 exit 0

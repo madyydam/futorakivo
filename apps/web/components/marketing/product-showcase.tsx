@@ -76,6 +76,7 @@ export function ProductShowcase() {
                   alt="Modexsys HORECA"
                   fill
                   className="object-contain"
+                  unoptimized
                 />
               </div>
               <span className="truncate text-xs font-bold tracking-tight text-foreground sm:text-sm">
@@ -99,6 +100,7 @@ export function ProductShowcase() {
                   sizes="(min-width: 1024px) 1024px, 100vw"
                   className="object-cover object-top"
                   priority={current.id === "dashboard"}
+                  unoptimized
                 />
               </motion.div>
             </AnimatePresence>

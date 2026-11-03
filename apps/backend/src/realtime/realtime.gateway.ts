@@ -10,6 +10,21 @@ import type { Server, Socket } from 'socket.io';
 import { BranchAccessService } from '../common/services/branch-access.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+function getAllowedOrigins(): string[] {
+  const allowed = (process.env.CORS_ORIGIN ?? 'http://localhost:1995')
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o && o !== '*');
+
+  if (process.env.VERCEL_URL) {
+    allowed.push(`https://${process.env.VERCEL_URL}`);
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    allowed.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+  }
+  return allowed;
+}
+
 // One gateway, room-per-branch — KDS/table-status/order-tracking all join
 // the branch room they care about and get pushed events by name
 // ("kot.updated", "table.updated", "order.updated"). Kept as a single
@@ -25,7 +40,7 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:1995',
+    origin: getAllowedOrigins(),
     credentials: true,
   },
 })

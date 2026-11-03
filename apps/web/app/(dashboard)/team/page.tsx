@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { StatusNote, useNoteToast } from "@/components/ui/status-note";
 import { AdjustLineDialog, PayRunDialog, SlipButton } from "@/components/team/payroll-dialogs";
+import { TeamMembersTab } from "@/components/team/team-members-tab";
 import { Suspense, useState } from "react";
 import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000);
 const errMsg = (e: unknown) => (e instanceof ApiError ? e.message : "Something went wrong");
 const fmtDate = (s: string) => new Date(s).toLocaleDateString([], { day: "numeric", month: "short" });
 const fmtTime = (s: string) => new Date(s).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-const TABS = ["schedule", "leave", "payroll", "performance"] as const;
+const TABS = ["members", "schedule", "leave", "payroll", "performance"] as const;
 type Tab = (typeof TABS)[number];
 
 function Schedule({ branchId }: { branchId: string | null }) {
@@ -347,13 +348,13 @@ function TeamView() {
   const params = useSearchParams();
   const [tab, setTab] = useState<Tab>(() => {
     const t = params.get("tab");
-    return TABS.find((x) => x === t) ?? "schedule";
+    return TABS.find((x) => x === t) ?? "members";
   });
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-[32px] font-semibold tracking-tight text-foreground">Team</h1>
-        <p className="text-sm text-muted-foreground">Schedules, leave, payroll and performance</p>
+        <p className="text-sm text-muted-foreground">Staff roster, compensation, schedules, leave, and payroll</p>
       </div>
       <div className="flex flex-wrap gap-2">
         {TABS.map((t) => (
@@ -370,6 +371,7 @@ function TeamView() {
           </button>
         ))}
       </div>
+      {tab === "members" && <TeamMembersTab branchId={branchId} />}
       {tab === "schedule" && <Schedule branchId={branchId} />}
       {tab === "leave" && <Leave branchId={branchId} />}
       {tab === "payroll" && <Payroll branchId={branchId} />}

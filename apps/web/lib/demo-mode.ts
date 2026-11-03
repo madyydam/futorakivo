@@ -582,6 +582,40 @@ export function getMockApiResponse(path: string, options: RequestInit = {}): unk
     };
   }
 
+  // ---- REPORTS ----
+  if (cleanPath === "/reports") {
+    return [
+      { key: "sales-daily", title: "Daily Sales Summary", group: "Sales & Revenue" },
+      { key: "sales-items", title: "Item-wise Sales Breakdown", group: "Sales & Revenue" },
+      { key: "tax-gst", title: "GST & Tax Summary", group: "Compliance & Tax" },
+      { key: "payments", title: "Payment Mode Breakdown", group: "Financial" },
+    ];
+  }
+
+  if (cleanPath.startsWith("/reports/")) {
+    return {
+      key: "sales-daily",
+      title: "Daily Sales Summary",
+      columns: ["Date", "Orders", "Gross Sales", "Discounts", "Taxes", "Net Revenue"],
+      rows: [
+        ["Today", 54, "₹51,450", "₹2,530", "₹2,448", "₹51,368"],
+        ["Yesterday", 62, "₹58,900", "₹2,100", "₹2,840", "₹59,640"],
+        ["2026-11-01", 48, "₹44,200", "₹1,800", "₹2,120", "₹44,520"],
+        ["2026-10-31", 55, "₹52,800", "₹3,200", "₹2,480", "₹52,080"],
+        ["2026-10-30", 69, "₹66,100", "₹3,500", "₹3,130", "₹65,730"],
+        ["2026-10-29", 42, "₹39,500", "₹1,200", "₹1,880", "₹40,180"],
+        ["2026-10-28", 58, "₹55,400", "₹2,400", "₹2,650", "₹55,650"],
+      ],
+    };
+  }
+
+  if (cleanPath === "/report-schedules") {
+    return {
+      emailConfigured: true,
+      schedules: [],
+    };
+  }
+
   // ---- TABLES & FLOORS ----
   if (cleanPath === "/tables/floors") {
     return DEMO_FLOORS;
@@ -605,12 +639,73 @@ export function getMockApiResponse(path: string, options: RequestInit = {}): unk
     return DEMO_KDS_TICKETS;
   }
 
-  // ---- INVENTORY LOW STOCK ----
+  // ---- ORDERS LIST & HISTORY ----
+  if (cleanPath === "/orders" && method === "GET") {
+    return [
+      { id: "ord-101", orderNumber: "1044", type: "DINE_IN", channel: "STAFF", status: "COMPLETED", subtotal: "1420", taxAmount: "71", discountAmount: "0", totalAmount: "1491", createdAt: new Date(Date.now() - 20 * 60000).toISOString(), table: { number: 1, name: "Window Table" }, customer: { name: "Vikram Malhotra", phone: "+91 98765 11223" }, items: [{ id: "i1", nameSnapshot: "Butter Chicken Special", quantity: 1 }, { id: "i2", nameSnapshot: "Butter Garlic Naan", quantity: 3 }] },
+      { id: "ord-102", orderNumber: "1043", type: "TAKEAWAY", channel: "STAFF", status: "COMPLETED", subtotal: "680", taxAmount: "34", discountAmount: "0", totalAmount: "714", createdAt: new Date(Date.now() - 45 * 60000).toISOString(), table: null, customer: { name: "Ananya Deshmukh", phone: "+91 98220 44556" }, items: [{ id: "i3", nameSnapshot: "Paneer Butter Masala", quantity: 1 }, { id: "i4", nameSnapshot: "Tandoori Roti", quantity: 4 }] },
+      { id: "ord-103", orderNumber: "1042", type: "DELIVERY", channel: "ONLINE", status: "COMPLETED", subtotal: "950", taxAmount: "47", discountAmount: "50", totalAmount: "947", createdAt: new Date(Date.now() - 75 * 60000).toISOString(), table: null, customer: { name: "Sunita Roy", phone: "+91 99887 76655" }, items: [{ id: "i5", nameSnapshot: "Hyderabadi Dum Biryani", quantity: 2 }] },
+    ];
+  }
+
+  if (cleanPath === "/orders/manage") {
+    return [];
+  }
+
+  // ---- RESERVATIONS ----
+  if (cleanPath === "/reservations") {
+    return [
+      { id: "res-1", guestName: "Rajesh Khanna", partySize: 4, reservedAt: new Date(Date.now() + 2 * 3600000).toISOString(), phone: "+91 98111 22334", status: "CONFIRMED", table: { number: "T3", name: "Family Corner" } },
+      { id: "res-2", guestName: "Meera Nair", partySize: 2, reservedAt: new Date(Date.now() + 4 * 3600000).toISOString(), phone: "+91 98222 33445", status: "CONFIRMED", table: { number: "R3", name: "Cabana 1" } },
+    ];
+  }
+
+  // ---- INVENTORY LOW STOCK & TRANSFERS ----
   if (cleanPath === "/inventory/ingredients/low-stock") {
     return [
       { id: "ing-1", name: "Amul Butter", sku: "ING-001", unit: "kg", reorderLevel: "5", currentStock: "2.5", costPerUnit: "480", isActive: true },
       { id: "ing-2", name: "Basmati Rice (Premium)", sku: "ING-002", unit: "kg", reorderLevel: "20", currentStock: "8", costPerUnit: "110", isActive: true },
       { id: "ing-3", name: "Fresh Paneer", sku: "ING-003", unit: "kg", reorderLevel: "10", currentStock: "3", costPerUnit: "320", isActive: true },
+    ];
+  }
+
+  if (cleanPath === "/inventory/ingredients") {
+    return [
+      { id: "ing-1", name: "Amul Butter", sku: "ING-001", unit: "kg", reorderLevel: "5", currentStock: "2.5", costPerUnit: "480", isActive: true },
+      { id: "ing-2", name: "Basmati Rice (Premium)", sku: "ING-002", unit: "kg", reorderLevel: "20", currentStock: "8", costPerUnit: "110", isActive: true },
+      { id: "ing-3", name: "Fresh Paneer", sku: "ING-003", unit: "kg", reorderLevel: "10", currentStock: "3", costPerUnit: "320", isActive: true },
+      { id: "ing-4", name: "Chicken Breast", sku: "ING-004", unit: "kg", reorderLevel: "15", currentStock: "18", costPerUnit: "260", isActive: true },
+      { id: "ing-5", name: "Maida Flour", sku: "ING-005", unit: "kg", reorderLevel: "25", currentStock: "40", costPerUnit: "45", isActive: true },
+    ];
+  }
+
+  if (cleanPath === "/inventory/transfers") {
+    return {
+      branches: [{ id: "brn-rooftop", name: "Rooftop Lounge" }],
+      history: [],
+    };
+  }
+
+  // ---- STAFF / USERS ----
+  if (cleanPath === "/users") {
+    return [
+      { id: "u-1", name: "Priya Sharma", email: "priya@royalspice.in", phone: "+91 98765 00001", roleId: "r-admin", role: { name: "Admin" }, isActive: true, branches: [{ branch: { name: "Main Dining Branch" } }] },
+      { id: "u-2", name: "Rahul Singh", email: "rahul@royalspice.in", phone: "+91 98765 00002", roleId: "r-waiter", role: { name: "Head Waiter" }, isActive: true, branches: [{ branch: { name: "Main Dining Branch" } }] },
+      { id: "u-3", name: "Chef Sanjeev", email: "sanjeev@royalspice.in", phone: "+91 98765 00003", roleId: "r-chef", role: { name: "Head Chef" }, isActive: true, branches: [{ branch: { name: "Main Dining Branch" } }] },
+    ];
+  }
+  if (cleanPath === "/users/roles") {
+    return [
+      { id: "r-admin", name: "Admin", permissions: [] },
+      { id: "r-waiter", name: "Waiter", permissions: [] },
+      { id: "r-chef", name: "Chef", permissions: [] },
+    ];
+  }
+  if (cleanPath === "/users/departments") {
+    return [
+      { id: "d-kitchen", name: "Kitchen & Production" },
+      { id: "d-service", name: "Floor Service" },
+      { id: "d-management", name: "Management" },
     ];
   }
 
@@ -641,10 +736,6 @@ export function getMockApiResponse(path: string, options: RequestInit = {}): unk
   }
 
   if (cleanPath === "/backups") {
-    return [];
-  }
-
-  if (cleanPath === "/orders/manage") {
     return [];
   }
 

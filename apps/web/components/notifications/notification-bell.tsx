@@ -23,6 +23,7 @@ import {
 import { openEntity } from "@/lib/entity-events";
 import { playNotificationFeedback } from "@/lib/notification-feedback";
 import { resolveWsUrl } from "@/lib/ws-url";
+import { DEMO_MODE } from "@/lib/demo-mode";
 
 // How many alerts the live socket already rang for but the refresh has not
 // listed yet (module-level: only one bell is ever mounted).
@@ -68,7 +69,7 @@ export function NotificationBell() {
   }, [muted]);
 
   useEffect(() => {
-    if (!branchId) return;
+    if (!branchId || DEMO_MODE) return;
 
     const socket = io(resolveWsUrl(), { query: { branchId }, withCredentials: true });
 

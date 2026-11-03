@@ -1,7 +1,0 @@
-#!/bin/sh
-set -e
-systemctl daemon-reload >/dev/null 2>&1 || true
-if [ "$1" = purge ]; then
-  echo "modexsys-horeca: your data stays in Docker volumes (modexsys-horeca_pg_data, modexsys-horeca_uploads_data, modexsys-horeca_state) and your settings and generated passwords in /etc/modexsys-horeca/modexsys-horeca.env, so a later reinstall picks up where you left off. To delete everything for good: sudo docker compose --project-name modexsys-horeca down -v ; sudo rm -rf /etc/modexsys-horeca" >&2
-fi
-exit 0

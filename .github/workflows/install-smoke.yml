@@ -36,7 +36,7 @@ jobs:
 
       - name: Logs on failure
         if: failure()
-        working-directory: ${{ runner.temp }}/nodedr-restaurant-pos
+        working-directory: ${{ runner.temp }}/modexsys-restaurant-pos
         run: docker compose logs --tail=80
 
   windows-script-syntax:

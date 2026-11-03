@@ -16,7 +16,6 @@ dine-in, takeaway, delivery and kitchen operations.
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](apps/web/tsconfig.json)
 [![NestJS](https://img.shields.io/badge/backend-NestJS-E0234E?logo=nestjs&logoColor=white)](apps/backend)
 [![Next.js](https://img.shields.io/badge/frontend-Next.js-000000?logo=next.js&logoColor=white)](apps/web)
-[![CasaOS / ZimaOS](https://img.shields.io/badge/CasaOS%20%2F%20ZimaOS-one--click%20app-1F6FEB)](casaos/README.md)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![Status](https://img.shields.io/badge/status-active%20development-orange.svg)](docs/ROADMAP.md)
 
@@ -108,27 +107,8 @@ login — there's no separate "cloud" mode to configure.
 - **CasaOS / ZimaOS.** Pre-built, multi-arch (amd64/arm64) images are
   published to GHCR and there's a ready-to-install app manifest — no build
   step, no `git clone` needed. Install directly from a compose URL today;
-  see [`casaos/README.md`](casaos/README.md). Official app store submission
   pending.
 
-### Windows desktop client
-
-However you host the server above, tills that are Windows machines don't
-have to use a browser tab: `windows/msix/` packages a thin native client
-(WinForms + WebView2, not Electron — no bundled Chromium, no server, no
-Docker) with a Start Menu entry that points at your server's address and
-otherwise just shows the same web UI. See
-[`windows/msix/README.md`](windows/msix/README.md) for what it is/isn't,
-build instructions, and the full capability list.
-
-Status: the build, package, install, and Start Menu registration are all
-machine-verified on every push via GitHub Actions (`windows-msix.yml`,
-real `windows-latest` runner) — not just "it compiled." What that CI run
-does **not** cover: a physical Windows machine (Start Menu tile look,
-taskbar icon, DPI scaling, upgrade-in-place), a real thermal printer, or
-Microsoft Store certification (WACK) — see `windows/msix/README.md` and
-[`SECURITY-AUDIT-REPORT.md`](docs/SECURITY-AUDIT-REPORT.md) for the full
-verified-vs-not-tested breakdown before relying on it in production.
 
 ## Features
 
@@ -434,7 +414,6 @@ pnpm dev
 apps/backend    NestJS API (REST /api/v1, Swagger at /api/docs, Socket.IO)
 apps/web        Next.js — back-office, POS, KDS, public QR menu view
 packages/types  Shared Zod schemas / TS types used by both apps
-casaos/         CasaOS/ZimaOS app store manifest + assets — see casaos/README.md
 docs/           Screenshots and supplementary docs
 ```
 
@@ -446,8 +425,6 @@ docs/           Screenshots and supplementary docs
 | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Tech-stack decisions and the reasoning behind each one |
 | [`ROADMAP.md`](docs/ROADMAP.md) | Phased build plan / living TODO — checkboxes are the real status |
 | [`DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Visual language, tokens, type scale, component inventory, per-surface UX notes |
-| [`casaos/README.md`](./casaos/README.md) | CasaOS/ZimaOS one-click install, image publishing, official app store submission steps |
-| [`windows/msix/README.md`](./windows/msix/README.md) | Windows MSIX desktop client — what it is/isn't, build/validate instructions, capabilities, what's CI-verified vs. not tested on real hardware |
 | [`ACCESSIBILITY.md`](docs/ACCESSIBILITY.md) | WCAG 2.1 AA target, what's implemented, testing methodology, known gaps |
 | [`COMPLIANCE-INDIA.md`](docs/COMPLIANCE-INDIA.md) | How the architecture relates to the DPDP Act 2023, IT Rules, GST invoicing, and CCPA dark-patterns guidelines |
 | [`docs/verifactu.md`](./docs/verifactu.md) | Spain VERI*FACTU: chained invoice records, QR on the 80 mm receipt and AEAT reporting. Implemented, not certified; what is and is not verified |

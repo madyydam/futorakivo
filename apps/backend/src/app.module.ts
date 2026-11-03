@@ -12,12 +12,15 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { MenuModule } from './modules/menu/menu.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
+import { RiderModule } from './modules/rider/rider.module';
 import { HrModule } from './modules/hr/hr.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
 import { MarketingModule } from './modules/marketing/marketing.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { OperationsModule } from './modules/operations/operations.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { IntegrationHubModule } from './integration-hub/integration-hub.module';
+import { ImportsModule } from './modules/imports/imports.module';
 import { EmailModule } from './modules/email/email.module';
 import { TablesModule } from './modules/tables/tables.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -38,6 +41,8 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { AuditModule } from './audit/audit.module';
 import { RolesModule } from './roles/roles.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PushModule } from './push/push.module';
+import { StandaloneModule } from './standalone/standalone.module';
 import { BackupModule } from './backup/backup.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { McpModule } from './mcp/mcp.module';
@@ -56,12 +61,15 @@ import { VerifactuModule } from './modules/verifactu/verifactu.module';
     TablesModule,
     AttendanceModule,
     DeliveryModule,
+    RiderModule,
     HrModule,
     AccountingModule,
     MarketingModule,
     ReportsModule,
     OperationsModule,
     WebhooksModule,
+    IntegrationHubModule,
+    ImportsModule,
     EmailModule,
     OrdersModule,
     KdsModule,
@@ -82,6 +90,8 @@ import { VerifactuModule } from './modules/verifactu/verifactu.module';
     AuditModule,
     RolesModule,
     NotificationsModule,
+    PushModule,
+    StandaloneModule,
     BackupModule,
     IntegrationsModule,
     McpModule,

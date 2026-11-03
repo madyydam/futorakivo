@@ -2,13 +2,16 @@
 
 import { EyeOff, Layers, Leaf, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { AddCategoryDialog } from "@/components/menu/add-category-dialog";
+import { ImportCsvDialog } from "@/components/imports/import-csv-dialog";
+import { BulkPriceDialog } from "@/components/menu/bulk-price-dialog";
 import { AddItemDialog } from "@/components/menu/add-item-dialog";
 import { ComboComponentsDialog } from "@/components/menu/combo-components-dialog";
 import { EditCategoryDialog } from "@/components/menu/edit-category-dialog";
 import { EditItemDialog } from "@/components/menu/edit-item-dialog";
 import { Badge } from "@/components/ui/badge";
+import { UploadImage } from "@/components/ui/upload-image";
 import { Button } from "@/components/ui/button";
 import { ResponsiveTabs } from "@/components/ui/nav-picker";
 import { Card } from "@/components/ui/card";
@@ -194,7 +197,13 @@ export default function MenuPage() {
         <Card className="flex flex-col gap-4 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-[18px] font-medium text-foreground">Items</h2>
-            {canManage && <AddItemDialog branchId={branchId} categories={categories ?? []} />}
+            {canManage && (
+              <div className="flex flex-wrap items-center gap-2">
+                <BulkPriceDialog branchId={branchId} categories={categories ?? []} />
+                <ImportCsvDialog kind="menu" branchId={branchId} />
+                <AddItemDialog branchId={branchId} categories={categories ?? []} />
+              </div>
+            )}
           </div>
 
           {itemsLoading ? (
@@ -210,8 +219,7 @@ export default function MenuPage() {
                 <li key={item.id} className="flex flex-col gap-2 py-3 first:pt-0">
                   <div className="flex items-start gap-3">
                     {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- uploaded asset served from the backend, not a Next-optimizable remote source
-                      <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-md object-cover" />
+                      <UploadImage src={item.imageUrl} width={48} height={48} className="h-12 w-12 shrink-0 rounded-md bg-secondary object-cover" />
                     ) : (
                       <div className="h-12 w-12 shrink-0 rounded-md bg-secondary" />
                     )}
@@ -274,17 +282,14 @@ export default function MenuPage() {
                     <TableCell className="font-medium text-foreground">
                       <div className="flex items-center gap-3">
                         {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- uploaded asset served from the backend, not a Next-optimizable remote source
-                          <img
-                            src={item.imageUrl}
-                            alt=""
-                            className="h-9 w-9 shrink-0 rounded-md object-cover"
-                          />
+                          <UploadImage src={item.imageUrl} width={36} height={36} className="h-9 w-9 shrink-0 rounded-md bg-secondary object-cover" />
                         ) : (
                           <div className="h-9 w-9 shrink-0 rounded-md bg-secondary" />
                         )}
                         {item.isVeg && <Leaf className="h-3.5 w-3.5 shrink-0 text-success" />}
-                        {item.name}
+                        <span className="min-w-0 max-w-[28ch] [overflow-wrap:anywhere]" title={item.name}>
+                          {item.name}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{item.category.name}</TableCell>

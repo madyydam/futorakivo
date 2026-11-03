@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { EntityDialogHost } from "@/components/layout/entity-dialog-host";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useBranch } from "@/hooks/use-branch";
-import { useSettings } from "@/hooks/use-settings";
+import { useDisplaySettings } from "@/hooks/use-settings";
 import { BrandFooter } from "./brand-footer";
 import { BranchSwitcher } from "./branch-switcher";
 import { LanguageSwitcher } from "./language-switcher";
@@ -18,13 +18,13 @@ import { UserMenu } from "./user-menu";
 
 // The restaurant's own logo + name lead the sidebar header — this is
 // white-label self-hosted software, so the operator's branding takes the
-// prime spot an operator actually looks at. The Nodedr OrderRestro product
+// prime spot an operator actually looks at. The OrderRestro product
 // mark moves to a small credit line at the bottom (BrandFooter) instead of
 // competing with it up here. Falls back to the product mark only until the
 // restaurant sets its own logo/name under Settings.
 function RestaurantBrand() {
   const { branchId } = useBranch();
-  const { data } = useSettings(branchId);
+  const { data } = useDisplaySettings(branchId);
   const restaurant = data?.restaurant;
 
   if (restaurant?.logoUrl) {
@@ -47,7 +47,7 @@ function RestaurantBrand() {
     <>
       <Logo />
       <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
-        {restaurant?.name ?? "Nodedr OrderRestro"}
+        {restaurant?.name ?? "OrderRestro"}
       </span>
     </>
   );

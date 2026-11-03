@@ -1,7 +1,8 @@
 "use client";
 
 import { Clock, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { ScanOrderInput } from "@/components/orders/scan-order-input";
 import { DeleteOrdersDialog } from "@/components/orders/delete-orders-dialog";
 import { ChannelBadge, TypeBadge } from "@/components/orders/channel-badges";
@@ -55,10 +56,19 @@ function timeAgo(iso: string) {
   return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`;
 }
 
-export default function OrdersPage() {
+function OrdersView() {
   const { branchId } = useBranch();
-  const [tab, setTab] = useState<OrderTab>("pending");
-  const [filterKey, setFilterKey] = useState("all");
+  // Deep links from the dashboard (?tab=history&filter=online) pick the
+  // starting view; after that the chips and tabs drive it as before.
+  const params = useSearchParams();
+  const [tab, setTab] = useState<OrderTab>(() => {
+    const t = params.get("tab");
+    return TABS.some((x) => x.key === t) ? (t as OrderTab) : "pending";
+  });
+  const [filterKey, setFilterKey] = useState(() => {
+    const f = params.get("filter");
+    return FILTERS.some((x) => x.key === f) ? (f as string) : "all";
+  });
   const filter = FILTERS.find((f) => f.key === filterKey) ?? FILTERS[0];
   const { data: orders, isLoading } = useManagedOrders(branchId, tab, filter.channel, filter.type);
   const { data: pendingOrders } = useManagedOrders(branchId, "pending");
@@ -260,6 +270,12 @@ function OrderRow({
           )}
         </div>
         <span className="truncate text-xs text-muted-foreground">{summary}</span>
+        {order.type === "DELIVERY" && order.deliveryAddress && (
+          <span className="truncate text-xs text-muted-foreground">
+            📍 {order.deliveryAddress}
+            {order.deliveryLat != null ? " · location shared" : ""}
+          </span>
+        )}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span className="text-sm font-medium tabular-nums text-foreground">
@@ -271,5 +287,13 @@ function OrderRow({
       </div>
     </button>
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<Skeleton className="h-96 rounded-2xl" />}>
+      <OrdersView />
+    </Suspense>
   );
 }

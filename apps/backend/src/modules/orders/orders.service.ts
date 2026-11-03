@@ -37,12 +37,18 @@ import {
 } from './pricing';
 import {
   computeBill,
+  assertManualDiscountAllowed,
   discountPercentOf,
   manualDiscountEntry,
   settlePayments,
   type Bill,
 } from './settlement';
 import type { TaxMode } from '@nodedr-restaurant/types';
+import {
+  adjustOnlinePrice,
+  type OnlinePriceAdjust,
+} from '../../common/online-price';
+import { ReferralsService } from '../referrals/referrals.service';
 import { VerifactuService } from '../verifactu/verifactu.service';
 
 const KOT_FORWARD_STATUSES = [
@@ -66,6 +72,7 @@ export class OrdersService {
     private readonly marketing: MarketingService,
     private readonly webhooks: WebhooksService,
     private readonly verifactu: VerifactuService,
+    private readonly referrals: ReferralsService,
   ) {}
 
   async listOpen(branchId: string, tableId?: string) {
@@ -165,6 +172,21 @@ export class OrdersService {
       channel?: 'STAFF' | 'ONLINE';
       requireAcceptance?: boolean;
       clientRequestId?: string;
+      integrationKeyId?: string;
+      clientRequestHash?: string;
+      externalSource?: string;
+      externalOrderId?: string;
+      externalCustomerRef?: string;
+      /** Refuse the order when its item total is below this (website / API orders). */
+      minOrderAmount?: number;
+      /** Website pricing change from Settings (cheaper / costlier). */
+      priceAdjust?: OnlinePriceAdjust | null;
+      /**
+       * A sale that already happened (taken on a phone with no connection and
+       * sent later): stamped with when it was sold, and it never reaches the
+       * kitchen, occupies a table or raises a "new order" alert.
+       */
+      historical?: { createdAt: Date };
     } = {},
   ) {
     const channel = options.channel ?? 'STAFF';
@@ -189,7 +211,26 @@ export class OrdersService {
         'One or more menu items are invalid for this branch',
       );
     }
-    const menuItemById = new Map(menuItems.map((m) => [m.id, m]));
+    const adjust = options.priceAdjust ?? null;
+    const menuItemById = new Map(
+      menuItems.map((m) => [
+        m.id,
+        adjust
+          ? {
+              ...m,
+              price: new Prisma.Decimal(
+                adjustOnlinePrice(Number(m.price), adjust),
+              ),
+              halfPrice:
+                m.halfPrice == null
+                  ? null
+                  : new Prisma.Decimal(
+                      adjustOnlinePrice(Number(m.halfPrice), adjust),
+                    ),
+            }
+          : m,
+      ]),
+    );
     const taxMode = await this.getBranchTaxMode(branchId);
 
     const modifierIds = [...new Set(dto.items.flatMap((i) => i.modifierIds))];
@@ -241,6 +282,11 @@ export class OrdersService {
       ),
     );
     const totals = computeOrderTotals(lineInputs.map((l) => l.priced));
+    if (options.minOrderAmount && totals.subtotal < options.minOrderAmount) {
+      throw new BadRequestException(
+        `Minimum order for online ordering is ₹${options.minOrderAmount}. Your items come to ₹${totals.subtotal}.`,
+      );
+    }
 
     // Delivery: the pincode must fall in one of this branch's active zones
     // and the item total must clear the zone's minimum. The zone's fee/ETA
@@ -250,6 +296,9 @@ export class OrdersService {
       | 'deliveryZoneId'
       | 'deliveryFee'
       | 'deliveryAddress'
+      | 'deliveryLat'
+      | 'deliveryLng'
+      | 'deliveryPlace'
       | 'deliveryPincode'
       | 'deliveryPhone'
       | 'deliveryStatus'
@@ -271,6 +320,9 @@ export class OrdersService {
       delivery = {
         deliveryStatus: 'UNASSIGNED',
         deliveryAddress: dto.delivery?.address,
+        deliveryLat: dto.delivery?.lat,
+        deliveryLng: dto.delivery?.lng,
+        deliveryPlace: dto.delivery?.place,
         deliveryPincode: dto.delivery?.pincode,
         deliveryPhone: dto.delivery?.phone,
       };
@@ -325,6 +377,12 @@ export class OrdersService {
           guestName: dto.guestName,
           notes: dto.notes,
           clientRequestId: options.clientRequestId,
+          ...(options.historical ? { createdAt: options.historical.createdAt } : {}),
+          integrationKeyId: options.integrationKeyId,
+          clientRequestHash: options.clientRequestHash,
+          externalSource: options.externalSource,
+          externalOrderId: options.externalOrderId,
+          externalCustomerRef: options.externalCustomerRef,
           createdById: userId,
           subtotal: totals.subtotal,
           taxAmount: totals.taxAmount,
@@ -338,6 +396,9 @@ export class OrdersService {
                 deliveryAddress: delivery.deliveryAddress,
                 deliveryPincode: delivery.deliveryPincode,
                 deliveryPhone: delivery.deliveryPhone,
+                deliveryLat: delivery.deliveryLat,
+                deliveryLng: delivery.deliveryLng,
+                deliveryPlace: delivery.deliveryPlace,
                 deliveryStatus: delivery.deliveryStatus,
                 deliveryEtaAt: delivery.deliveryEtaAt,
               }
@@ -364,7 +425,7 @@ export class OrdersService {
         include: { items: true },
       });
 
-      if (dto.tableId) {
+      if (dto.tableId && !options.historical) {
         await tx.table.update({
           where: { id: dto.tableId },
           data: { status: 'OCCUPIED', statusSince: new Date() },
@@ -375,12 +436,18 @@ export class OrdersService {
       // (acceptOrder() generates the tickets then).
       // A scheduled order also waits: releaseDueScheduledOrders() sends it to
       // the kitchen shortly before its time.
-      if (acceptance !== 'PENDING' && !this.isDeferred(scheduledFor)) {
+      if (
+        acceptance !== 'PENDING' &&
+        !this.isDeferred(scheduledFor) &&
+        !options.historical
+      ) {
         await this.generateKots(tx, created.id, branchId, created.items);
       }
 
       return created;
     });
+
+    if (options.historical) return this.getOrder(branchId, order.id);
 
     // `acceptance` rides along so a kitchen screen can sound the alert for an
     // order that is waiting on a yes/no (it has no ticket to announce yet).
@@ -1297,7 +1364,12 @@ export class OrdersService {
       round2(lines.reduce((sum, l) => sum + l.lineTotal, 0)),
       adj.couponCode,
     );
-    const pointsToRedeem = adj.loyaltyPointsToRedeem ?? 0;
+    // Points a guest asked to use when ordering online apply here unless staff
+    // choose otherwise; they are capped at the balance so an out-of-date
+    // request can never block taking payment.
+    const pointsToRedeem =
+      adj.loyaltyPointsToRedeem ??
+      Math.min(order.requestedRedeemPoints, order.customer?.loyaltyPoints ?? 0);
     if (pointsToRedeem > 0 && !customerId) {
       throw new BadRequestException(
         'Cannot redeem loyalty points without a customer on the order',
@@ -1431,6 +1503,7 @@ export class OrdersService {
     orderId: string,
     userId: string,
     dto: CheckoutDto,
+    mayExceedDiscountCap = false,
   ) {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, branchId },
@@ -1486,6 +1559,18 @@ export class OrdersService {
       dto.discountPercent ?? 0,
       dto.discountFlat ?? 0,
     );
+    // Only the first payment fixes the discount; later part-payments reuse it.
+    if (!locked) {
+      assertManualDiscountAllowed({
+        subtotal: bill.subtotal,
+        discountPercent: dto.discountPercent,
+        discountFlat: dto.discountFlat,
+        maxPercent: Number(branch.restaurant.maxManualDiscountPercent),
+        requireReason: branch.restaurant.requireDiscountReason,
+        reason: dto.discountReason,
+        mayExceedCap: mayExceedDiscountCap,
+      });
+    }
 
     let stockSkipped: { menuItemId: string; name: string; reason: string }[] =
       [];
@@ -1530,6 +1615,13 @@ export class OrdersService {
                 'Customer loyalty balance changed — please retry checkout',
               );
             }
+            await this.referrals.recordOrderPoints(tx, {
+              branchId,
+              customerId: effectiveCustomerId,
+              orderId,
+              earned: 0,
+              redeemed: pointsToRedeem,
+            });
           }
         }
 
@@ -1597,6 +1689,9 @@ export class OrdersService {
               discountAmount: bill.discountAmount,
               discountType: entry?.type ?? null,
               discountValue: entry?.value ?? null,
+              discountReason: entry
+                ? (dto.discountReason?.trim() ?? null)
+                : null,
               taxAmount: bill.taxAmount,
               couponCode: auto.couponCode ?? null,
               promotionName: auto.promotionName ?? null,
@@ -1645,7 +1740,22 @@ export class OrdersService {
               where: { id: effectiveCustomerId },
               data: { loyaltyPoints: { increment: pointsEarned } },
             });
+            await this.referrals.recordOrderPoints(tx, {
+              branchId,
+              customerId: effectiveCustomerId,
+              orderId,
+              earned: pointsEarned,
+              redeemed: 0,
+            });
           }
+          // First paid purchase of a referred customer: pays both sides, once.
+          await this.referrals.onOrderPaid(tx, {
+            id: orderId,
+            branchId,
+            customerId: effectiveCustomerId,
+            totalAmount: bill.totalDue,
+            foodValue: bill.subtotal,
+          });
         }
 
         // `status: 'OPEN'` in the where clause is the actual concurrency

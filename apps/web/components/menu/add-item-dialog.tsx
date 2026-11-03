@@ -2,7 +2,7 @@
 
 import { ImagePlus, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,7 +28,7 @@ import {
   useUploadItemImage,
   type MenuCategory,
 } from "@/hooks/use-menu";
-import { useSettings } from "@/hooks/use-settings";
+import { useDisplaySettings } from "@/hooks/use-settings";
 import { ApiError } from "@/lib/api";
 
 export function AddItemDialog({
@@ -51,7 +51,7 @@ export function AddItemDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: stations } = useStations(branchId);
-  const { data: settings } = useSettings(branchId);
+  const { data: settings } = useDisplaySettings(branchId);
   const createItem = useCreateMenuItem(branchId);
   const uploadImage = useUploadItemImage();
   const priceLabel =

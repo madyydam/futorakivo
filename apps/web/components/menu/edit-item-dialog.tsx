@@ -2,7 +2,7 @@
 
 import { ImagePlus, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,7 +30,7 @@ import {
 } from "@/hooks/use-menu";
 import { hasPermission, useCurrentUser } from "@/hooks/use-auth";
 import { StockTrackingSection } from "@/components/menu/stock-tracking-section";
-import { useSettings } from "@/hooks/use-settings";
+import { useDisplaySettings } from "@/hooks/use-settings";
 import { ApiError } from "@/lib/api";
 
 // Mounted only while a specific item is being edited (see MenuPage), keyed
@@ -58,7 +58,7 @@ export function EditItemDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: stations } = useStations(branchId);
-  const { data: settings } = useSettings(branchId);
+  const { data: settings } = useDisplaySettings(branchId);
   const { data: me } = useCurrentUser();
   const updateItem = useUpdateMenuItem(branchId);
   const uploadImage = useUploadItemImage();

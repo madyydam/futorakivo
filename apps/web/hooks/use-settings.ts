@@ -20,6 +20,15 @@ export interface RestaurantSettings {
   upiPayeeName: string | null;
   loyaltyPointValue: string;
   loyaltyEarnPerCurrency: number;
+  referralEnabled: boolean;
+  referralSharerPoints: number;
+  referralReferredPoints: number;
+  referralMinPurchase: string;
+  onlineMinOrderAmount: string;
+  onlinePriceAdjustKind: "PERCENT" | "AMOUNT";
+  onlinePriceAdjustValue: string;
+  maxManualDiscountPercent: string;
+  requireDiscountReason: boolean;
 }
 
 export interface BranchSettings {
@@ -52,6 +61,31 @@ export function useSettings(branchId: string | null) {
     queryFn: () =>
       api.get<{ restaurant: RestaurantSettings; branch: BranchSettings }>(
         `/settings?branchId=${branchId}`,
+      ),
+    enabled: !!branchId,
+  });
+}
+
+// The slice every signed-in role may read. Used by the app shell, checkout and
+// menu dialogs; the full useSettings (settings.manage only) stays for the
+// Settings screens.
+export type DisplayRestaurant = Pick<
+  RestaurantSettings,
+  | "id" | "name" | "legalName" | "logoUrl" | "currency" | "timezone"
+  | "upiVpa" | "upiPayeeName" | "loyaltyPointValue" | "loyaltyEarnPerCurrency" | "referralEnabled" | "referralSharerPoints" | "referralReferredPoints" | "referralMinPurchase" | "onlineMinOrderAmount" | "onlinePriceAdjustKind" | "onlinePriceAdjustValue"
+  | "maxManualDiscountPercent" | "requireDiscountReason"
+>;
+export type DisplayBranch = Pick<
+  BranchSettings,
+  "id" | "name" | "address" | "phone" | "gstNumber" | "country" | "taxRegime" | "taxMode" | "taxLabel" | "taxId"
+>;
+
+export function useDisplaySettings(branchId: string | null) {
+  return useQuery({
+    queryKey: ["settings", branchId, "display"],
+    queryFn: () =>
+      api.get<{ restaurant: DisplayRestaurant; branch: DisplayBranch }>(
+        `/settings/display?branchId=${branchId}`,
       ),
     enabled: !!branchId,
   });

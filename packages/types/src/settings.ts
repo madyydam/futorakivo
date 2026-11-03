@@ -25,6 +25,16 @@ export const restaurantSettingsSchema = z.object({
   upiPayeeName: z.string().trim().max(60).optional().nullable(),
   loyaltyPointValue: z.coerce.number().min(0).optional(),
   loyaltyEarnPerCurrency: z.coerce.number().int().positive().optional(),
+  referralEnabled: z.boolean().optional(),
+  referralSharerPoints: z.coerce.number().int().min(0).max(100000).optional(),
+  referralReferredPoints: z.coerce.number().int().min(0).max(100000).optional(),
+  referralMinPurchase: z.coerce.number().min(0).max(1000000).optional(),
+  onlineMinOrderAmount: z.coerce.number().min(0).max(1000000).optional(),
+  // Website / app-ordering prices: PERCENT or AMOUNT, negative = cheaper, positive = costlier.
+  onlinePriceAdjustKind: z.enum(["PERCENT", "AMOUNT"]).optional(),
+  onlinePriceAdjustValue: z.coerce.number().min(-100000).max(100000).optional(),
+  maxManualDiscountPercent: z.coerce.number().min(0).max(100).optional(),
+  requireDiscountReason: z.boolean().optional(),
 });
 export type RestaurantSettingsDto = z.infer<typeof restaurantSettingsSchema>;
 

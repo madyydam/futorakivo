@@ -2,7 +2,7 @@
 
 import { ImagePlus, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   RESTAURANT_NAME_MAX_LENGTH,
   TAX_REGIME_PRESETS,
@@ -11,12 +11,15 @@ import {
   type TaxRegime,
 } from "@nodedr-restaurant/types";
 import { KioskCard } from "@/components/settings/kiosk-card";
+import { MobileAppCard } from "@/components/settings/mobile-app-card";
 import { PrinterDiagnosticsCard } from "@/components/settings/printer-diagnostics-card";
+import { BluetoothPrinterCard } from "@/components/settings/bluetooth-printer-card";
 import { SettingsTabs } from "@/components/settings/settings-tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StatusNote, useNoteToast } from "@/components/ui/status-note";
 import {
   Select,
   SelectContent,
@@ -71,7 +74,9 @@ export default function SettingsPage() {
 
       <NotificationSettingsCard />
 
+      <BluetoothPrinterCard />
       <PrinterDiagnosticsCard />
+      <MobileAppCard />
     </div>
   );
 }
@@ -182,6 +187,17 @@ function GeneralSettingsForm({
   const [loyaltyEarnPerCurrency, setLoyaltyEarnPerCurrency] = useState(
     String(restaurant.loyaltyEarnPerCurrency),
   );
+  const [referralEnabled, setReferralEnabled] = useState(!!restaurant.referralEnabled);
+  const [referralSharerPoints, setReferralSharerPoints] = useState(String(restaurant.referralSharerPoints ?? 15));
+  const [referralReferredPoints, setReferralReferredPoints] = useState(String(restaurant.referralReferredPoints ?? 10));
+  const [referralMinPurchase, setReferralMinPurchase] = useState(String(Number(restaurant.referralMinPurchase ?? 200)));
+  const [onlineMinOrder, setOnlineMinOrder] = useState(String(Number(restaurant.onlineMinOrderAmount ?? 0)));
+  const initialAdjust = Number(restaurant.onlinePriceAdjustValue ?? 0);
+  const [adjustKind, setAdjustKind] = useState<"PERCENT" | "AMOUNT">(restaurant.onlinePriceAdjustKind ?? "PERCENT");
+  const [adjustDir, setAdjustDir] = useState<"cheaper" | "costlier">(initialAdjust < 0 ? "cheaper" : "costlier");
+  const [adjustValue, setAdjustValue] = useState(String(Math.abs(initialAdjust)));
+  const [maxDiscount, setMaxDiscount] = useState(String(Number(restaurant.maxManualDiscountPercent ?? 100)));
+  const [requireReason, setRequireReason] = useState(!!restaurant.requireDiscountReason);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const uploadLogo = useUploadRestaurantLogo();
 
@@ -198,6 +214,7 @@ function GeneralSettingsForm({
   const preset = TAX_REGIME_PRESETS[taxRegime];
 
   const updateRestaurant = useUpdateRestaurantSettings(branchId);
+  const { note: saveNote, clear: clearSaveNote, toast: saveToast } = useNoteToast();
   const updateBranch = useUpdateBranchSettings(branchId);
 
   const onSubmitRestaurant = (e: React.FormEvent) => {
@@ -213,10 +230,19 @@ function GeneralSettingsForm({
         upiPayeeName: upiPayeeName.trim() || null,
         loyaltyPointValue: Number(loyaltyPointValue) || 0,
         loyaltyEarnPerCurrency: Number(loyaltyEarnPerCurrency) || 1,
+        referralEnabled,
+        referralSharerPoints: Math.max(Math.floor(Number(referralSharerPoints) || 0), 0),
+        referralReferredPoints: Math.max(Math.floor(Number(referralReferredPoints) || 0), 0),
+        referralMinPurchase: Math.max(Number(referralMinPurchase) || 0, 0),
+        onlineMinOrderAmount: Math.max(Number(onlineMinOrder) || 0, 0),
+        onlinePriceAdjustKind: adjustKind,
+        onlinePriceAdjustValue: (adjustDir === "cheaper" ? -1 : 1) * Math.abs(Number(adjustValue) || 0),
+        maxManualDiscountPercent: Math.min(Math.max(Number(maxDiscount) || 0, 0), 100),
+        requireDiscountReason: requireReason,
       },
       {
-        onSuccess: () => toast.success("Restaurant details saved"),
-        onError: (err) => toast.error(err instanceof ApiError ? err.message : "Could not save"),
+        onSuccess: () => saveToast.success("Restaurant details saved"),
+        onError: (err) => saveToast.error(err instanceof ApiError ? err.message : "Could not save"),
       },
     );
   };
@@ -383,6 +409,165 @@ function GeneralSettingsForm({
             </div>
           </div>
 
+          <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Referral rewards</h3>
+                <p className="text-xs text-muted-foreground">
+                  Customers share a dish or their personal link. Points are paid only after the new customer&apos;s
+                  first purchase is paid. Points are worth the &ldquo;1 point redeems for&rdquo; amount above
+                  (for 100 points = {currency} 10, enter 0.10).
+                </p>
+              </div>
+              <Switch
+                id="r-referral-enabled"
+                aria-label="Enable referral rewards"
+                checked={referralEnabled}
+                onCheckedChange={setReferralEnabled}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="r-referral-sharer">Points for the customer who shares</Label>
+                <Input
+                  id="r-referral-sharer"
+                  type="number"
+                  min="0"
+                  step="1"
+                  disabled={!referralEnabled}
+                  value={referralSharerPoints}
+                  onChange={(e) => setReferralSharerPoints(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="r-referral-referred">Points for the new customer</Label>
+                <Input
+                  id="r-referral-referred"
+                  type="number"
+                  min="0"
+                  step="1"
+                  disabled={!referralEnabled}
+                  value={referralReferredPoints}
+                  onChange={(e) => setReferralReferredPoints(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="r-referral-min">Minimum food value of the first order for rewards ({currency})</Label>
+              <Input
+                id="r-referral-min"
+                type="number"
+                min="0"
+                step="1"
+                disabled={!referralEnabled}
+                value={referralMinPurchase}
+                onChange={(e) => setReferralMinPurchase(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+            <div>
+              <h3 className="text-sm font-medium text-foreground">Website food prices</h3>
+              <p className="text-xs text-muted-foreground">
+                Make every dish cheaper or costlier for customers ordering on your website, by a percentage or a fixed
+                amount. In-restaurant, POS and marketplace prices do not change. Leave at 0 for no change.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="r-adjust-dir">Make prices</Label>
+                <select
+                  id="r-adjust-dir"
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={adjustDir}
+                  onChange={(e) => setAdjustDir(e.target.value as "cheaper" | "costlier")}
+                >
+                  <option value="cheaper">Cheaper</option>
+                  <option value="costlier">Costlier</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="r-adjust-kind">By</Label>
+                <select
+                  id="r-adjust-kind"
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={adjustKind}
+                  onChange={(e) => setAdjustKind(e.target.value as "PERCENT" | "AMOUNT")}
+                >
+                  <option value="PERCENT">Percentage (%)</option>
+                  <option value="AMOUNT">Amount ({currency} per dish)</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="r-adjust-value">{adjustKind === "PERCENT" ? "Percent" : `Amount (${currency})`}</Label>
+                <Input
+                  id="r-adjust-value"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={adjustValue}
+                  onChange={(e) => setAdjustValue(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              {Number(adjustValue) > 0
+                ? `A ${currency} 100 dish will cost ${currency} ${Math.max(
+                    Math.round(
+                      (adjustKind === "PERCENT"
+                        ? 100 * (1 + ((adjustDir === "cheaper" ? -1 : 1) * Number(adjustValue)) / 100)
+                        : 100 + (adjustDir === "cheaper" ? -1 : 1) * Number(adjustValue)) * 100,
+                    ) / 100,
+                    0,
+                  )} on the website.`
+                : "No change to website prices."}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="r-online-min">Smallest online order accepted ({currency}, 0 = no minimum)</Label>
+            <Input
+              id="r-online-min"
+              type="number"
+              min="0"
+              step="1"
+              value={onlineMinOrder}
+              onChange={(e) => setOnlineMinOrder(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Orders from your website or the API below this amount are refused. Marketplace orders (Zomato, Swiggy)
+              and table QR orders are not affected.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="r-max-discount">Highest cashier discount (%)</Label>
+              <Input
+                id="r-max-discount"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={maxDiscount}
+                onChange={(e) => setMaxDiscount(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                100 means no limit. Owners, administrators and roles with “Discount Above the Cashier Limit” can go higher.
+              </p>
+            </div>
+            <label className="flex items-start gap-2 text-sm sm:pt-7">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={requireReason}
+                onChange={(e) => setRequireReason(e.target.checked)}
+              />
+              Require a reason for every discount
+            </label>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="r-upi">UPI id (for QR payments)</Label>
@@ -409,6 +594,7 @@ function GeneralSettingsForm({
             </div>
           </div>
 
+          <StatusNote note={saveNote} onClear={clearSaveNote} />
           <Button type="submit" disabled={updateRestaurant.isPending} className="self-start">
             {updateRestaurant.isPending ? "Saving…" : "Save restaurant"}
           </Button>
@@ -505,6 +691,20 @@ function GeneralSettingsForm({
           </Button>
         </form>
       </Card>
+
+      <p className="text-xs text-muted-foreground">
+        Nodedr OrderRestro is free software under the GNU AGPL-3.0. The source code of the version
+        you are using is available to every user of this service at{" "}
+        <a
+          className="underline"
+          href="https://github.com/Raktim94/nodedr-restaurant-pos"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          github.com/Raktim94/nodedr-restaurant-pos
+        </a>
+        .
+      </p>
     </div>
   );
 }

@@ -25,14 +25,16 @@ import {
   type CreatedOrder,
 } from "@/hooks/use-orders";
 import { usePrintKot, usePrintOrderUsb, type PrintJobResult } from "@/hooks/use-print";
-import { useSettings } from "@/hooks/use-settings";
+import { useDisplaySettings } from "@/hooks/use-settings";
 import { api, ApiError } from "@/lib/api";
 import { discountSummary, parseMoney, planPayment } from "@/lib/bill";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { publishDisplay } from "@/lib/customer-display";
 import { playPaymentReceived } from "@/lib/celebrate";
 import { buildUpiUri } from "@/lib/upi";
 import { QRCodeSVG } from "qrcode.react";
+import { canPrintOnDevice } from "@/lib/device-print";
 import { openKotPrint, openReceiptPrint } from "@/lib/print";
 import { round2 } from "@/lib/pricing-preview";
 
@@ -82,7 +84,11 @@ export function CheckoutPanel({
     : orderSnapshot;
   const [method, setMethod] = useState<PaymentMethodDto>("CASH");
   const [amountText, setAmountText] = useState("");
-  const [discountPercent, setDiscountPercent] = useState("0");
+  // The cashier enters either a percentage or a fixed cash amount; the server
+  // prices both the same way (and enforces the cap and the reason rule).
+  const [discountMode, setDiscountMode] = useState<"PERCENT" | "FLAT">("PERCENT");
+  const [discountValue, setDiscountValue] = useState("0");
+  const [discountReason, setDiscountReason] = useState("");
   const [tipAmount, setTipAmount] = useState("0");
   const [pointsToRedeem, setPointsToRedeem] = useState("0");
   const [giftCardCode, setGiftCardCode] = useState("");
@@ -100,6 +106,7 @@ export function CheckoutPanel({
   const canDiscount = hasPermission(me?.user, "discounts.apply");
   const [cancelOpen, setCancelOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const phone = canPrintOnDevice();
   const printUsb = usePrintOrderUsb(branchId);
   const printKot = usePrintKot(branchId);
   const onPrinted = (r: PrintJobResult) =>
@@ -124,23 +131,25 @@ export function CheckoutPanel({
             });
             return;
           }
-          toast.error(err instanceof ApiError ? err.message : "Could not print to the kitchen printer");
+          toast.error(err instanceof Error ? err.message : "Could not print to the kitchen printer");
         },
       },
     );
   const [completed, setCompleted] = useState<CheckoutResult | null>(null);
-  const { data: settings } = useSettings(branchId);
+  const { data: settings } = useDisplaySettings(branchId);
 
   // What the guest has typed in, as numbers. Once a payment has been taken the
   // server locks the figures, so these stop mattering (and are not sent).
   const adjustments = useMemo(
     () => ({
-      discountPercent: Number(discountPercent) || 0,
+      ...(discountMode === "PERCENT"
+        ? { discountPercent: Math.min(Number(discountValue) || 0, 100) }
+        : { discountFlat: Number(discountValue) || 0 }),
       tipAmount: Number(tipAmount) || 0,
       loyaltyPointsToRedeem: Math.max(0, Math.floor(Number(pointsToRedeem) || 0)),
       couponCode: appliedCoupon || undefined,
     }),
-    [discountPercent, tipAmount, pointsToRedeem, appliedCoupon],
+    [discountMode, discountValue, tipAmount, pointsToRedeem, appliedCoupon],
   );
   const settled = useDebounced(adjustments);
   // Once any payment is on the bill the server fixes its figures and refuses
@@ -246,6 +255,9 @@ export function CheckoutPanel({
     const dto = {
       customerId: customer?.id,
       ...(locked ? {} : settled),
+      ...(!locked && Number(discountValue) > 0 && discountReason.trim()
+        ? { discountReason: discountReason.trim() }
+        : {}),
       giftCardCode: giftCardBalance !== null ? giftCardCode : undefined,
       payments,
       allowPartial: plan.partial || undefined,
@@ -280,7 +292,7 @@ export function CheckoutPanel({
       {
         onSuccess: onPrinted,
         onError: (err) =>
-          toast.error(err instanceof ApiError ? err.message : "Could not print to the thermal printer"),
+          toast.error(err instanceof Error ? err.message : "Could not print to the thermal printer"),
       },
     );
 
@@ -312,7 +324,7 @@ export function CheckoutPanel({
             className="h-11"
             onClick={() => branchId && openReceiptPrint(completed.id, branchId)}
           >
-            Print receipt (browser)
+            {phone ? "Print / Save PDF" : "Print receipt (browser)"}
           </Button>
           <Button
             variant="outline"
@@ -322,11 +334,11 @@ export function CheckoutPanel({
               printUsb.mutate({ orderId: completed.id, drawer: completed.payments?.some((p) => p.method === "CASH") }, {
                 onSuccess: onPrinted,
                 onError: (err) =>
-                  toast.error(err instanceof ApiError ? err.message : "Could not print to the thermal printer"),
+                  toast.error(err instanceof Error ? err.message : "Could not print to the thermal printer"),
               })
             }
           >
-            {printUsb.isPending ? "Printing…" : "Thermal receipt"}
+            {printUsb.isPending ? "Printing…" : phone ? "Bluetooth receipt" : "Thermal receipt"}
           </Button>
           <Button className="h-11" onClick={onDone}>New order</Button>
         </div>
@@ -419,7 +431,7 @@ export function CheckoutPanel({
             onClick={() => branchId && openKotPrint(order.id, branchId)}
           >
             <Printer className="h-4 w-4" />
-            KOT (browser)
+            {phone ? "KOT / PDF" : "KOT (browser)"}
           </Button>
           <Button
             type="button"
@@ -430,7 +442,7 @@ export function CheckoutPanel({
             onClick={() => printKotNow(false)}
           >
             <Printer className="h-4 w-4" />
-            {printKot.isPending ? "Printing…" : "KOT (thermal)"}
+            {printKot.isPending ? "Printing…" : phone ? "KOT (Bluetooth)" : "KOT (thermal)"}
           </Button>
           </div>
         </div>
@@ -463,19 +475,66 @@ export function CheckoutPanel({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="discount">Discount %</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="discount">Discount</Label>
+            <div role="group" aria-label="Discount type" className="flex overflow-hidden rounded-lg border border-border text-xs">
+              {(["PERCENT", "FLAT"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={discountMode === m}
+                  disabled={locked || !canDiscount}
+                  onClick={() => {
+                    setDiscountMode(m);
+                    setDiscountValue("0");
+                  }}
+                  className={cn(
+                    "min-h-8 px-2.5 font-medium transition-colors disabled:opacity-50",
+                    discountMode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary",
+                  )}
+                >
+                  {m === "PERCENT" ? "%" : "₹ Cash"}
+                </button>
+              ))}
+            </div>
+          </div>
           <Input
             id="discount"
             type="number"
             min="0"
-            max="100"
+            max={discountMode === "PERCENT" ? 100 : undefined}
+            inputMode="decimal"
             className="h-11"
-            value={discountPercent}
+            value={discountValue}
             disabled={locked || !canDiscount}
-            onChange={(e) => setDiscountPercent(e.target.value)}
+            onChange={(e) => setDiscountValue(e.target.value)}
           />
+          {canDiscount && !locked && (
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Discount presets">
+              {(discountMode === "PERCENT" ? [5, 10, 15, 20] : [10, 20, 50, 100]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setDiscountValue(String(v))}
+                  className="min-h-8 rounded-full border border-border px-2.5 text-xs text-muted-foreground transition-colors hover:bg-secondary"
+                >
+                  {discountMode === "PERCENT" ? `${v}%` : `₹${v}`}
+                </button>
+              ))}
+            </div>
+          )}
           {!canDiscount && (
             <p className="text-[11px] text-muted-foreground">Your role cannot apply discounts.</p>
+          )}
+          {canDiscount && !locked && Number(discountValue) > 0 && (
+            <Input
+              aria-label="Discount reason"
+              placeholder="Reason for discount"
+              maxLength={200}
+              className="h-9 text-sm"
+              value={discountReason}
+              onChange={(e) => setDiscountReason(e.target.value)}
+            />
           )}
         </div>
         <div className="flex flex-col gap-2">
@@ -678,7 +737,7 @@ export function CheckoutPanel({
             title="Prints the bill for the guest. Nothing is charged and the table stays open."
           >
             <Printer className="h-4 w-4" />
-            Print bill
+            {phone ? "Print / Save PDF" : "Print bill"}
           </Button>
           <Button
             type="button"
@@ -689,12 +748,16 @@ export function CheckoutPanel({
             title="Prints the bill on the thermal printer. Nothing is charged and the cash drawer stays shut."
           >
             <Printer className="h-4 w-4" />
-            {printUsb.isPending ? "Printing…" : "Print bill (thermal)"}
+            {printUsb.isPending ? "Printing…" : phone ? "Print bill (Bluetooth)" : "Print bill (thermal)"}
           </Button>
         </div>
 
+      </div>
+
+      {/* Pinned to the bottom of the scrolling panel on phones, so billing is always one tap away. */}
+      <div className="sticky bottom-0 z-10 -mx-1 bg-card px-1 pb-1 pt-2 max-lg:border-t max-lg:border-border max-lg:shadow-[0_-8px_12px_-10px_rgba(0,0,0,0.25)]">
         <Button
-          className="h-12 text-base"
+          className="h-12 w-full text-base"
           disabled={checkout.isPending || !bill || repricing || !plan.valid}
           onClick={handleCheckout}
         >
@@ -704,7 +767,9 @@ export function CheckoutPanel({
               ? partialLabel
               : plan.change > 0
                 ? `Complete payment · change ${formatCurrency(plan.change)}`
-                : "Complete payment"}
+                : bill
+                  ? `Complete payment · ${formatCurrency(bill.totalDue)}`
+                  : "Complete payment"}
         </Button>
       </div>
     </div>

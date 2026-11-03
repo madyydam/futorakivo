@@ -75,7 +75,7 @@ export interface BillPreview {
 
 export type BillAdjustments = Pick<
   CheckoutDto,
-  "discountPercent" | "tipAmount" | "loyaltyPointsToRedeem" | "couponCode" | "customerId"
+  "discountPercent" | "discountFlat" | "tipAmount" | "loyaltyPointsToRedeem" | "couponCode" | "customerId"
 >;
 
 export function useBillPreview(branchId: string | null, orderId: string, adj: BillAdjustments, enabled = true) {
@@ -135,6 +135,11 @@ export interface OrderDetail {
   tableId: string | null;
   guestName: string | null;
   guestCount: number | null;
+  deliveryAddress?: string | null;
+  deliveryPincode?: string | null;
+  deliveryLat?: number | null;
+  deliveryLng?: number | null;
+  deliveryPlace?: string | null;
   notes: string | null;
   cancelReason: string | null;
   subtotal: string;
@@ -195,6 +200,11 @@ export interface ManagedOrder {
   channel: OrderChannel;
   acceptance: AcceptanceStatus;
   guestName: string | null;
+  deliveryAddress?: string | null;
+  deliveryPincode?: string | null;
+  deliveryLat?: number | null;
+  deliveryLng?: number | null;
+  deliveryPlace?: string | null;
   totalAmount: string;
   createdAt: string;
   table: { id: string; name: string | null; number: number } | null;

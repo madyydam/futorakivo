@@ -68,6 +68,10 @@ export const deliveryInfoSchema = z.object({
   address: z.string().trim().min(5).max(300),
   pincode: z.string().trim().min(3).max(12),
   phone: z.string().trim().min(6).max(20),
+  // Where the customer asked to be met: a shared GPS fix and/or a named place.
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  place: z.string().trim().max(200).optional(),
 });
 export type DeliveryInfoDto = z.infer<typeof deliveryInfoSchema>;
 
@@ -156,6 +160,8 @@ export type BillPreviewDto = z.infer<typeof billPreviewSchema>;
 
 export const checkoutSchema = z.object({
   ...billAdjustmentFields,
+  // Why a manual discount was given; stored on the order.
+  discountReason: z.string().trim().min(1).max(200).optional(),
   customerId: z.string().optional(),
   giftCardCode: z.string().optional(),
   payments: z

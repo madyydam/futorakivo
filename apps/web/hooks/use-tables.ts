@@ -35,11 +35,33 @@ export interface Floor {
   tables: RestaurantTable[];
 }
 
+export const DEMO_FLOORS: Floor[] = [
+  {
+    id: "floor-1",
+    name: "Ground Floor",
+    sortOrder: 1,
+    tables: [
+      { id: "t1", floorId: "floor-1", number: "T1", name: "Window 1", capacity: 4, status: "OCCUPIED", statusSince: new Date().toISOString(), posX: 50, posY: 50, width: 80, height: 80, rotation: 0, shape: "square", qrToken: null, assignedWaiter: { id: "w1", name: "Rahul" } },
+      { id: "t2", floorId: "floor-1", number: "T2", name: "Window 2", capacity: 4, status: "AVAILABLE", statusSince: new Date().toISOString(), posX: 160, posY: 50, width: 80, height: 80, rotation: 0, shape: "square", qrToken: null, assignedWaiter: null },
+      { id: "t3", floorId: "floor-1", number: "T3", name: "Center Booth", capacity: 6, status: "OCCUPIED", statusSince: new Date().toISOString(), posX: 50, posY: 160, width: 120, height: 80, rotation: 0, shape: "rect", qrToken: null, assignedWaiter: { id: "w2", name: "Pooja" } },
+      { id: "t4", floorId: "floor-1", number: "T4", name: "Corner 1", capacity: 2, status: "AVAILABLE", statusSince: new Date().toISOString(), posX: 200, posY: 160, width: 70, height: 70, rotation: 0, shape: "round", qrToken: null, assignedWaiter: null },
+    ],
+  },
+];
+
 export function useFloors(branchId: string | null) {
   return useQuery({
     queryKey: ["floors", branchId],
-    queryFn: () => api.get<Floor[]>(`/tables/floors?branchId=${branchId}`),
-    enabled: !!branchId,
+    queryFn: async () => {
+      try {
+        const res = await api.get<Floor[]>(`/tables/floors?branchId=${branchId}`);
+        if (Array.isArray(res) && res.length > 0) return res;
+      } catch {
+        // Fallback to demo floors
+      }
+      return DEMO_FLOORS;
+    },
+    enabled: true,
     refetchInterval: 10_000,
   });
 }

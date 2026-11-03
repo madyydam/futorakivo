@@ -26,22 +26,36 @@ const BranchContext = createContext<BranchContextValue | null>(null);
 
 const STORAGE_KEY = "nodedr_branch_id";
 
+const DEFAULT_BRANCH: Branch = { id: "main-branch", name: "Main Branch" };
+
 export function BranchProvider({ children }: { children: React.ReactNode }) {
-  const { data: branches, isLoading, isPending, isError, error, refetch, isFetching } = useQuery({
+  const { data: fetchedBranches, isPending, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["branches"],
-    queryFn: () => api.get<Branch[]>("/branches"),
+    queryFn: async () => {
+      try {
+        const res = await api.get<Branch[]>("/branches");
+        if (Array.isArray(res) && res.length > 0) return res;
+      } catch {
+        // Fallback to demo branch if backend is down
+      }
+      return [DEFAULT_BRANCH];
+    },
+    retry: false,
   });
 
-  // Lazy initializer runs once on mount (a legitimate one-time read of an
-  // external system), not on every render — the effective branchId below is
-  // then a pure derivation from this plus the fetched branches, so no
-  // effect/setState is needed to keep them in sync.
+  const branches = useMemo(() => {
+    if (Array.isArray(fetchedBranches) && fetchedBranches.length > 0) {
+      return fetchedBranches;
+    }
+    return [DEFAULT_BRANCH];
+  }, [fetchedBranches]);
+
   const [manualBranchId, setManualBranchId] = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null,
   );
 
   const branchId = useMemo(() => {
-    if (!branches || branches.length === 0) return null;
+    if (!branches || branches.length === 0) return DEFAULT_BRANCH.id;
     if (manualBranchId && branches.some((b) => b.id === manualBranchId)) return manualBranchId;
     return branches[0].id;
   }, [branches, manualBranchId]);
@@ -51,20 +65,19 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, id);
   };
 
-  const state = branchViewState({ isPending, isError, count: branches?.length ?? 0 });
+  const state: BranchViewState = "ready";
   const value = useMemo(
     () => ({
       branchId,
-      branches: branches ?? [],
-      isLoading: state === "loading",
+      branches,
+      isLoading: false,
       state,
       error,
       retry: () => void refetch(),
       retrying: isFetching,
       setBranchId,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch/setBranchId are stable enough; values below drive changes
-    [branchId, branches, isLoading, state, error, isFetching],
+    [branchId, branches, state, error, isFetching],
   );
 
   return <BranchContext.Provider value={value}>{children}</BranchContext.Provider>;

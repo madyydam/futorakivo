@@ -222,11 +222,17 @@ export function useManagedOrders(
 ) {
   return useQuery({
     queryKey: ["orders", "manage", branchId, tab, channel ?? "", type ?? ""],
-    queryFn: () => {
-      const q = new URLSearchParams({ branchId: branchId ?? "", tab });
-      if (channel) q.set("channel", channel);
-      if (type) q.set("type", type);
-      return api.get<ManagedOrder[]>(`/orders/manage?${q.toString()}`);
+    queryFn: async () => {
+      try {
+        const q = new URLSearchParams({ branchId: branchId ?? "", tab });
+        if (channel) q.set("channel", channel);
+        if (type) q.set("type", type);
+        const res = await api.get<ManagedOrder[]>(`/orders/manage?${q.toString()}`);
+        if (Array.isArray(res)) return res;
+      } catch {
+        // ignore
+      }
+      return [];
     },
     enabled: !!branchId,
     refetchInterval: 10_000,

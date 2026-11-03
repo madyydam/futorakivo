@@ -20,7 +20,7 @@ export function PosMockup() {
       initial={{ opacity: 0, y: 16, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-      className="relative mx-auto w-full max-w-lg"
+      className="relative mx-auto w-full max-w-xl"
     >
       <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_16px_50px_-15px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-1.5 border-b border-border/60 bg-muted/40 px-3.5 py-2">

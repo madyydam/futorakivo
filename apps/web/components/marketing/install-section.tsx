@@ -2,11 +2,8 @@
 
 import { ArrowRight, Cloud, Layers, RefreshCw, Sparkles, WifiOff } from "lucide-react";
 import Link from "next/link";
-import { AnimatedCounter } from "@/components/marketing/animated-counter";
 import { Reveal, RevealGroup, RevealItem } from "@/components/marketing/reveal";
 import { Button } from "@/components/ui/button";
-import { totalDownloads } from "@/lib/downloads";
-import { useDownloadStats } from "@/hooks/use-download-stats";
 
 const pillars = [
   {
@@ -36,9 +33,6 @@ const pillars = [
 ];
 
 export function InstallSection() {
-  const { data: stats } = useDownloadStats();
-  const total = totalDownloads(stats);
-
   return (
     <section id="get-started" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <Reveal className="mx-auto max-w-2xl text-center">
@@ -85,14 +79,25 @@ export function InstallSection() {
         ))}
       </RevealGroup>
 
-      {/* Live restaurant counters */}
-      <Reveal delay={0.15} className="mt-14 flex flex-col items-center gap-1 text-center">
-        <p className="text-4xl font-semibold tabular-nums text-foreground sm:text-5xl">
-          <AnimatedCounter value={total} />
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Active restaurant and café locations operating with zero downtime.
-        </p>
+      {/* SaaS Reliability & Performance Highlights */}
+      <Reveal delay={0.15} className="mt-14">
+        <div className="grid grid-cols-1 gap-6 rounded-2xl border border-border/60 bg-card/60 p-6 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-border/60 sm:p-8">
+          <div className="flex flex-col items-center px-4 py-2 text-center">
+            <span className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">99.9%</span>
+            <span className="mt-1.5 text-sm font-semibold text-foreground">Cloud Uptime</span>
+            <span className="mt-1 text-xs text-muted-foreground">High-availability redundant SaaS clusters</span>
+          </div>
+          <div className="flex flex-col items-center px-4 py-2 text-center">
+            <span className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">0 sec</span>
+            <span className="mt-1.5 text-sm font-semibold text-foreground">Offline Lag</span>
+            <span className="mt-1 text-xs text-muted-foreground">Instant billing and kitchen printing without internet</span>
+          </div>
+          <div className="flex flex-col items-center px-4 py-2 text-center">
+            <span className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">100%</span>
+            <span className="mt-1.5 text-sm font-semibold text-foreground">Auto-Sync</span>
+            <span className="mt-1 text-xs text-muted-foreground">Automatic cloud reconciliation on reconnection</span>
+          </div>
+        </div>
       </Reveal>
     </section>
   );

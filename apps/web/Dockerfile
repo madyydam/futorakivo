@@ -1,5 +1,6 @@
 # Built from the MONOREPO ROOT context (see docker-compose.yml `context: .`)
 # because this app depends on the workspace package @nodedr-restaurant/types.
+# Do not try to `docker build` this file with apps/web as context.
 
 FROM node:22-alpine AS base
 RUN corepack enable
@@ -27,6 +28,7 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS builder
 ARG BACKEND_URL=http://backend:4000
 ENV BACKEND_URL=${BACKEND_URL}
+ENV DOCKER_BUILD=1
 COPY packages/types packages/types
 COPY apps/web apps/web
 RUN pnpm --filter @nodedr-restaurant/types build
@@ -36,6 +38,7 @@ RUN pnpm --filter web build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+ENV DOCKER_BUILD=1
 
 # The standalone server (apps/web/server.js) resolves `public/` and
 # `.next/static` relative to ITS OWN traced monorepo path, i.e.

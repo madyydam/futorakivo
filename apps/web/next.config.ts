@@ -22,17 +22,13 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone output is strictly for Docker container self-hosting.
+  // On Vercel, omitting standalone allows Vercel's Edge CDN to natively host,
+  // optimize, and serve public/ static assets (like logo.png, icons, screenshots).
+  ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" as const } : {}),
   images: {
-    // The backend's upload folder (proxied through /api) plus the app's own
-    // static images. Deliberately not "/**": that would let the optimizer fetch
-    // internal API routes. Nothing external is allowed.
     localPatterns: [
-      { pathname: "/api/uploads/**" },
-      { pathname: "/logo.png" },
-      { pathname: "/brand-lockup.png" },
-      { pathname: "/screenshots/**" },
-      { pathname: "/icons/**" },
+      { pathname: "/**" },
     ],
     // WebP only: AVIF is smaller but slow to encode on a small restaurant PC.
     formats: ["image/webp"],

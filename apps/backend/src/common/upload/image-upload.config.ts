@@ -9,11 +9,34 @@ import { diskStorage, type FileFilterCallback } from 'multer';
 // docker-compose.yml) so uploaded menu photos survive container rebuilds,
 // the same way the Postgres volume survives them — see README/ARCHITECTURE.
 export function uploadsDir(): string {
-  const dir = process.env.UPLOADS_DIR ?? join(process.cwd(), 'uploads');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+  if (process.env.UPLOADS_DIR) {
+    if (!existsSync(process.env.UPLOADS_DIR)) {
+      try {
+        mkdirSync(process.env.UPLOADS_DIR, { recursive: true });
+      } catch {
+        // ignore in read-only environment
+      }
+    }
+    return process.env.UPLOADS_DIR;
   }
-  return dir;
+  const candidates = [
+    join(process.cwd(), 'apps', 'backend', 'uploads'),
+    join(process.cwd(), 'uploads'),
+    join(__dirname, '..', '..', '..', 'uploads'),
+    join(__dirname, '..', '..', 'uploads'),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+  const fallback = process.env.VERCEL ? '/tmp/uploads' : join(process.cwd(), 'uploads');
+  if (!existsSync(fallback)) {
+    try {
+      mkdirSync(fallback, { recursive: true });
+    } catch {
+      // ignore
+    }
+  }
+  return fallback;
 }
 
 const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);

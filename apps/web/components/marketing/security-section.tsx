@@ -17,9 +17,9 @@ const points = [
   },
   {
     icon: ScanEye,
-    title: "Your data stays on your server",
+    title: "Enterprise cloud data security",
     description:
-      "Self-hosted on your own LAN or VPS — no restaurant or customer data is ever sent to a third-party cloud you don't control.",
+      "Encrypted cloud storage with continuous automated backups, strict tenant-level isolation, and secure local offline caching so your operations are always protected.",
   },
   {
     icon: FileCheck2,

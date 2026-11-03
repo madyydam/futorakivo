@@ -1,61 +1,39 @@
 "use client";
 
-import { Check, Copy, HardDrive, Server, Terminal, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Cloud, Layers, RefreshCw, Sparkles, WifiOff } from "lucide-react";
+import Link from "next/link";
 import { AnimatedCounter } from "@/components/marketing/animated-counter";
 import { Reveal, RevealGroup, RevealItem } from "@/components/marketing/reveal";
-import { downloadHref, totalDownloads } from "@/lib/downloads";
+import { Button } from "@/components/ui/button";
+import { totalDownloads } from "@/lib/downloads";
 import { useDownloadStats } from "@/hooks/use-download-stats";
 
-const INSTALL_COMMAND =
-  "curl -fsSL https://horeca.modexsys.com/quickstart.sh | bash";
-
-const channels = [
+const pillars = [
   {
-    channel: "install-script" as const,
-    icon: Terminal,
-    title: "One-click install",
-    description: "Run install.sh on your server — auto-generates secrets, sets up Postgres, and launches the stack.",
+    icon: Cloud,
+    title: "Instant Cloud Setup",
+    description:
+      "Zero servers to install. Access your complete restaurant management platform from any web browser, iPad, Android tablet, or POS terminal in seconds.",
   },
   {
-    channel: "docker" as const,
-    icon: HardDrive,
-    title: "Docker Compose",
-    description: "Postgres, API, and web app — three high-performance containers running locally on port 1995.",
+    icon: WifiOff,
+    title: "100% Offline Resilience",
+    description:
+      "Never miss a sale when internet drops. Bill customers, print receipts, and dispatch kitchen tickets uninterrupted even with zero network connectivity.",
   },
   {
-    channel: "casaos" as const,
-    icon: Server,
-    title: "Dedicated Local Server",
-    description: "Deploy onto your local in-restaurant hardware or private cloud box with zero WAN dependency.",
+    icon: RefreshCw,
+    title: "Automatic Cloud Sync",
+    description:
+      "All offline tickets, payments, customer data, and inventory deductions automatically sync to the cloud server the moment connection is restored.",
   },
   {
-    channel: "docker" as const,
-    icon: ShieldCheck,
-    title: "Offline-First Security",
-    description: "Proprietary software by Modexsys. Run locally on your restaurant LAN with 100% data sovereignty.",
+    icon: Layers,
+    title: "Centralized Management",
+    description:
+      "Control menus, live revenue, stock costing, staff payroll, and CRM across single or multi-branch chains from one centralized cloud dashboard.",
   },
 ];
-
-function CopyCommand() {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(INSTALL_COMMAND);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1800);
-      }}
-      className="group flex w-full max-w-xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 text-left font-mono text-[13px] text-foreground/90 transition-colors hover:border-primary/40"
-    >
-      <span className="truncate">{INSTALL_COMMAND}</span>
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:text-foreground">
-        {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
-      </span>
-    </button>
-  );
-}
 
 export function InstallSection() {
   const { data: stats } = useDownloadStats();
@@ -64,46 +42,56 @@ export function InstallSection() {
   return (
     <section id="get-started" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <Reveal className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Running in minutes, not a sales call
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
+          <Sparkles className="size-3.5" />
+          Cloud-Managed SaaS · Offline-First Speed
+        </div>
+        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          Start Managing Your Restaurant in Minutes
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Deploy Modexsys HORECA on your local hardware or in-restaurant server.
+          Modexsys HORECA unites modern cloud SaaS flexibility with rugged offline reliability.
+          Sign up online and start serving customers immediately.
         </p>
       </Reveal>
 
+      {/* CTA Box */}
       <Reveal delay={0.1} className="mt-8 flex justify-center">
-        <CopyCommand />
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
+          <Button size="lg" className="w-full sm:w-auto h-12 px-7 text-[15px]" render={<Link href="/signup" />}>
+            Create your account free
+            <ArrowRight className="size-4 ml-1.5" data-icon="inline-end" />
+          </Button>
+          <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-6 text-[15px]" render={<Link href="/login" />}>
+            Sign in to Dashboard
+          </Button>
+        </div>
       </Reveal>
 
-      <RevealGroup className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {channels.map((c, i) => (
-          <RevealItem key={`${c.title}-${i}`}>
-            <a
-              href={downloadHref(c.channel)}
-              className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card p-6 transition-colors hover:border-primary/40"
-            >
-              <div className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <c.icon className="size-5" />
+      {/* 4 Pillars Grid */}
+      <RevealGroup className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {pillars.map((p) => (
+          <RevealItem key={p.title}>
+            <div className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card p-6 transition-colors hover:border-primary/40">
+              <div className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
+                <p.icon className="size-5" />
               </div>
-              <h3 className="mt-4 text-[15px] font-semibold text-foreground">{c.title}</h3>
+              <h3 className="mt-4 text-[15px] font-semibold text-foreground">{p.title}</h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                {c.description}
+                {p.description}
               </p>
-              <span className="mt-4 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                Deploy now &rarr;
-              </span>
-            </a>
+            </div>
           </RevealItem>
         ))}
       </RevealGroup>
 
+      {/* Live restaurant counters */}
       <Reveal delay={0.15} className="mt-14 flex flex-col items-center gap-1 text-center">
         <p className="text-4xl font-semibold tabular-nums text-foreground sm:text-5xl">
           <AnimatedCounter value={total} />
         </p>
         <p className="text-sm text-muted-foreground">
-          HORECA nodes and server instances deployed worldwide.
+          Active restaurant and café locations operating with zero downtime.
         </p>
       </Reveal>
     </section>

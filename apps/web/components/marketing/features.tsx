@@ -1,6 +1,6 @@
 import {
   ChefHat,
-  GitBranch,
+  Cloud,
   Gift,
   Package,
   Plug,
@@ -44,9 +44,9 @@ const features = [
   },
   {
     icon: WifiOff,
-    title: "Offline-first by design",
+    title: "Offline-ready resilience",
     description:
-      "The whole stack runs on one local server. Order-taking, billing, KDS, and printing keep working even with internet disconnected.",
+      "Never miss a sale when internet cuts out. POS billing, KDS tickets, and kitchen printing work seamlessly offline, then auto-sync to the cloud the moment you reconnect.",
   },
   {
     icon: ShieldCheck,
@@ -55,10 +55,10 @@ const features = [
       "Granular, individually toggleable permissions and strict multi-tenant isolation — never a hardcoded role check.",
   },
   {
-    icon: GitBranch,
-    title: "Self-hosted, no lock-in",
+    icon: Cloud,
+    title: "Centralized cloud SaaS",
     description:
-      "Deploy on your own server, mini PC, or local Docker. 100% independent — your data never has to leave your building.",
+      "Manage all your menus, pricing, customer CRM, multi-branch operations, staff permissions, and financial reports from a single centralized cloud platform accessible from anywhere.",
   },
   {
     icon: Plug,

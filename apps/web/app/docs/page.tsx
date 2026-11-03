@@ -4,7 +4,7 @@ import { DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
   title: "Documentation — Modexsys HORECA",
-  description: "API & MCP, accessibility, and India compliance docs for a self-hosted Modexsys HORECA instance.",
+  description: "API & MCP, accessibility, and India compliance docs for the Modexsys HORECA cloud platform.",
 };
 
 const docs = [

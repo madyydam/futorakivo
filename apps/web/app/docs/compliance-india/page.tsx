@@ -22,19 +22,11 @@ export default function ComplianceIndiaPage() {
         </p>
       </DocSection>
 
-      <DocSection heading="Who is the &ldquo;data fiduciary&rdquo;?">
+      <DocSection heading="Data Protection & Privacy (DPDP Act, 2023)">
         <p>
-          Modexsys HORECA is self-hosted software, not a cloud service Modexsys
-          Infotech operates on your behalf. When a restaurant deploys
-          Modexsys HORECA on its own server, <strong className="text-foreground">
-          that restaurant is the Data Fiduciary</strong> under the Digital
-          Personal Data Protection Act, 2023 (DPDP Act) for the customer and
-          staff personal data it collects through the app — the same way a
-          restaurant using a paper register or a locally-run spreadsheet
-          would be. Modexsys does not receive, store, or process that
-          data on its own infrastructure in a self-hosted deployment.
-        </p>
-        <p>This has a practical upside: because the entire stack (Postgres, API, and web app) runs on hardware the restaurant controls, data residency and cross-border transfer questions under the DPDP Act are largely avoided by construction — the data simply never leaves the deploying operator&rsquo;s own server unless they choose to move it.</p>
+          Modexsys HORECA is a cloud-based SaaS platform designed with strict data protection and privacy controls. Under the Digital Personal Data Protection Act, 2023 (DPDP Act), restaurants collecting customer and staff data act as Data Fiduciaries. Modexsys provides the secure infrastructure and compliance tools necessary for restaurants to fulfill their regulatory obligations, including customer consent verification, data correction, and strict role-based access.
+
+All cloud data is encrypted in transit and at rest with isolated tenant boundaries, ensuring complete separation between restaurants. Local offline data cached on terminal devices is protected and automatically synced to the cloud upon reconnection.</p>
       </DocSection>
 
       <DocSection heading="DPDP Act, 2023 — what the software supports">
@@ -86,12 +78,7 @@ export default function ComplianceIndiaPage() {
           ]}
         />
         <p>
-          Transport encryption (HTTPS/TLS) for any deployment reachable
-          beyond a trusted LAN is the deploying operator&rsquo;s
-          responsibility — typically via a reverse proxy (Caddy, nginx, or a
-          tunnel provider) in front of the app. A LAN-only deployment behind
-          a restaurant&rsquo;s own router is not directly exposed to the
-          public internet by default.
+          All cloud communication is encrypted end-to-end via modern HTTPS/TLS 1.3. Local offline caching on terminal devices operates with scoped security boundaries, ensuring uninterrupted service without compromising security.
         </p>
       </DocSection>
 

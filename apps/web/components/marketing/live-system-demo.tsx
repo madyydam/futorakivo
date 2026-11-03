@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 type DemoPhase = 0 | 1 | 2 | 3 | 4;
 
 const PHASES = [
-  { id: 0, title: "1. Monitor Dashboard", desc: "Live LAN floor metrics" },
+  { id: 0, title: "1. Monitor Dashboard", desc: "Live floor & revenue metrics" },
   { id: 1, title: "2. Click + New Order", desc: "Trigger order modal" },
   { id: 2, title: "3. Select Dishes", desc: "Table 4 items & pricing" },
   { id: 3, title: "4. Fire KOT to Kitchen", desc: "Instant KDS dispatch" },
@@ -141,7 +141,7 @@ export function LiveSystemDemo() {
       <div className="mx-auto max-w-2xl text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
           <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-          Interactive System Walkthrough · Zero-Lag LAN
+          Interactive System Walkthrough · Cloud SaaS &amp; Offline Sync
         </div>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           Watch Modexsys HORECA in Live Action
@@ -196,14 +196,14 @@ export function LiveSystemDemo() {
             <span className="size-2.5 rounded-full bg-warning/60" />
             <span className="size-2.5 rounded-full bg-success/60" />
             <span className="ml-2 font-mono text-xs text-muted-foreground hidden sm:inline-block">
-              http://192.168.1.36:1995/dashboard
+              https://horeca.modexsys.com/dashboard
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              LAN Service Active
+              Cloud Sync Active
             </span>
             <span className="rounded bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground">
               v1.0-horeca
@@ -263,8 +263,8 @@ export function LiveSystemDemo() {
             </div>
 
             <div className="rounded-lg border border-border/50 bg-card p-2 text-[10px] text-muted-foreground">
-              <span className="block font-semibold text-foreground">Offline LAN Mode</span>
-              Thermal POS printing ready
+              <span className="block font-semibold text-foreground">Offline Auto-Sync</span>
+              Local cache &amp; cloud connected
             </div>
           </div>
 
@@ -546,7 +546,7 @@ export function LiveSystemDemo() {
                   <div>
                     <p className="font-bold">KOT #108 Dispatched Successfully</p>
                     <p className="text-[10px] text-emerald-200">
-                      Table 4 routed to Hot Kitchen & Beverage Bar • 0ms LAN
+                      Table 4 routed to Hot Kitchen &amp; Beverage Bar • Instant Local Response
                     </p>
                   </div>
                 </motion.div>

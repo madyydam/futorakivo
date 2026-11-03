@@ -17,7 +17,7 @@ import { SidebarNav } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
 
 // The restaurant's own logo + name lead the sidebar header — this is
-// white-label self-hosted software, so the operator's branding takes the
+// white-label SaaS platform, so the operator's branding takes the
 // prime spot an operator actually looks at. The Modexsys HORECA product
 // mark moves to a small credit line at the bottom (BrandFooter) instead of
 // competing with it up here. Falls back to the product mark only until the

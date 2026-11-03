@@ -1,7 +1,7 @@
 {
   "name": "Modexsys HORECA",
   "short_name": "Modexsys HORECA",
-  "description": "Modexsys HORECA — Offline-first restaurant management system — POS, tables, kitchen display, menu, inventory.",
+  "description": "Modexsys HORECA — Cloud-based SaaS restaurant management platform with offline resilience.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

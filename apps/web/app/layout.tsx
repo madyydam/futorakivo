@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Modexsys HORECA",
-  description: "Modexsys HORECA — Offline-first Restaurant POS & Management System",
+  title: "Modexsys HORECA — Cloud Restaurant Management Platform",
+  description: "Modexsys HORECA — Cloud-based SaaS restaurant management platform with offline resilience & automatic sync.",
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],

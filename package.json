@@ -19,7 +19,9 @@
     "point-of-sale",
     "kitchen-display-system",
     "inventory-management",
-    "self-hosted",
+    "cloud-saas",
+    "saas",
+    "offline-sync",
     "offline-first",
     "upi-payments",
     "gst-billing",
@@ -35,7 +37,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "postinstall": "pnpm --filter @modexsys/backend prisma:generate"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

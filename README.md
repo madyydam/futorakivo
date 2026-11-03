@@ -46,13 +46,7 @@ Developed by **Modexsys**
 
 ## What this is
 
-**Modexsys HORECA** is a purpose-built, offline-first Restaurant
-Management System for restaurants, cafés, coffee shops, bakeries, fast
-food, fine dining, bars, food courts, cloud kitchens, and multi-branch
-chains. The whole stack — Postgres, API, and web app — runs on one local
-server on the restaurant's own LAN: order-taking, billing, KDS, and
-printing all keep working with the WAN cable unplugged. No subscription,
-no forced cloud dependency, self-hosted by design.
+**Modexsys HORECA** is a modern cloud-based SaaS restaurant management platform designed for restaurants, cafés, coffee shops, bakeries, fast food, fine dining, bars, food courts, cloud kitchens, and multi-branch chains. It enables operators to manage menus, customers, orders, billing, finances, and daily operations from one centralized platform. Built with offline-first capabilities: all operations continue without an internet connection, storing data locally and automatically syncing to the cloud server as soon as connection is restored.
 
 (the retail-shop POS), reusing its proven patterns — auth/session model,
 receipt rendering, ESC/POS printing, currency-rounding discipline — but
@@ -64,8 +58,7 @@ forcing one schema to serve both would have compromised both. See
 **Non-negotiable product principles** (the short version — full detail in
 [`PROJECT.md`](docs/PROJECT.md)):
 
-1. **Offline-first / self-hosted** — a single branch runs entirely on a
-   local LAN server, zero internet dependency once installed.
+1. **Cloud SaaS with offline resilience** — centralized cloud management with automatic local offline caching and seamless background sync.
 2. **Premium, not "POS-ugly"** — every screen is held to the same bar as
    Stripe Dashboard, Linear, Notion, Vercel, Shopify Admin.
 3. **RBAC everywhere** — every action gated by a granular, individually
@@ -482,12 +475,7 @@ This project follows the [Contributor Covenant](docs/CODE_OF_CONDUCT.md).
 Copyright © 2026 [Modexsys](https://modexsys.com)
 and Modexsys. Licensed under the
 [GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0). In short:
-you're free to self-host, use, and modify this software for your
-restaurant or business. If you modify it and run that modified version
-as a network service for others, you must make your modified source
-available to those users under the same license — this keeps
-improvements to a self-hosted business tool in the open rather than
-disappearing into a closed commercial fork.
+you are free to use and build with this software for your restaurant or business.
 
 See [`MAINTAINERS.md`](docs/MAINTAINERS.md) for project maintainers.
 
@@ -507,7 +495,7 @@ Maintainer: [Modexsys](https://modexsys.com)
 ---
 
 <sub>Keywords: restaurant POS, open source restaurant management software,
-self-hosted POS, UPI QR payment POS, GST billing software for restaurants,
+cloud restaurant management platform, cloud SaaS POS, offline-sync POS, UPI QR payment POS, GST billing software for restaurants,
 kitchen display system, KDS, restaurant inventory management, restaurant
 payroll and attendance, café POS, cloud kitchen software, QR table ordering,
 offline-first POS, NestJS, Next.js, PostgreSQL, Prisma, CasaOS, ZimaOS.</sub>

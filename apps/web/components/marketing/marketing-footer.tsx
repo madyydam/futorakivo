@@ -42,7 +42,7 @@ export function MarketingFooter() {
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Offline-first HORECA management operating system. Fast, dependable, self-hosted on your own LAN.
+              Cloud-based SaaS restaurant management platform with offline-first speed. Centralized operations for restaurants and cafés, online and offline.
             </p>
           </div>
 

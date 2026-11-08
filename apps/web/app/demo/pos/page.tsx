@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface MenuItem {
   id: string;
@@ -141,7 +142,7 @@ export default function DemoPosPage() {
         {/* Header Search & Filter */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">POS Billing Register</h1>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl text-slate-900 dark:text-white">POS Billing Register</h1>
             <p className="text-xs text-muted-foreground">Quick-tap touch terminal · Modexsys HORECA POS</p>
           </div>
           <div className="relative w-full sm:w-64">
@@ -150,71 +151,80 @@ export default function DemoPosPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search dish or beverage…"
-              className="h-9 pl-9 text-xs"
+              className="h-10 pl-9 rounded-2xl bg-white dark:bg-card border-slate-200/80 dark:border-border shadow-2xs text-xs"
             />
           </div>
         </div>
 
         {/* Category Pills */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {CATEGORIES.map((cat) => (
             <Button
               key={cat}
               variant={selectedCategory === cat ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedCategory(cat)}
-              className="h-8 rounded-full px-3.5 text-xs font-medium"
+              className={cn(
+                "h-8 rounded-full px-3.5 text-xs font-semibold transition-all",
+                selectedCategory === cat
+                  ? "bg-[#9f1239] hover:bg-[#881337] text-white shadow-xs"
+                  : "bg-white dark:bg-card border-slate-200/80 dark:border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+              )}
             >
               {cat}
             </Button>
           ))}
         </div>
 
-        {/* Dish Grid */}
-        <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
+        {/* Dish Grid - Auto fill responsive, never squeezed */}
+        <div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(155px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(165px,1fr))] gap-3.5 overflow-y-auto pr-1 pb-4">
           {filteredItems.map((item) => (
-            <Card
+            <div
               key={item.id}
               onClick={() => addToCart(item)}
-              className="group cursor-pointer border-border/60 transition-all hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
+              className="group cursor-pointer rounded-[22px] bg-white dark:bg-card border border-slate-200/90 dark:border-border p-4 shadow-xs transition-all hover:border-[#9f1239]/40 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] flex flex-col justify-between min-h-[145px]"
             >
-              <CardContent className="flex h-full flex-col justify-between p-3.5">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-2xl">{item.image}</span>
+              <div>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-2xl">{item.image}</span>
+                  <span
+                    className={cn(
+                      "flex size-4 items-center justify-center rounded-[4px] border",
+                      item.isVeg
+                        ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
+                        : "border-rose-600 bg-rose-50 dark:bg-rose-950/30"
+                    )}
+                  >
                     <span
-                      className={`flex size-4 items-center justify-center rounded-sm border ${
-                        item.isVeg ? "border-emerald-600" : "border-rose-600"
-                      }`}
-                    >
-                      <span
-                        className={`size-2 rounded-full ${
-                          item.isVeg ? "bg-emerald-600" : "bg-rose-600"
-                        }`}
-                      />
-                    </span>
-                  </div>
-                  <h3 className="mt-2 text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">
-                    {item.description}
-                  </p>
+                      className={cn(
+                        "size-2 rounded-full",
+                        item.isVeg ? "bg-emerald-600" : "bg-rose-600"
+                      )}
+                    />
+                  </span>
                 </div>
-                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2.5">
-                  <span className="text-sm font-bold text-foreground">₹{item.price}</span>
-                  <Button size="sm" variant="secondary" className="h-7 px-2.5 text-xs font-medium">
-                    + Add
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <h3 className="mt-2 text-sm font-bold leading-tight text-slate-900 dark:text-white group-hover:text-[#9f1239] dark:group-hover:text-rose-400 transition-colors">
+                  {item.name}
+                </h3>
+                <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground leading-snug">
+                  {item.description}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-border/60 pt-2.5">
+                <span className="font-mono text-sm font-extrabold tabular-nums text-[#9f1239] dark:text-rose-400">
+                  ₹{item.price}
+                </span>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:bg-[#9f1239] group-hover:text-white transition-colors">
+                  +
+                </span>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Right Column: Active Order Cart & Billing */}
-      <div className="flex w-full flex-col rounded-xl border border-border bg-card p-4 shadow-sm lg:w-96">
+      <div className="flex w-full flex-col rounded-[26px] border border-slate-200/80 dark:border-border bg-white dark:bg-card p-5 shadow-xs lg:w-96">
         {/* Cart Header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-3">
           <div className="flex items-center gap-2">

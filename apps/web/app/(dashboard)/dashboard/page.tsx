@@ -139,7 +139,7 @@ export default function DashboardPage() {
         {/* Today's Revenue (Hero Double-Width Card) */}
         <Link
           href="/reports"
-          className="group relative flex flex-col justify-between rounded-[26px] bg-white/60 dark:bg-card/55 p-6 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md col-span-1 sm:col-span-2 xl:col-span-2"
+          className="group relative flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-6 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md col-span-1 sm:col-span-2 xl:col-span-2"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export default function DashboardPage() {
         {/* Today's Orders */}
         <Link
           href="/orders?tab=history"
-          className="group relative flex flex-col justify-between rounded-[26px] bg-white/60 dark:bg-card/55 p-5 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md"
+          className="group relative flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -196,7 +196,7 @@ export default function DashboardPage() {
         {/* Occupied Tables */}
         <Link
           href="/tables"
-          className="group relative flex flex-col justify-between rounded-[26px] bg-white/60 dark:bg-card/55 p-5 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md"
+          className="group relative flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -223,7 +223,7 @@ export default function DashboardPage() {
         {/* Kitchen Queue */}
         <Link
           href="/kds"
-          className="group relative flex flex-col justify-between rounded-[26px] bg-white/60 dark:bg-card/55 p-5 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md"
+          className="group relative flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -253,7 +253,7 @@ export default function DashboardPage() {
         {/* Pending payments */}
         <Link
           href="/orders?tab=active"
-          className="group flex flex-col justify-between rounded-[24px] bg-white/60 dark:bg-card/55 p-5 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -273,7 +273,7 @@ export default function DashboardPage() {
         {/* Low stock items */}
         <Link
           href="/inventory?filter=low"
-          className="group flex flex-col justify-between rounded-[24px] bg-white/60 dark:bg-card/55 p-5 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -294,7 +294,7 @@ export default function DashboardPage() {
         {/* Active customers */}
         <Link
           href="/customers"
-          className="group flex flex-col justify-between rounded-[24px] bg-white/60 dark:bg-card/55 p-5 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -320,7 +320,7 @@ export default function DashboardPage() {
         {/* Team on duty */}
         <Link
           href="/team"
-          className="group flex flex-col justify-between rounded-[24px] bg-white/60 dark:bg-card/55 p-5 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -349,7 +349,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 4: Live Orders Stream & Recent Transactions */}
-      <Card className="rounded-[26px] bg-white/60 dark:bg-card/55 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl overflow-hidden">
+      <Card className="rounded-[26px] bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-border/50">
           <div className="flex items-center gap-2">
             <ReceiptText className="size-4 text-[#9f1239]" />

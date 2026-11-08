@@ -260,10 +260,10 @@ function PosPageInner() {
           href="/customer-display"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-border bg-white dark:bg-card px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-2xs transition-colors hover:bg-slate-50"
           title="Opens the customer-facing screen in a new window — drag it to the second monitor"
         >
-          <MonitorSmartphone className="h-3.5 w-3.5" />
+          <MonitorSmartphone className="h-3.5 w-3.5 text-[#9f1239]" />
           Customer display
         </a>
       </div>
@@ -271,7 +271,7 @@ function PosPageInner() {
       <BranchNotice />
 
       {showTablePicker ? (
-        <Card className="flex-1 overflow-hidden p-5">
+        <Card className="flex-1 overflow-hidden p-5 bg-white dark:bg-card rounded-[26px] border border-slate-200/80 dark:border-border shadow-xs">
           <PosTablePicker
             floors={floors ?? []}
             onSelect={handleTablePick}
@@ -282,14 +282,14 @@ function PosPageInner() {
           />
         </Card>
       ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[1fr_360px]">
-          <Card className="min-h-0 overflow-hidden p-3 sm:p-5">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-hidden lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_380px]">
+          <Card className="min-h-0 overflow-hidden p-4 sm:p-5 bg-white dark:bg-card rounded-[26px] border border-slate-200/80 dark:border-border shadow-xs">
             <ProductGrid branchId={branchId} onSelect={handleSelect} />
           </Card>
 
           <Card
             className={cn(
-              "min-h-0 overflow-hidden p-5",
+              "min-h-0 overflow-hidden p-5 bg-white dark:bg-card rounded-[26px] border border-slate-200/80 dark:border-border shadow-xs",
               cartOpen
                 ? "max-lg:fixed max-lg:inset-0 max-lg:z-40 max-lg:rounded-none max-lg:p-4 max-lg:pt-[max(1rem,env(safe-area-inset-top))] max-lg:pb-[max(1rem,env(safe-area-inset-bottom))]"
                 : "max-lg:hidden",

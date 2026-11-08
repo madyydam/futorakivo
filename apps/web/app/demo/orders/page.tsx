@@ -527,7 +527,7 @@ export default function DemoOrdersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search Order #, customer, table, items…"
-            className="h-10 pl-10 rounded-full border-white/70 dark:border-white/10 bg-white/60 dark:bg-card/55 backdrop-blur-md text-xs shadow-2xs"
+            className="h-10 pl-10 rounded-full border-slate-200/80 dark:border-border bg-white dark:bg-card text-xs shadow-2xs"
           />
         </div>
       </div>
@@ -546,7 +546,7 @@ export default function DemoOrdersPage() {
                 "flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-150 shadow-2xs",
                 isActive
                   ? "bg-gradient-to-r from-[#9f1239] to-[#881337] text-white shadow-md shadow-[#9f1239]/20"
-                  : "bg-white/60 dark:bg-card/55 border border-white/70 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-white/90 backdrop-blur-md",
+                  : "bg-white dark:bg-card border border-slate-200/80 dark:border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50",
               )}
             >
               <span>{t.label}</span>
@@ -578,7 +578,7 @@ export default function DemoOrdersPage() {
                 "rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-150 shadow-2xs",
                 isSelected
                   ? "bg-[#9f1239] text-white"
-                  : "bg-white/50 dark:bg-card/45 border border-white/60 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-white/80 backdrop-blur-sm",
+                  : "bg-white dark:bg-card border border-slate-200/80 dark:border-border text-slate-600 dark:text-slate-300 hover:bg-slate-50",
               )}
             >
               {chip.label}
@@ -587,8 +587,8 @@ export default function DemoOrdersPage() {
         })}
       </div>
 
-      {/* Orders Table with Glassmorphism */}
-      <Card className="rounded-[26px] bg-white/60 dark:bg-card/55 border border-white/70 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl overflow-hidden">
+      {/* Orders Table with Solid White Card */}
+      <Card className="rounded-[26px] bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="border-b border-border/40 bg-slate-50/50 dark:bg-muted/20 font-semibold text-slate-600 dark:text-slate-400">

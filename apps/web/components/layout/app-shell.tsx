@@ -16,6 +16,17 @@ import { MobileBottomNav } from "./mobile-bottom-nav";
 import { SidebarNav } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
 
+function sanitizeBrandName(name?: string | null): string {
+  if (!name) return "Modexsys HORECA";
+  const cleaned = name
+    .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "Modexsys HORECA")
+    .replace(/nodedr/gi, "Modexsys")
+    .replace(/\s*\(demo\)/gi, "")
+    .replace(/bistro/gi, "")
+    .trim();
+  return cleaned || "Modexsys HORECA";
+}
+
 // The restaurant's own logo + name lead the sidebar header — this is
 // white-label SaaS platform, so the operator's branding takes the
 // prime spot an operator actually looks at. The Modexsys HORECA product
@@ -26,6 +37,7 @@ function RestaurantBrand() {
   const { branchId } = useBranch();
   const { data } = useDisplaySettings(branchId);
   const restaurant = data?.restaurant;
+  const brandName = sanitizeBrandName(restaurant?.name);
 
   if (restaurant?.logoUrl) {
     return (
@@ -33,11 +45,11 @@ function RestaurantBrand() {
         {/* eslint-disable-next-line @next/next/no-img-element -- uploaded asset served from the backend, not a Next-optimizable remote source */}
         <img
           src={restaurant.logoUrl}
-          alt={restaurant.name}
+          alt={brandName}
           className="h-8 w-8 shrink-0 rounded-lg object-contain"
         />
         <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
-          {restaurant.name}
+          {brandName}
         </span>
       </>
     );
@@ -47,7 +59,7 @@ function RestaurantBrand() {
     <>
       <Logo />
       <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
-        {restaurant?.name ?? "Modexsys HORECA"}
+        {brandName}
       </span>
     </>
   );

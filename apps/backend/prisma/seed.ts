@@ -46,7 +46,7 @@ async function main() {
     update: {},
     create: {
       id: 'demo-restaurant',
-      name: 'Modexsys HORECA Bistro (Demo)',
+      name: 'Modexsys HORECA',
       currency: 'INR',
     },
   });

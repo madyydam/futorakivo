@@ -58,6 +58,14 @@ export class SettingsService {
     if (!restaurant || !branch) {
       throw new NotFoundException('Restaurant or branch not found');
     }
+    if (restaurant.name) {
+      restaurant.name = restaurant.name
+        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'Modexsys HORECA')
+        .replace(/nodedr/gi, 'Modexsys')
+        .replace(/\s*\(demo\)/gi, '')
+        .replace(/bistro/gi, '')
+        .trim() || 'Modexsys HORECA';
+    }
     return { restaurant, branch };
   }
 
@@ -70,6 +78,14 @@ export class SettingsService {
     });
     if (!restaurant || !branch) {
       throw new NotFoundException('Restaurant or branch not found');
+    }
+    if (restaurant.name) {
+      restaurant.name = restaurant.name
+        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'Modexsys HORECA')
+        .replace(/nodedr/gi, 'Modexsys')
+        .replace(/\s*\(demo\)/gi, '')
+        .replace(/bistro/gi, '')
+        .trim() || 'Modexsys HORECA';
     }
     return { restaurant, branch };
   }

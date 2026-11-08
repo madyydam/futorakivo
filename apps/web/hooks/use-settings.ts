@@ -80,14 +80,70 @@ export type DisplayBranch = Pick<
   "id" | "name" | "address" | "phone" | "gstNumber" | "country" | "taxRegime" | "taxMode" | "taxLabel" | "taxId"
 >;
 
+function cleanBrandName(n?: string | null): string {
+  if (!n) return "Modexsys HORECA";
+  return n
+    .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "Modexsys HORECA")
+    .replace(/nodedr/gi, "Modexsys")
+    .replace(/\s*\(demo\)/gi, "")
+    .replace(/bistro/gi, "")
+    .trim() || "Modexsys HORECA";
+}
+
 export function useDisplaySettings(branchId: string | null) {
   return useQuery({
     queryKey: ["settings", branchId, "display"],
-    queryFn: () =>
-      api.get<{ restaurant: DisplayRestaurant; branch: DisplayBranch }>(
-        `/settings/display?branchId=${branchId}`,
-      ),
-    enabled: !!branchId,
+    queryFn: async () => {
+      try {
+        const res = await api.get<{ restaurant: DisplayRestaurant; branch: DisplayBranch }>(
+          `/settings/display?branchId=${branchId}`,
+        );
+        if (res?.restaurant) {
+          if (res.restaurant.name) {
+            res.restaurant.name = cleanBrandName(res.restaurant.name);
+          }
+          return res;
+        }
+      } catch {
+        // Fallback to default branding
+      }
+      return {
+        restaurant: {
+          id: "demo-restaurant",
+          name: "Modexsys HORECA",
+          legalName: "Modexsys HORECA Pvt Ltd",
+          logoUrl: null,
+          currency: "INR",
+          timezone: "Asia/Kolkata",
+          upiVpa: null,
+          upiPayeeName: null,
+          loyaltyPointValue: "1",
+          loyaltyEarnPerCurrency: 0.05,
+          referralEnabled: false,
+          referralSharerPoints: 50,
+          referralReferredPoints: 50,
+          referralMinPurchase: "500",
+          onlineMinOrderAmount: "200",
+          onlinePriceAdjustKind: "PERCENT" as const,
+          onlinePriceAdjustValue: "0",
+          maxManualDiscountPercent: "20",
+          requireDiscountReason: false,
+        },
+        branch: {
+          id: branchId ?? "main-branch",
+          name: "Main Branch",
+          address: "Main Branch",
+          phone: null,
+          gstNumber: null,
+          country: "IN",
+          taxRegime: "GST" as TaxRegime,
+          taxMode: "EXCLUSIVE" as TaxMode,
+          taxLabel: "GST",
+          taxId: null,
+        },
+      };
+    },
+    enabled: true,
   });
 }
 

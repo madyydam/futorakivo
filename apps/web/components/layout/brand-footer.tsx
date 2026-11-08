@@ -61,7 +61,7 @@ export function BrandFooter() {
       <button
         type="button"
         onClick={() => setSupportOpen(true)}
-        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all hover:bg-white dark:hover:bg-card hover:border-slate-300 hover:shadow-xs border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] group"
+        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_6px_18px_rgba(159,18,57,0.15)] border-0 bg-white dark:bg-card shadow-[0_2px_8px_rgba(159,18,57,0.06),0_1px_2px_rgba(0,0,0,0.03)] group"
       >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/40 text-[#9f1239] dark:text-rose-400 group-hover:scale-105 transition-transform border border-rose-100 dark:border-rose-900/30 shadow-2xs">
           <Headphones className="h-4 w-4" />

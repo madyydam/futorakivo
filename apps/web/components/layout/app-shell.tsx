@@ -83,11 +83,13 @@ export function AppShell({
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-[#FAF8F8] dark:bg-[#0C0D10]">
-      {/* Ambient luxury maroon radial lighting meshes - strictly in background (z-0), behind the floating sidebar */}
+      {/* Ambient luxury maroon radial lighting meshes - strictly in background (z-0), behind the floating sidebar & top header */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none">
         <div className="absolute -left-12 -top-12 h-[540px] w-[540px] rounded-full bg-gradient-to-br from-[#881337]/35 via-[#9f1239]/22 to-transparent blur-3xl" />
         <div className="absolute -left-20 top-1/3 h-[500px] w-[480px] rounded-full bg-gradient-to-r from-[#9f1239]/30 via-[#be123c]/20 to-transparent blur-3xl" />
         <div className="absolute -left-16 bottom-0 h-[480px] w-[480px] rounded-full bg-gradient-to-tr from-[#881337]/30 via-[#9f1239]/20 to-transparent blur-3xl" />
+        {/* Ambient maroon lighting glow across the top header in the background */}
+        <div className="absolute right-10 -top-28 h-[420px] w-[580px] rounded-full bg-gradient-to-b from-[#881337]/24 via-[#9f1239]/14 to-transparent blur-3xl" />
       </div>
 
       {/* Desktop floating island sidebar - crisp solid white with round corners */}
@@ -126,28 +128,29 @@ export function AppShell({
       </Sheet>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center justify-between px-4 sm:px-6 z-20">
+        {/* Floating island top header - crisp solid white with round corners */}
+        <header className="mt-3 mr-3 ml-3 lg:ml-0 mb-1.5 flex h-14 sm:h-16 shrink-0 items-center justify-between rounded-[24px] border border-slate-200/80 dark:border-border bg-white dark:bg-card px-4 sm:px-6 shadow-sm z-20">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 dark:border-border text-muted-foreground hover:bg-white dark:hover:bg-card lg:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-card lg:hidden transition-all"
               aria-label="Open navigation"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] px-3 py-1.5">
               <span className="relative flex h-2 w-2" aria-hidden>
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 Live · {todayString}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <LanguageSwitcher compact />
             <NotificationBell />
             <UserMenu user={user} />

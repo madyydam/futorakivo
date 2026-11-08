@@ -21,7 +21,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
     <Select value={locale} onValueChange={(v) => v && setLocale(v as Locale)}>
       <SelectTrigger
         aria-label={t("common.language")}
-        className={compact ? "h-8 w-auto gap-1.5 rounded-full border border-slate-200/80 dark:border-border/80 bg-white/90 dark:bg-card/90 px-3 text-xs font-semibold shadow-2xs" : undefined}
+        className={compact ? "h-8.5 w-auto gap-1.5 rounded-full border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-card hover:border-slate-300 transition-all" : undefined}
       >
         {compact && <Languages className="h-3.5 w-3.5 text-muted-foreground" />}
         <SelectValue>{compact ? locale.toUpperCase() : LOCALE_LABELS[locale]}</SelectValue>

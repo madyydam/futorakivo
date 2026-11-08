@@ -253,7 +253,7 @@ export default function DashboardPage() {
         {/* Pending payments */}
         <Link
           href="/orders?tab=active"
-          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -273,7 +273,7 @@ export default function DashboardPage() {
         {/* Low stock items */}
         <Link
           href="/inventory?filter=low"
-          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -294,7 +294,7 @@ export default function DashboardPage() {
         {/* Active customers */}
         <Link
           href="/customers"
-          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -320,7 +320,7 @@ export default function DashboardPage() {
         {/* Team on duty */}
         <Link
           href="/team"
-          className="group flex flex-col justify-between rounded-[24px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
+          className="group flex flex-col justify-between rounded-[26px] bg-white dark:bg-card p-5 border border-slate-200/80 dark:border-border shadow-xs transition-all hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">

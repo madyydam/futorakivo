@@ -91,7 +91,7 @@ export function LuxuryRevenueChart({
         {/* Average Pill Dropdown Button */}
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-border bg-white/80 dark:bg-card px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-2xs hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-border bg-white dark:bg-card px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-2xs hover:bg-slate-50 transition-colors"
         >
           <span>{averageLabel}</span>
           <ChevronDown className="h-3 w-3 text-muted-foreground" />

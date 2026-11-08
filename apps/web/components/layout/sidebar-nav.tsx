@@ -50,22 +50,29 @@ export function SidebarNav({
               href={href}
               onClick={onNavigate}
               className={cn(
-                "relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150",
+                "group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-150",
                 isActive
-                  ? "before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1.5 before:rounded-r-full before:bg-[#9f1239] bg-white/70 dark:bg-[#9f1239]/25 text-[#881337] dark:text-rose-300 font-bold shadow-xs border border-white/60 dark:border-white/10 backdrop-blur-md"
-                  : "text-slate-700/85 dark:text-slate-300 hover:bg-white/45 dark:hover:bg-card/45 hover:text-slate-900 dark:hover:text-slate-100",
+                  ? "bg-gradient-to-r from-[#9f1239] to-[#881337] text-white shadow-md shadow-[#9f1239]/20 font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white",
               )}
             >
               <Icon
                 className={cn(
                   "h-[18px] w-[18px] shrink-0 transition-colors",
-                  isActive ? "text-[#9f1239] dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
+                  isActive ? "text-white" : "text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white",
                 )}
-                strokeWidth={isActive ? 2.2 : 1.9}
+                strokeWidth={isActive ? 2.4 : 2}
               />
               <span className="truncate">{t(item.labelKey)}</span>
               {isOrders ? (
-                <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#9f1239] text-[10px] font-bold text-white shadow-2xs">
+                <span
+                  className={cn(
+                    "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold shadow-2xs transition-colors",
+                    isActive
+                      ? "bg-white text-[#9f1239]"
+                      : "bg-[#9f1239] text-white",
+                  )}
+                >
                   3
                 </span>
               ) : badges.nav[item.href] && !isActive ? (

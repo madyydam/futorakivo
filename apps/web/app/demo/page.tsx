@@ -14,6 +14,7 @@ import {
   ReceiptText,
   ShoppingCart,
   Store,
+  Trash2,
   TrendingUp,
   UserRound,
   Users,
@@ -24,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TrendChart } from "@/components/dashboard/trend-chart";
 import { cn } from "@/lib/utils";
 
 function StatCard({
@@ -111,6 +113,26 @@ const INITIAL_ORDERS: DemoOrder[] = [
   { id: "3", orderNumber: "ORD-1043", table: "Takeaway #3", items: "2x Dal Makhani, 4x Tandoori Roti", total: 560, time: "14 mins ago", status: "SERVED", type: "TAKEAWAY" },
   { id: "4", orderNumber: "ORD-1042", table: "Table 2", items: "1x Kadhai Paneer, 2x Garlic Naan, 1x Sweet Lassi", total: 580, time: "22 mins ago", status: "PAID", type: "QR_ORDER" },
   { id: "5", orderNumber: "ORD-1041", table: "Table 7", items: "1x Margherita Pizza, 1x Mocktail Blue Lagoon", total: 490, time: "35 mins ago", status: "PAID", type: "DINE_IN" },
+];
+
+const DEMO_REVENUE_TRENDS = [
+  { date: "2026-11-02", amount: 62400 },
+  { date: "2026-11-03", amount: 68500 },
+  { date: "2026-11-04", amount: 74200 },
+  { date: "2026-11-05", amount: 71000 },
+  { date: "2026-11-06", amount: 89600 },
+  { date: "2026-11-07", amount: 104200 },
+  { date: "2026-11-08", amount: 84250 },
+];
+
+const DEMO_WASTE_TRENDS = [
+  { date: "2026-11-02", cost: 1200 },
+  { date: "2026-11-03", cost: 850 },
+  { date: "2026-11-04", cost: 1600 },
+  { date: "2026-11-05", cost: 950 },
+  { date: "2026-11-06", cost: 1400 },
+  { date: "2026-11-07", cost: 2100 },
+  { date: "2026-11-08", cost: 1100 },
 ];
 
 export default function DemoDashboardPage() {
@@ -220,52 +242,34 @@ export default function DemoDashboardPage() {
         />
       </div>
 
-      {/* Two Column Layout: Charts & Live Operations */}
+      {/* Trend Charts Section - exact same to same as main dashboard */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <TrendChart
+          title="Revenue — last 7 days"
+          icon={TrendingUp}
+          data={DEMO_REVENUE_TRENDS}
+          valueKey="amount"
+          color="var(--success)"
+          valueFormatter={(v) => `₹${v.toLocaleString("en-IN")}`}
+          isLoading={false}
+          emptyMessage="No revenue data recorded yet."
+        />
+        <TrendChart
+          title="Food waste cost — last 7 days"
+          icon={Trash2}
+          data={DEMO_WASTE_TRENDS}
+          valueKey="cost"
+          color="var(--warning)"
+          valueFormatter={(v) => `₹${v.toLocaleString("en-IN")}`}
+          isLoading={false}
+          emptyMessage="No waste logs recorded."
+        />
+      </div>
+
+      {/* Two Column Layout: Orders & Live Operations */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column: Revenue Trend Chart */}
+        {/* Left Column: Recent Orders Table */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-border/60 p-5 shadow-sm">
-            <div className="flex items-center justify-between pb-4 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="size-4 text-emerald-600" />
-                <h3 className="font-semibold text-sm">Revenue — Last 7 Days</h3>
-              </div>
-              <Badge variant="outline" className="text-xs font-mono">
-                Average ₹76,400/day
-              </Badge>
-            </div>
-
-            {/* Simulated 7-day Bar Chart */}
-            <div className="mt-6 flex h-48 items-end justify-between gap-2 pt-4">
-              {[
-                { day: "Mon", amount: 62000, height: "60%" },
-                { day: "Tue", amount: 68000, height: "65%" },
-                { day: "Wed", amount: 74000, height: "72%" },
-                { day: "Thu", amount: 71000, height: "70%" },
-                { day: "Fri", amount: 89000, height: "86%" },
-                { day: "Sat", amount: 104000, height: "100%" },
-                { day: "Today", amount: 84250, height: "82%", current: true },
-              ].map((bar) => (
-                <div key={bar.day} className="flex flex-1 flex-col items-center gap-2 group cursor-pointer">
-                  <span className="text-[10px] font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                    ₹{(bar.amount / 1000).toFixed(0)}k
-                  </span>
-                  <div
-                    className={cn(
-                      "w-full max-w-[48px] rounded-t-md transition-all group-hover:opacity-80",
-                      bar.current ? "bg-primary shadow-sm" : "bg-emerald-500/70 dark:bg-emerald-600/70",
-                    )}
-                    style={{ height: bar.height }}
-                  />
-                  <span className={cn("text-xs font-medium", bar.current ? "font-bold text-primary" : "text-muted-foreground")}>
-                    {bar.day}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Recent Orders Table */}
           <Card className="border-border/60 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-border/50 bg-muted/20">
               <div className="flex items-center gap-2">

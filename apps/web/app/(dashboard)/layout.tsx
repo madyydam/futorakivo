@@ -29,15 +29,15 @@ export default function DashboardGroupLayout({ children }: { children: React.Rea
   const router = useRouter();
   const pathname = usePathname();
   const { data, isLoading, isError } = useCurrentUser();
-  const permissions = data?.user.permissions;
+  const permissions = data?.user?.permissions;
   const allowed = !permissions || canOpen(pathname ?? "", permissions, NAV_ITEMS);
   const fallback = permissions ? firstAllowedHref(permissions, NAV_ITEMS) : undefined;
 
   useEffect(() => {
-    if (!isLoading && isError) {
+    if (!isLoading && (isError || !data?.user)) {
       router.replace("/login");
     }
-  }, [isLoading, isError, router]);
+  }, [isLoading, isError, data, router]);
 
   // Direct URL to a page the role may not use (e.g. a waiter opening /dashboard
   // after login): send them to their first permitted screen.
@@ -49,7 +49,7 @@ export default function DashboardGroupLayout({ children }: { children: React.Rea
     return <div className="flex min-h-screen items-center justify-center bg-background" />;
   }
 
-  if (isError || !data) {
+  if (isError || !data?.user) {
     return null;
   }
 

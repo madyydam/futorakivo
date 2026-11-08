@@ -21,7 +21,7 @@ export const DEMO_USER: SessionUser = {
   permissions: PERMISSIONS.map((p) => p.key),
 };
 
-function getSavedUser(): SessionUser {
+function getSavedUser(): SessionUser | null {
   if (typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem("nodedr_demo_user");
@@ -32,7 +32,7 @@ function getSavedUser(): SessionUser {
       // ignore
     }
   }
-  return DEMO_USER;
+  return null;
 }
 
 function saveUser(user: SessionUser) {
@@ -48,7 +48,7 @@ function saveUser(user: SessionUser) {
 export function useCurrentUser() {
   return useQuery({
     queryKey: ["auth", "me"],
-    queryFn: async () => {
+    queryFn: async (): Promise<{ user: SessionUser }> => {
       try {
         const res = await api.get<{ user: SessionUser }>("/auth/me");
         if (res?.user) {
@@ -56,9 +56,16 @@ export function useCurrentUser() {
           return res;
         }
       } catch {
-        // Fallback to demo user if backend is unavailable or 500s
+        // Check if there is an active saved demo session
       }
-      return { user: getSavedUser() };
+
+      const saved = getSavedUser();
+      if (saved) {
+        return { user: saved };
+      }
+
+      // Not logged in: throw so query status is error / unauthenticated
+      throw new Error("UNAUTHENTICATED");
     },
     retry: false,
     staleTime: 60_000,

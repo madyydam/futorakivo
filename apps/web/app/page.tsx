@@ -1,7 +1,6 @@
 "use client";
 
 import { MotionConfig } from "motion/react";
-import { AuthRedirectGate } from "@/components/marketing/auth-redirect-gate";
 import { Features } from "@/components/marketing/features";
 import { Hero } from "@/components/marketing/hero";
 import { InstallSection } from "@/components/marketing/install-section";
@@ -19,9 +18,6 @@ export default function MarketingHomePage() {
     // useReducedMotion() through every component individually.
     <MotionConfig reducedMotion="user">
       <div className="flex min-h-full flex-col">
-        {/* If the visitor is already logged in, automatically take them to /dashboard */}
-        <AuthRedirectGate />
-
         <MarketingNav />
         <main id="main-content">
           <Hero />

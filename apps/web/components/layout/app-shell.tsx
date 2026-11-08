@@ -83,17 +83,19 @@ export function AppShell({
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-[#FAF8F8] dark:bg-[#0C0D10]">
-      {/* Ambient luxury radial lighting meshes */}
-      <div className="pointer-events-none absolute -right-28 -top-28 h-[580px] w-[580px] rounded-full bg-gradient-to-br from-[#9f1239]/12 via-[#fb7185]/6 to-transparent blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 bottom-10 h-[500px] w-[500px] rounded-full bg-gradient-to-tl from-[#9f1239]/10 via-[#9f1239]/4 to-transparent blur-3xl" />
-      <div className="pointer-events-none absolute -left-24 bottom-0 h-[420px] w-[420px] rounded-full bg-gradient-to-tr from-[#9f1239]/8 via-rose-500/4 to-transparent blur-3xl" />
+      {/* Ambient luxury maroon radial lighting meshes - enriched behind sidebar & across corners */}
+      <div className="pointer-events-none absolute -left-12 -top-12 h-[520px] w-[520px] rounded-full bg-gradient-to-br from-[#881337]/32 via-[#9f1239]/22 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -left-20 top-1/3 h-[480px] w-[460px] rounded-full bg-gradient-to-r from-[#9f1239]/28 via-[#be123c]/18 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -left-16 bottom-0 h-[460px] w-[460px] rounded-full bg-gradient-to-tr from-[#881337]/28 via-[#9f1239]/18 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -right-28 -top-28 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-[#881337]/24 via-[#9f1239]/16 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 bottom-10 h-[520px] w-[520px] rounded-full bg-gradient-to-tl from-[#9f1239]/22 via-[#be123c]/14 to-transparent blur-3xl" />
 
-      {/* Desktop floating island sidebar */}
-      <aside className="relative hidden w-64 shrink-0 my-3 ml-3 rounded-[28px] border border-white/80 dark:border-white/10 bg-white/85 dark:bg-[#131418]/85 backdrop-blur-2xl shadow-[0_10px_35px_rgba(0,0,0,0.03)] lg:flex flex-col h-[calc(100vh-24px)] select-none overflow-hidden z-20">
-        <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/30">
+      {/* Desktop floating island sidebar with enhanced frosted glass effect */}
+      <aside className="relative hidden w-64 shrink-0 my-3 ml-3 rounded-[28px] border border-white/70 dark:border-white/10 bg-white/55 dark:bg-[#121318]/55 backdrop-blur-3xl backdrop-saturate-150 shadow-[0_12px_40px_rgba(159,18,57,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset] lg:flex flex-col h-[calc(100vh-24px)] select-none overflow-hidden z-20">
+        <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/25">
           <RestaurantBrand />
         </div>
-        <div className="shrink-0 px-3 py-3 border-b border-sidebar-border/30">
+        <div className="shrink-0 px-3 py-3 border-b border-sidebar-border/25">
           <BranchSwitcher />
         </div>
         <div className="flex-1 overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -106,7 +108,7 @@ export function AppShell({
 
       {/* Mobile drawer with glassmorphism */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 bg-sidebar/95 backdrop-blur-2xl border-r border-sidebar-border/60 p-0 flex flex-col h-full">
+        <SheetContent side="left" className="w-72 bg-white/70 dark:bg-[#121318]/70 backdrop-blur-3xl border-r border-white/60 dark:border-white/10 p-0 flex flex-col h-full">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/40">
             <RestaurantBrand />

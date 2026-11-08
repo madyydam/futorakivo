@@ -52,8 +52,8 @@ export function SidebarNav({
               className={cn(
                 "relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150",
                 isActive
-                  ? "before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1.5 before:rounded-r-full before:bg-[#9f1239] bg-rose-50/90 dark:bg-[#9f1239]/20 text-[#9f1239] dark:text-rose-300 font-semibold shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-card/70 hover:text-slate-900 dark:hover:text-slate-100",
+                  ? "before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1.5 before:rounded-r-full before:bg-[#9f1239] bg-white/70 dark:bg-[#9f1239]/25 text-[#881337] dark:text-rose-300 font-bold shadow-xs border border-white/60 dark:border-white/10 backdrop-blur-md"
+                  : "text-slate-700/85 dark:text-slate-300 hover:bg-white/45 dark:hover:bg-card/45 hover:text-slate-900 dark:hover:text-slate-100",
               )}
             >
               <Icon

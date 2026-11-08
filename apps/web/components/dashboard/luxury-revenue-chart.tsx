@@ -75,7 +75,7 @@ export function LuxuryRevenueChart({
   return (
     <div
       className={cn(
-        "flex flex-col justify-between rounded-[26px] bg-white/90 dark:bg-card/90 p-6 border border-white/80 dark:border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl",
+        "flex flex-col justify-between rounded-[26px] bg-white/60 dark:bg-card/55 p-6 border border-white/80 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)_inset] backdrop-blur-2xl",
         className,
       )}
     >

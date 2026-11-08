@@ -57,13 +57,13 @@ export function BrandFooter() {
   )}`;
 
   return (
-    <div className="flex flex-col gap-2 border-t border-sidebar-border/40 px-3 py-2.5">
+    <div className="flex flex-col gap-2 border-t border-sidebar-border/30 px-3 py-2.5">
       <button
         type="button"
         onClick={() => setSupportOpen(true)}
-        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all hover:bg-sidebar-accent/70 group"
+        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all hover:bg-white/60 dark:hover:bg-card/60 border border-white/60 dark:border-white/10 bg-white/40 dark:bg-card/40 backdrop-blur-md group shadow-2xs"
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sidebar-accent/60 text-[#9f1239] dark:text-rose-400 group-hover:scale-105 transition-transform border border-sidebar-border/40">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/60 dark:bg-card/60 text-[#9f1239] dark:text-rose-400 group-hover:scale-105 transition-transform border border-white/60 dark:border-white/10 shadow-2xs">
           <Headphones className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">

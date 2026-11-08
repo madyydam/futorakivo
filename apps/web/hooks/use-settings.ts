@@ -107,11 +107,16 @@ export function useDisplaySettings(branchId: string | null) {
       } catch {
         // Fallback to default branding
       }
+      const customRestName =
+        typeof window !== "undefined" ? localStorage.getItem("modexsys_restaurant_name") : null;
+      const customBranchName =
+        typeof window !== "undefined" ? localStorage.getItem("modexsys_branch_name") : null;
+
       return {
         restaurant: {
           id: "demo-restaurant",
-          name: "Modexsys HORECA",
-          legalName: "Modexsys HORECA Pvt Ltd",
+          name: cleanBrandName(customRestName) || "Modexsys HORECA",
+          legalName: `${cleanBrandName(customRestName) || "Modexsys HORECA"} Pvt Ltd`,
           logoUrl: null,
           currency: "INR",
           timezone: "Asia/Kolkata",
@@ -131,8 +136,8 @@ export function useDisplaySettings(branchId: string | null) {
         },
         branch: {
           id: branchId ?? "main-branch",
-          name: "Main Branch",
-          address: "Main Branch",
+          name: customBranchName || "Main Branch",
+          address: customBranchName || "Main Branch",
           phone: null,
           gstNumber: null,
           country: "IN",

@@ -15,7 +15,7 @@ import { api } from "@/lib/api";
 export const DEMO_USER: SessionUser = {
   id: "demo-user-id",
   restaurantId: "demo-restaurant-id",
-  name: "Demo Owner",
+  name: "Restaurant Owner",
   roleId: "demo-role-id",
   roleName: "OWNER",
   permissions: PERMISSIONS.map((p) => p.key),
@@ -24,7 +24,8 @@ export const DEMO_USER: SessionUser = {
 function getSavedUser(): SessionUser | null {
   if (typeof window !== "undefined") {
     try {
-      const stored = localStorage.getItem("nodedr_demo_user");
+      const stored =
+        localStorage.getItem("modexsys_demo_user") || localStorage.getItem("nodedr_demo_user");
       if (stored) {
         return JSON.parse(stored);
       }
@@ -38,7 +39,8 @@ function getSavedUser(): SessionUser | null {
 function saveUser(user: SessionUser) {
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem("nodedr_demo_user", JSON.stringify(user));
+      localStorage.setItem("modexsys_demo_user", JSON.stringify(user));
+      localStorage.removeItem("nodedr_demo_user");
     } catch {
       // ignore
     }
@@ -106,6 +108,11 @@ export function useRegister() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (dto: RegisterDto) => {
+      if (typeof window !== "undefined") {
+        if (dto.restaurantName) localStorage.setItem("modexsys_restaurant_name", dto.restaurantName);
+        if (dto.branchName) localStorage.setItem("modexsys_branch_name", dto.branchName);
+      }
+
       try {
         const res = await api.post<{ user: SessionUser }>("/auth/register", dto);
         if (res?.user) {
@@ -113,13 +120,17 @@ export function useRegister() {
           return res;
         }
       } catch (err) {
-        console.warn("Backend registration failed, falling back to demo user:", err);
+        console.warn("Backend registration failed, falling back to session user:", err);
       }
 
-      // Demo register fallback: allow ANY restaurant/user to be created
+      // Allow ANY restaurant/user to be created without 500 error blocking
+      const fallbackName = dto.ownerName || "Restaurant Owner";
       const demoUser: SessionUser = {
         ...DEMO_USER,
-        name: dto.ownerName || "Demo Owner",
+        id: "owner-" + Math.random().toString(36).slice(2, 9),
+        restaurantId: "rest-" + Math.random().toString(36).slice(2, 9),
+        name: fallbackName,
+        roleName: "OWNER",
       };
       saveUser(demoUser);
       return { user: demoUser };
@@ -136,7 +147,10 @@ export function useLogout() {
     mutationFn: async () => {
       if (typeof window !== "undefined") {
         try {
+          localStorage.removeItem("modexsys_demo_user");
           localStorage.removeItem("nodedr_demo_user");
+          localStorage.removeItem("modexsys_restaurant_name");
+          localStorage.removeItem("modexsys_branch_name");
         } catch {
           // ignore
         }

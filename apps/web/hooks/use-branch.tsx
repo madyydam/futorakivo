@@ -24,11 +24,16 @@ interface BranchContextValue {
 
 const BranchContext = createContext<BranchContextValue | null>(null);
 
-const STORAGE_KEY = "nodedr_branch_id";
+const STORAGE_KEY = "modexsys_branch_id";
 
-const DEFAULT_BRANCH: Branch = { id: "main-branch", name: "Main Branch" };
+function getDefaultBranch(): Branch {
+  const custom =
+    typeof window !== "undefined" ? localStorage.getItem("modexsys_branch_name") : null;
+  return { id: "main-branch", name: custom || "Main Branch" };
+}
 
 export function BranchProvider({ children }: { children: React.ReactNode }) {
+  const defaultBranch = useMemo(() => getDefaultBranch(), []);
   const { data: fetchedBranches, isPending, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["branches"],
     queryFn: async () => {
@@ -36,9 +41,9 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
         const res = await api.get<Branch[]>("/branches");
         if (Array.isArray(res) && res.length > 0) return res;
       } catch {
-        // Fallback to demo branch if backend is down
+        // Fallback to default branch if backend is down
       }
-      return [DEFAULT_BRANCH];
+      return [defaultBranch];
     },
     retry: false,
   });
@@ -47,18 +52,18 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
     if (Array.isArray(fetchedBranches) && fetchedBranches.length > 0) {
       return fetchedBranches;
     }
-    return [DEFAULT_BRANCH];
-  }, [fetchedBranches]);
+    return [defaultBranch];
+  }, [fetchedBranches, defaultBranch]);
 
   const [manualBranchId, setManualBranchId] = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null,
   );
 
   const branchId = useMemo(() => {
-    if (!branches || branches.length === 0) return DEFAULT_BRANCH.id;
+    if (!branches || branches.length === 0) return defaultBranch.id;
     if (manualBranchId && branches.some((b) => b.id === manualBranchId)) return manualBranchId;
     return branches[0].id;
-  }, [branches, manualBranchId]);
+  }, [branches, manualBranchId, defaultBranch]);
 
   const setBranchId = (id: string) => {
     setManualBranchId(id);

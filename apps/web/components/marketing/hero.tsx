@@ -73,7 +73,7 @@ export function Hero() {
                   <ArrowRight className="size-4 ml-1.5" data-icon="inline-end" />
                 </Button>
               ) : (
-                <Button size="lg" className="h-11 px-6 text-[15px]" render={<Link href="/signup" />}>
+                <Button size="lg" className="h-11 px-6 text-[15px]" render={<Link href="/onboarding" />}>
                   Get started free
                   <ArrowRight className="size-4 ml-1.5" data-icon="inline-end" />
                 </Button>
@@ -83,10 +83,10 @@ export function Hero() {
                 variant="outline"
                 size="lg"
                 className="h-11 px-6 text-[15px]"
-                render={<a href="#live-demo" />}
+                render={<Link href="/demo" />}
               >
                 <Play className="size-3.5 fill-current text-primary mr-1" data-icon="inline-start" />
-                Watch Live Demo
+                See Demo
               </Button>
             </motion.div>
 

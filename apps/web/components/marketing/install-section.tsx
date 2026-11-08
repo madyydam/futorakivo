@@ -52,7 +52,7 @@ export function InstallSection() {
       {/* CTA Box */}
       <Reveal delay={0.1} className="mt-8 flex justify-center">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
-          <Button size="lg" className="w-full sm:w-auto h-12 px-7 text-[15px]" render={<Link href="/signup" />}>
+          <Button size="lg" className="w-full sm:w-auto h-12 px-7 text-[15px]" render={<Link href="/onboarding" />}>
             Create your account free
             <ArrowRight className="size-4 ml-1.5" data-icon="inline-end" />
           </Button>

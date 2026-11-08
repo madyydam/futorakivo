@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/use-auth";
 
 const links = [
+  { href: "/demo", label: "See Demo" },
   { href: "#features", label: "Features" },
-  { href: "#live-demo", label: "Live System Demo" },
   { href: "#showcase", label: "Product Views" },
   { href: "#security", label: "Security" },
 ];
@@ -51,7 +51,7 @@ export function MarketingNav() {
               <Button variant="ghost" size="default" render={<Link href="/login" />}>
                 Sign in
               </Button>
-              <Button variant="default" size="default" render={<Link href="/signup" />}>
+              <Button variant="default" size="default" render={<Link href="/onboarding" />}>
                 Get started free
               </Button>
             </>
@@ -92,7 +92,7 @@ export function MarketingNav() {
                   <Button variant="outline" render={<Link href="/login" />}>
                     Sign in
                   </Button>
-                  <Button variant="default" render={<Link href="/signup" />}>
+                  <Button variant="default" render={<Link href="/onboarding" />}>
                     Get started free
                   </Button>
                 </>

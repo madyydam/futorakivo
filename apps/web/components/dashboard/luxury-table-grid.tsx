@@ -109,3 +109,4 @@ export function LuxuryTableGrid({
     </div>
   );
 }
+

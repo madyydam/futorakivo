@@ -2,9 +2,11 @@
 
 import { ChevronDown, TrendingUp } from "lucide-react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -38,46 +40,39 @@ function formatDayFromIso(iso: string, isLast: boolean): string {
   }
 }
 
-// Custom Milestone Dot with white ring
-function CustomMilestoneDot(props: any) {
-  const { cx, cy, index, dataLength, payload } = props;
-  const isLast = index === (dataLength ?? DEFAULT_WEEK_DATA.length) - 1 || payload?.isToday;
+// Floating badge pill anchored directly over the 'Today' bar
+function renderCustomTodayBadge(props: any) {
+  const { x, y, width, index, value } = props;
+  const isToday = index === 6 || props.payload?.isToday;
+  if (!isToday) return null;
+
+  const badgeWidth = 72;
+  const badgeHeight = 25;
+  const centerX = (x ?? 0) + (width ?? 0) / 2;
+  const topY = (y ?? 0) - badgeHeight - 8;
 
   return (
-    <g key={`dot-${index}`}>
-      <circle
-        cx={cx}
-        cy={cy}
-        r={isLast ? 5 : 4}
-        fill={isLast ? "#881337" : "#9f1239"}
-        stroke="#ffffff"
-        strokeWidth={2}
+    <g transform={`translate(${centerX - badgeWidth / 2}, ${topY})`}>
+      <rect
+        width={badgeWidth}
+        height={badgeHeight}
+        rx={8}
+        fill="#ffffff"
+        stroke="#e2e8f0"
+        strokeWidth={1}
+        filter="drop-shadow(0 4px 6px rgba(0,0,0,0.08))"
       />
-      {isLast && (
-        // Floating pill badge over Today's data point matching the reference UI
-        <g transform={`translate(${cx - 36}, ${cy - 36})`}>
-          <rect
-            width="72"
-            height="26"
-            rx="8"
-            fill="#ffffff"
-            stroke="#e2e8f0"
-            strokeWidth="1"
-            filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))"
-          />
-          <text
-            x="36"
-            y="17"
-            textAnchor="middle"
-            fill="#0f172a"
-            fontSize="11"
-            fontWeight="700"
-            fontFamily="monospace, sans-serif"
-          >
-            ₹{payload?.amount ? Number(payload.amount).toLocaleString("en-IN") : "84,250"}
-          </text>
-        </g>
-      )}
+      <text
+        x={badgeWidth / 2}
+        y={16}
+        textAnchor="middle"
+        fill="#0f172a"
+        fontSize={11}
+        fontWeight="700"
+        fontFamily="monospace, sans-serif"
+      >
+        ₹{Number(value).toLocaleString("en-IN")}
+      </text>
     </g>
   );
 }
@@ -112,7 +107,6 @@ export function LuxuryRevenueChart({
   averageLabel?: string;
   className?: string;
 }) {
-  // If rawTrends is provided and has items, transform it
   const chartData: RevenueDataPoint[] = (() => {
     if (data && data.length > 0) return data;
     if (rawTrends && rawTrends.length > 0) {
@@ -159,18 +153,24 @@ export function LuxuryRevenueChart({
         </button>
       </div>
 
-      {/* Chart Container */}
+      {/* Bar Chart Container */}
       <div className="h-[250px] w-full pt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
+          <BarChart
             data={chartData}
             margin={{ top: 38, right: 12, bottom: 0, left: -14 }}
           >
             <defs>
-              <linearGradient id="revSplineGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#9f1239" stopOpacity={0.25} />
-                <stop offset="60%" stopColor="#9f1239" stopOpacity={0.08} />
-                <stop offset="100%" stopColor="#9f1239" stopOpacity={0.0} />
+              {/* Highlighted Gradient for Today Bar */}
+              <linearGradient id="todayBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#9f1239" stopOpacity={1} />
+                <stop offset="100%" stopColor="#881337" stopOpacity={0.9} />
+              </linearGradient>
+
+              {/* Soft Crimson Tint for Previous Days */}
+              <linearGradient id="prevBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#9f1239" stopOpacity={0.45} />
+                <stop offset="100%" stopColor="#9f1239" stopOpacity={0.2} />
               </linearGradient>
             </defs>
 
@@ -204,6 +204,7 @@ export function LuxuryRevenueChart({
                 "Revenue",
               ]}
               labelFormatter={(label) => `Day: ${label}`}
+              cursor={{ fill: "rgba(159, 18, 57, 0.05)" }}
               contentStyle={{
                 backgroundColor: "rgba(255, 255, 255, 0.95)",
                 backdropFilter: "blur(8px)",
@@ -215,16 +216,20 @@ export function LuxuryRevenueChart({
               }}
             />
 
-            <Area
-              type="monotone"
+            <Bar
               dataKey="amount"
-              stroke="#9f1239"
-              strokeWidth={2.5}
-              fill="url(#revSplineGrad)"
-              dot={<CustomMilestoneDot dataLength={chartData.length} />}
-              activeDot={{ r: 6, fill: "#881337", stroke: "#ffffff", strokeWidth: 2 }}
-            />
-          </AreaChart>
+              radius={[8, 8, 0, 0]}
+              maxBarSize={44}
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`bar-cell-${index}`}
+                  fill={entry.isToday ? "url(#todayBarGrad)" : "url(#prevBarGrad)"}
+                />
+              ))}
+              <LabelList dataKey="amount" content={renderCustomTodayBadge} />
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>

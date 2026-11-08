@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -41,9 +41,9 @@ export function TrendChart({
   const hasData = data.some((d) => Number(d[valueKey]) > 0);
 
   return (
-    <Card className="flex flex-col gap-3 p-6">
+    <Card className="flex flex-col gap-3 p-6 rounded-[24px] bg-white/90 dark:bg-card/90 border border-white/80 dark:border-border/60 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
       <h2 className="flex items-center gap-2 text-[18px] font-medium text-foreground">
-        <Icon className="h-[18px] w-[18px] text-muted-foreground" />
+        <Icon className="h-[18px] w-[18px] text-[#9f1239]" />
         {title}
       </h2>
 
@@ -56,8 +56,8 @@ export function TrendChart({
       ) : (
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" vertical={false} />
               <XAxis
                 dataKey="date"
                 tickFormatter={formatDayLabel}
@@ -75,22 +75,24 @@ export function TrendChart({
               <Tooltip
                 formatter={(value: number) => valueFormatter(value)}
                 labelFormatter={(label: string) => formatDayLabel(label)}
+                cursor={{ fill: "rgba(159, 18, 57, 0.05)" }}
                 contentStyle={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  borderRadius: 12,
                   fontSize: 12,
+                  fontWeight: 600,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
                 }}
               />
-              <Line
-                type="monotone"
+              <Bar
                 dataKey={valueKey}
-                stroke={color}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
+                fill={color}
+                radius={[6, 6, 0, 0]}
+                maxBarSize={36}
               />
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       )}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { SessionUser } from "@modexsys/types";
-import { LogOut, Moon, Server, Sun, Trash2 } from "lucide-react";
+import { ChevronDown, LogOut, Moon, Server, Sun, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -47,18 +47,21 @@ export function UserMenu({ user }: { user?: SessionUser }) {
       </button>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-secondary">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
-              {initials(user?.name)}
+        <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-border/80 bg-white/90 dark:bg-card/90 pl-1.5 pr-2.5 py-1 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-card transition-colors shadow-2xs">
+          <Avatar className="h-6 w-6">
+            <AvatarFallback className="bg-[#9f1239] text-[10px] font-bold text-white">
+              {user?.name ? initials(user.name) : "RO"}
             </AvatarFallback>
           </Avatar>
-          <span className="hidden text-sm font-medium sm:block">{user?.name}</span>
+          <span className="hidden text-xs font-medium text-slate-800 dark:text-slate-100 sm:block">
+            {user?.name || "Restaurant Owner"}
+          </span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
-            <p className="text-sm font-medium">{user?.name}</p>
-            <p className="text-xs font-normal text-muted-foreground">{user?.roleName}</p>
+            <p className="text-sm font-medium">{user?.name || "Restaurant Owner"}</p>
+            <p className="text-xs font-normal text-muted-foreground">{user?.roleName || "Owner / Super Admin"}</p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem

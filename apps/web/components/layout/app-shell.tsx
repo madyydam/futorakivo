@@ -73,12 +73,24 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [todayString] = useState(() => {
+    return new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+  });
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Desktop sidebar with glassmorphism & independent scroll */}
-      <aside className="relative hidden w-64 shrink-0 flex-col border-r border-sidebar-border/60 bg-sidebar/70 backdrop-blur-2xl backdrop-saturate-150 shadow-lg shadow-black/[0.03] lg:flex h-full select-none">
-        <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/40">
+    <div className="relative flex h-screen w-full overflow-hidden bg-[#FAF8F8] dark:bg-[#0C0D10]">
+      {/* Ambient luxury radial lighting meshes */}
+      <div className="pointer-events-none absolute -right-28 -top-28 h-[580px] w-[580px] rounded-full bg-gradient-to-br from-[#9f1239]/12 via-[#fb7185]/6 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 bottom-10 h-[500px] w-[500px] rounded-full bg-gradient-to-tl from-[#9f1239]/10 via-[#9f1239]/4 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -left-24 bottom-0 h-[420px] w-[420px] rounded-full bg-gradient-to-tr from-[#9f1239]/8 via-rose-500/4 to-transparent blur-3xl" />
+
+      {/* Desktop floating island sidebar */}
+      <aside className="relative hidden w-64 shrink-0 my-3 ml-3 rounded-[28px] border border-white/80 dark:border-white/10 bg-white/85 dark:bg-[#131418]/85 backdrop-blur-2xl shadow-[0_10px_35px_rgba(0,0,0,0.03)] lg:flex flex-col h-[calc(100vh-24px)] select-none overflow-hidden z-20">
+        <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/30">
           <RestaurantBrand />
         </div>
         <div className="shrink-0 px-3 py-3 border-b border-sidebar-border/30">
@@ -87,14 +99,14 @@ export function AppShell({
         <div className="flex-1 overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <SidebarNav user={user} />
         </div>
-        <div className="shrink-0 border-t border-sidebar-border/40">
+        <div className="shrink-0">
           <BrandFooter />
         </div>
       </aside>
 
       {/* Mobile drawer with glassmorphism */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 bg-sidebar/85 backdrop-blur-2xl border-r border-sidebar-border/60 p-0 flex flex-col h-full">
+        <SheetContent side="left" className="w-72 bg-sidebar/95 backdrop-blur-2xl border-r border-sidebar-border/60 p-0 flex flex-col h-full">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/40">
             <RestaurantBrand />
@@ -105,30 +117,44 @@ export function AppShell({
           <div className="flex-1 overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <SidebarNav user={user} onNavigate={() => setMobileOpen(false)} />
           </div>
-          <div className="shrink-0 border-t border-sidebar-border/40">
+          <div className="shrink-0">
             <BrandFooter />
           </div>
         </SheetContent>
       </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl sm:px-6 z-20">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary lg:hidden"
-            aria-label="Open navigation"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="hidden lg:block" />
-          <div className="flex items-center gap-1">
+        <header className="flex h-16 shrink-0 items-center justify-between px-4 sm:px-6 z-20">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 dark:border-border text-muted-foreground hover:bg-white dark:hover:bg-card lg:hidden"
+              aria-label="Open navigation"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2" aria-hidden>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                Live · {todayString}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
             <LanguageSwitcher compact />
             <NotificationBell />
             <UserMenu user={user} />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 overscroll-contain">{children}</main>
+
+        <main className="flex-1 overflow-y-auto px-4 py-2 pb-24 sm:px-6 sm:py-3 sm:pb-24 lg:px-8 overscroll-contain">
+          {children}
+        </main>
         <EntityDialogHost />
       </div>
       <MobileBottomNav user={user} onMore={() => setMobileOpen(true)} />

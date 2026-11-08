@@ -43,21 +43,34 @@ export function SidebarNav({
               : pathname?.startsWith(DEMO_ROUTE_MAP[item.href] ?? item.href)
             : pathname?.startsWith(item.href);
           const Icon = item.icon;
+          const isOrders = item.href === "/orders";
           return (
             <Link
               key={item.href}
               href={href}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                "relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                  ? "before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1.5 before:rounded-r-full before:bg-[#9f1239] bg-rose-50/90 dark:bg-[#9f1239]/20 text-[#9f1239] dark:text-rose-300 font-semibold shadow-2xs"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-card/70 hover:text-slate-900 dark:hover:text-slate-100",
               )}
             >
-              <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-              {t(item.labelKey)}
-              {badges.nav[item.href] && !isActive ? <NavDot /> : null}
+              <Icon
+                className={cn(
+                  "h-[18px] w-[18px] shrink-0 transition-colors",
+                  isActive ? "text-[#9f1239] dark:text-rose-400" : "text-slate-500 dark:text-slate-400",
+                )}
+                strokeWidth={isActive ? 2.2 : 1.9}
+              />
+              <span className="truncate">{t(item.labelKey)}</span>
+              {isOrders ? (
+                <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#9f1239] text-[10px] font-bold text-white shadow-2xs">
+                  3
+                </span>
+              ) : badges.nav[item.href] && !isActive ? (
+                <NavDot />
+              ) : null}
             </Link>
           );
         },

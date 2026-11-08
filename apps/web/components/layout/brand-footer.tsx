@@ -51,29 +51,29 @@ export function BrandFooter() {
   };
 
   const whatsappUrl = `https://wa.me/918446653644?text=${encodeURIComponent(
-    `Hi Modexsys Support, I need help with my restaurant POS system${
+    `Hi HORECA Support, I need help with my restaurant POS system${
       subject ? ` (Issue: ${subject})` : ""
     }.`,
   )}`;
 
   return (
-    <div className="flex flex-col gap-2 border-t border-sidebar-border/30 px-3 py-2.5">
+    <div className="flex flex-col px-3.5 py-3">
       <button
         type="button"
         onClick={() => setSupportOpen(true)}
-        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_6px_18px_rgba(159,18,57,0.15)] border-0 bg-white dark:bg-card shadow-[0_2px_8px_rgba(159,18,57,0.06),0_1px_2px_rgba(0,0,0,0.03)] group"
+        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/20 bg-white/10 backdrop-blur-xs hover:bg-white/15 text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] group select-none"
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/40 text-[#9f1239] dark:text-rose-400 group-hover:scale-105 transition-transform border border-rose-100 dark:border-rose-900/30 shadow-2xs">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white group-hover:scale-105 transition-transform border border-white/30 shadow-2xs">
           <Headphones className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-              Modexsys Support
+            <span className="text-xs font-bold text-white tracking-tight truncate">
+              HORECA Support
             </span>
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
           </div>
-          <p className="text-[10px] text-muted-foreground truncate">
+          <p className="text-[10px] text-rose-100/90 font-medium truncate">
             We&apos;re here to help
           </p>
         </div>
@@ -85,7 +85,7 @@ export function BrandFooter() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <LifeBuoy className="size-5 text-primary" />
-              Modexsys Support &amp; Help Desk
+              HORECA Support &amp; Help Desk
             </DialogTitle>
             <DialogDescription className="text-xs">
               Raise an issue or contact our 24/7 restaurant technical support team

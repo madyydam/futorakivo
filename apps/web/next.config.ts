@@ -26,6 +26,16 @@ const nextConfig: NextConfig = {
   // On Vercel, omitting standalone allows Vercel's Edge CDN to natively host,
   // optimize, and serve public/ static assets (like logo.png, icons, screenshots).
   ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" as const } : {}),
+  compress: true,
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "motion",
+      "@tanstack/react-table",
+      "@base-ui/react",
+    ],
+  },
   images: {
     localPatterns: [
       { pathname: "/**" },
@@ -37,7 +47,21 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/icons/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+        ],
+      },
+    ];
   },
   // socket.io's endpoint is literally "/socket.io/" — the backend 404s on the
   // slash-less form, so Next must not redirect it.

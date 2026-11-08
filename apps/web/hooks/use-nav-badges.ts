@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useBranch } from "@/hooks/use-branch";
 import { hasPermission, useCurrentUser } from "@/hooks/use-auth";
 import { useLowStockIngredients } from "@/hooks/use-inventory";
@@ -38,31 +39,33 @@ export function useNavBadges(): NavBadges {
   const { data: backups } = useBackups(canBackup);
   const { data: lowStock } = useLowStockIngredients(canInventory ? branchId : null);
 
-  const nav: Record<string, boolean> = {};
-  const settingsTabs: Record<string, boolean> = {};
+  return useMemo(() => {
+    const nav: Record<string, boolean> = {};
+    const settingsTabs: Record<string, boolean> = {};
 
-  for (const n of notifications?.data ?? []) {
-    if (n.readAt) continue;
-    const href = n.entity ? ENTITY_TO_NAV[n.entity] : undefined;
-    if (href) nav[href] = true;
-    if (n.entity === "Backup" || n.entity === "BackupConfig") {
+    for (const n of notifications?.data ?? []) {
+      if (n.readAt) continue;
+      const href = n.entity ? ENTITY_TO_NAV[n.entity] : undefined;
+      if (href) nav[href] = true;
+      if (n.entity === "Backup" || n.entity === "BackupConfig") {
+        nav["/settings"] = true;
+        settingsTabs["/settings/backup"] = true;
+      }
+    }
+
+    if (canInventory && (lowStock?.length ?? 0) > 0) nav["/inventory"] = true;
+
+    if (canUpdate && update?.updateAvailable) {
+      nav["/settings"] = true;
+      settingsTabs["/settings/updates"] = true;
+    }
+
+    // The newest backup failing is worth a nudge even if the notification was read.
+    if (canBackup && backups?.[0]?.status === "FAILED") {
       nav["/settings"] = true;
       settingsTabs["/settings/backup"] = true;
     }
-  }
 
-  if (canInventory && (lowStock?.length ?? 0) > 0) nav["/inventory"] = true;
-
-  if (canUpdate && update?.updateAvailable) {
-    nav["/settings"] = true;
-    settingsTabs["/settings/updates"] = true;
-  }
-
-  // The newest backup failing is worth a nudge even if the notification was read.
-  if (canBackup && backups?.[0]?.status === "FAILED") {
-    nav["/settings"] = true;
-    settingsTabs["/settings/backup"] = true;
-  }
-
-  return { nav, settingsTabs };
+    return { nav, settingsTabs };
+  }, [notifications, update, backups, lowStock, canInventory, canUpdate, canBackup]);
 }

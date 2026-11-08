@@ -2,7 +2,7 @@
 
 import { ChevronLeft, MonitorSmartphone, ShoppingCart } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { StatusNote, useNoteToast } from "@/components/ui/status-note";
 import { publishDisplay } from "@/lib/customer-display";
 import { BranchNotice } from "@/components/layout/branch-notice";
@@ -42,7 +42,7 @@ function PosPageInner() {
   const { note, clear: clearNote, toast } = useNoteToast();
   const floorsQuery = useFloors(branchId);
   const floors = floorsQuery.data;
-  const tables = floors?.flatMap((f) => f.tables) ?? [];
+  const tables = useMemo(() => floors?.flatMap((f) => f.tables) ?? [], [floors]);
   const preselectedTableId = useSearchParams().get("tableId") ?? "";
 
   const [lines, setLines] = useState<CartLine[]>([]);

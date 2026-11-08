@@ -35,8 +35,10 @@ export async function unlockAudio(): Promise<boolean> {
   const Ctx = ContextCtor();
   if (!Ctx) return false;
   try {
-    ctx ??= new Ctx();
-    ctx.addEventListener("statechange", emit);
+    if (!ctx) {
+      ctx = new Ctx();
+      ctx.addEventListener("statechange", emit);
+    }
     if (ctx.state !== "running") await ctx.resume();
   } catch {
     return false;

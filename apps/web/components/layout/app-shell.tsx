@@ -2,6 +2,8 @@
 
 import type { SessionUser } from "@modexsys/types";
 import { Menu } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { EntityDialogHost } from "@/components/layout/entity-dialog-host";
@@ -17,51 +19,55 @@ import { SidebarNav } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
 
 function sanitizeBrandName(name?: string | null): string {
-  if (!name) return "Modexsys HORECA";
+  if (!name) return "HORECA OS";
   const cleaned = name
-    .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "Modexsys HORECA")
-    .replace(/nodedr/gi, "Modexsys")
+    .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "HORECA OS")
+    .replace(/modexsys\s*horeca/gi, "HORECA OS")
+    .replace(/nodedr/gi, "HORECA OS")
     .replace(/\s*\(demo\)/gi, "")
     .replace(/bistro/gi, "")
     .trim();
-  return cleaned || "Modexsys HORECA";
+  return cleaned || "HORECA OS";
 }
 
 // The restaurant's own logo + name lead the sidebar header — this is
 // white-label SaaS platform, so the operator's branding takes the
-// prime spot an operator actually looks at. The Modexsys HORECA product
-// mark moves to a small credit line at the bottom (BrandFooter) instead of
-// competing with it up here. Falls back to the product mark only until the
-// restaurant sets its own logo/name under Settings.
+// prime spot an operator actually looks at.
 function RestaurantBrand() {
+  const pathname = usePathname();
   const { branchId } = useBranch();
   const { data } = useDisplaySettings(branchId);
   const restaurant = data?.restaurant;
   const brandName = sanitizeBrandName(restaurant?.name);
-
-  if (restaurant?.logoUrl) {
-    return (
-      <>
-        {/* eslint-disable-next-line @next/next/no-img-element -- uploaded asset served from the backend, not a Next-optimizable remote source */}
-        <img
-          src={restaurant.logoUrl}
-          alt={brandName}
-          className="h-8 w-8 shrink-0 rounded-lg object-contain"
-        />
-        <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
-          {brandName}
-        </span>
-      </>
-    );
-  }
+  const isDemo = pathname?.startsWith("/demo");
+  const homeHref = isDemo ? "/demo" : "/dashboard";
 
   return (
-    <>
-      <Logo />
-      <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
-        {brandName}
-      </span>
-    </>
+    <Link
+      href={homeHref}
+      className="group flex w-full items-center gap-3 py-1 transition-all duration-200 select-none hover:opacity-95 active:scale-[0.98]"
+      aria-label={`${brandName} Home`}
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.14)] border border-white/90 group-hover:scale-105 transition-transform overflow-hidden p-1">
+        {restaurant?.logoUrl ? (
+          <img
+            src={restaurant.logoUrl}
+            alt={brandName}
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <Logo size={22} />
+        )}
+      </div>
+      <div className="flex flex-col min-w-0">
+        <span className="truncate text-sm font-extrabold tracking-tight text-white drop-shadow-xs">
+          {brandName}
+        </span>
+        <span className="text-[10px] font-semibold text-rose-200/90 tracking-wide uppercase">
+          Cloud Platform
+        </span>
+      </div>
+    </Link>
   );
 }
 
@@ -92,9 +98,9 @@ export function AppShell({
         <div className="absolute right-10 -top-28 h-[420px] w-[580px] rounded-full bg-gradient-to-b from-[#881337]/24 via-[#9f1239]/14 to-transparent blur-3xl" />
       </div>
 
-      {/* Desktop floating island sidebar - crisp solid white with round corners */}
+      {/* Desktop floating island sidebar - crisp solid white with round corners, framed by rich maroon header & footer buttons */}
       <aside className="relative hidden w-64 shrink-0 my-3 ml-3 rounded-[28px] border border-slate-200/80 dark:border-border bg-white dark:bg-card shadow-sm lg:flex flex-col h-[calc(100vh-24px)] select-none overflow-hidden z-20">
-        <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-slate-100 dark:border-border/60">
+        <div className="flex h-16 shrink-0 items-center px-4 bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] border-b border-[#780c29]/60 shadow-[0_4px_12px_rgba(159,18,57,0.18)]">
           <RestaurantBrand />
         </div>
         <div className="shrink-0 px-3 py-3 border-b border-slate-100 dark:border-border/60">
@@ -103,16 +109,16 @@ export function AppShell({
         <div className="flex-1 overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <SidebarNav user={user} />
         </div>
-        <div className="shrink-0">
+        <div className="shrink-0 bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] border-t border-[#780c29]/60 shadow-[0_-4px_12px_rgba(159,18,57,0.14)]">
           <BrandFooter />
         </div>
       </aside>
 
-      {/* Mobile drawer - solid white */}
+      {/* Mobile drawer - solid white framed by rich maroon header & footer */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 bg-white dark:bg-card border-r border-slate-200/80 dark:border-border p-0 flex flex-col h-full">
+        <SheetContent side="left" className="w-72 bg-white dark:bg-card border-r border-slate-200/80 dark:border-border p-0 flex flex-col h-full overflow-hidden">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-slate-100 dark:border-border/60">
+          <div className="flex h-16 shrink-0 items-center px-4 bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] border-b border-[#780c29]/60 shadow-[0_4px_12px_rgba(159,18,57,0.18)]">
             <RestaurantBrand />
           </div>
           <div className="shrink-0 px-3 py-3 border-b border-slate-100 dark:border-border/60">
@@ -121,7 +127,7 @@ export function AppShell({
           <div className="flex-1 overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <SidebarNav user={user} onNavigate={() => setMobileOpen(false)} />
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] border-t border-[#780c29]/60 shadow-[0_-4px_12px_rgba(159,18,57,0.14)]">
             <BrandFooter />
           </div>
         </SheetContent>

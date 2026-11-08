@@ -81,13 +81,14 @@ export type DisplayBranch = Pick<
 >;
 
 function cleanBrandName(n?: string | null): string {
-  if (!n) return "Modexsys HORECA";
+  if (!n) return "HORECA OS";
   return n
-    .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "Modexsys HORECA")
-    .replace(/nodedr/gi, "Modexsys")
+    .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "HORECA OS")
+    .replace(/modexsys\s*horeca/gi, "HORECA OS")
+    .replace(/nodedr/gi, "HORECA OS")
     .replace(/\s*\(demo\)/gi, "")
     .replace(/bistro/gi, "")
-    .trim() || "Modexsys HORECA";
+    .trim() || "HORECA OS";
 }
 
 export function useDisplaySettings(branchId: string | null) {
@@ -115,8 +116,8 @@ export function useDisplaySettings(branchId: string | null) {
       return {
         restaurant: {
           id: "demo-restaurant",
-          name: cleanBrandName(customRestName) || "Modexsys HORECA",
-          legalName: `${cleanBrandName(customRestName) || "Modexsys HORECA"} Pvt Ltd`,
+          name: cleanBrandName(customRestName) || "HORECA OS",
+          legalName: `${cleanBrandName(customRestName) || "HORECA OS"} Pvt Ltd`,
           logoUrl: null,
           currency: "INR",
           timezone: "Asia/Kolkata",

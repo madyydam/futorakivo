@@ -61,14 +61,14 @@ export function BrandFooter() {
       <button
         type="button"
         onClick={() => setSupportOpen(true)}
-        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-border bg-slate-50/70 dark:bg-card group shadow-2xs"
+        className="flex w-full items-center gap-2.5 rounded-2xl p-2 text-left transition-all hover:bg-white dark:hover:bg-card hover:border-slate-300 hover:shadow-xs border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] group"
       >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/40 text-[#9f1239] dark:text-rose-400 group-hover:scale-105 transition-transform border border-rose-100 dark:border-rose-900/30 shadow-2xs">
           <Headphones className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-xs font-semibold text-sidebar-foreground truncate">
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
               Modexsys Support
             </span>
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />

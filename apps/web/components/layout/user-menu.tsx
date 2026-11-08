@@ -35,19 +35,19 @@ export function UserMenu({ user }: { user?: SessionUser }) {
   const [deleting, setDeleting] = useState(false);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2">
       <button
         type="button"
         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary"
+        className="flex h-8.5 w-8.5 items-center justify-center rounded-full border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-card hover:border-slate-300 transition-all"
         aria-label="Toggle theme"
       >
-        <Sun className="h-[18px] w-[18px] dark:hidden" />
-        <Moon className="hidden h-[18px] w-[18px] dark:block" />
+        <Sun className="h-4 w-4 dark:hidden" />
+        <Moon className="hidden h-4 w-4 dark:block" />
       </button>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-border/80 bg-white/90 dark:bg-card/90 pl-1.5 pr-2.5 py-1 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-card transition-colors shadow-2xs">
+        <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-border/80 bg-white/90 dark:bg-card/90 pl-1 pr-2.5 py-0.5 sm:py-1 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-card transition-colors shadow-2xs">
           <Avatar className="h-6 w-6">
             <AvatarFallback className="bg-[#9f1239] text-[10px] font-bold text-white">
               {user?.name ? initials(user.name) : "RO"}

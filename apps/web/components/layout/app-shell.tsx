@@ -128,23 +128,23 @@ export function AppShell({
       </Sheet>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        {/* Floating island top header - crisp solid white with round corners */}
-        <header className="mt-3 mr-3 ml-3 lg:ml-0 mb-1.5 flex h-14 sm:h-16 shrink-0 items-center justify-between rounded-[24px] border border-slate-200/80 dark:border-border bg-white dark:bg-card px-4 sm:px-6 shadow-sm z-20">
-          <div className="flex items-center gap-3">
+        {/* Floating island top header - crisp solid white with round corners, compact height & clear margin from sidebar */}
+        <header className="mt-3 mr-3 ml-3 mb-2 flex h-12 shrink-0 items-center justify-between rounded-[22px] border border-slate-200/80 dark:border-border bg-white dark:bg-card px-3.5 sm:px-5 shadow-sm z-20">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-card lg:hidden transition-all"
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-card lg:hidden transition-all"
               aria-label="Open navigation"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4.5 w-4.5" />
             </button>
-            <div className="flex items-center gap-2 rounded-full border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] px-3 py-1.5">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200/75 dark:border-border/60 bg-[#F7F4F3] dark:bg-slate-900/50 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] px-2.5 py-1">
               <span className="relative flex h-2 w-2" aria-hidden>
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300">
                 Live · {todayString}
               </span>
             </div>
@@ -157,7 +157,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 py-2 pb-24 sm:px-6 sm:py-3 sm:pb-24 lg:px-8 overscroll-contain">
+        <main className="flex-1 overflow-y-auto px-3 sm:px-4 lg:px-3 py-2 pb-24 sm:pb-24 overscroll-contain">
           {children}
         </main>
         <EntityDialogHost />

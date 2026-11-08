@@ -75,40 +75,44 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-        <div className="flex h-16 items-center gap-2 px-5">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Desktop sidebar with glassmorphism & independent scroll */}
+      <aside className="relative hidden w-64 shrink-0 flex-col border-r border-sidebar-border/60 bg-sidebar/70 backdrop-blur-2xl backdrop-saturate-150 shadow-lg shadow-black/[0.03] lg:flex h-full select-none">
+        <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/40">
           <RestaurantBrand />
         </div>
-        <div className="px-3 pb-3">
+        <div className="shrink-0 px-3 py-3 border-b border-sidebar-border/30">
           <BranchSwitcher />
         </div>
-        <div className="flex-1 overflow-y-auto py-2">
+        <div className="flex-1 overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <SidebarNav user={user} />
         </div>
-        <BrandFooter />
+        <div className="shrink-0 border-t border-sidebar-border/40">
+          <BrandFooter />
+        </div>
       </aside>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer with glassmorphism */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 bg-sidebar p-0">
+        <SheetContent side="left" className="w-72 bg-sidebar/85 backdrop-blur-2xl border-r border-sidebar-border/60 p-0 flex flex-col h-full">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <div className="flex h-16 items-center gap-2 px-5">
+          <div className="flex h-16 shrink-0 items-center gap-2 px-5 border-b border-sidebar-border/40">
             <RestaurantBrand />
           </div>
-          <div className="px-3 pb-3">
+          <div className="shrink-0 px-3 py-3 border-b border-sidebar-border/30">
             <BranchSwitcher />
           </div>
-          <div className="flex-1 overflow-y-auto py-2">
+          <div className="flex-1 overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <SidebarNav user={user} onNavigate={() => setMobileOpen(false)} />
           </div>
-          <BrandFooter />
+          <div className="shrink-0 border-t border-sidebar-border/40">
+            <BrandFooter />
+          </div>
         </SheetContent>
       </Sheet>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
+      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl sm:px-6 z-20">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -124,7 +128,7 @@ export function AppShell({
             <UserMenu user={user} />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 overscroll-contain">{children}</main>
         <EntityDialogHost />
       </div>
       <MobileBottomNav user={user} onMore={() => setMobileOpen(true)} />

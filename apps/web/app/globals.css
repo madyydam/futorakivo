@@ -322,6 +322,26 @@
   table {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Fine sleek theme scrollbars */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--primary), transparent 70%);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--primary), transparent 70%) transparent;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

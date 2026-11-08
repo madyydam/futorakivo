@@ -132,13 +132,7 @@ export default function DashboardPage() {
   const { data: trends, isLoading: trendsLoading } = useDashboardTrends(branchId, prefs.trendDays);
   const [viewingOrderId, setViewingOrderId] = useState<string | null>(null);
   const [customizing, setCustomizing] = useState(false);
-  const { data: me } = useCurrentUser();
   const [now] = useState(() => new Date());
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = (me?.user?.name ?? "").trim().split(/\s+/)[0];
-  const isDemoName = !firstName || /demo/i.test(firstName);
-  const titleText = isDemoName ? "Dashboard Overview" : `${greeting}, ${firstName}`;
   const today = now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
 
   // Layout only: where a widget sits and whether it shows. CSS `order` keeps
@@ -160,9 +154,6 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[32px] font-semibold tracking-tight text-foreground">
-            {titleText}
-          </h1>
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="relative flex h-2 w-2" aria-hidden>
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60 motion-reduce:animate-none" />

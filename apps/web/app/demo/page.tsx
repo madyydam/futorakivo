@@ -3,23 +3,96 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
+  AlertTriangle,
   ArrowUpRight,
+  CalendarPlus,
   ChefHat,
   ClipboardList,
   Flame,
   HandCoins,
+  LayoutGrid,
   ReceiptText,
-  Sparkles,
+  ShoppingCart,
   Store,
   TrendingUp,
+  UserRound,
+  Users,
   UtensilsCrossed,
   Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  accent,
+  href,
+  size = "default",
+  className,
+}: {
+  label: string;
+  value: string;
+  icon: typeof Wallet;
+  accent?: "success" | "warning";
+  href: string;
+  size?: "hero" | "default" | "compact";
+  className?: string;
+}) {
+  const hero = size === "hero";
+  const compact = size === "compact";
+  return (
+    <Link
+      href={href}
+      aria-label={`${label}: ${value}. Open details`}
+      className={cn(
+        "group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+        className,
+      )}
+    >
+      <Card
+        className={cn(
+          "flex h-full flex-col transition group-hover:border-primary/40 group-hover:shadow-md",
+          hero
+            ? "justify-between gap-6 border-success/25 bg-gradient-to-br from-success/10 via-card to-card p-6 sm:p-7"
+            : compact
+            ? "gap-2 p-4"
+            : "gap-3 p-4 sm:p-6",
+          accent === "warning" && !hero && "border-warning/40",
+        )}
+      >
+        <div className="flex items-center justify-between">
+          <span className={cn("font-medium text-muted-foreground", compact ? "text-xs" : "text-[13px]")}>
+            {label}
+          </span>
+          <div
+            className={cn(
+              "flex items-center justify-center rounded-xl",
+              compact ? "h-7 w-7" : "h-9 w-9",
+              accent === "success" && "bg-success/10 text-success",
+              accent === "warning" && "bg-warning/10 text-warning",
+              !accent && "bg-primary/10 text-primary",
+            )}
+          >
+            <Icon className={compact ? "h-4 w-4" : "h-[18px] w-[18px]"} />
+          </div>
+        </div>
+        <span
+          className={cn(
+            "font-semibold tabular-nums tracking-tight text-foreground",
+            hero ? "text-4xl sm:text-5xl" : compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl",
+          )}
+        >
+          {value}
+        </span>
+      </Card>
+    </Link>
+  );
+}
 
 interface DemoOrder {
   id: string;
@@ -42,388 +115,329 @@ const INITIAL_ORDERS: DemoOrder[] = [
 
 export default function DemoDashboardPage() {
   const [selectedOrder, setSelectedOrder] = useState<DemoOrder | null>(null);
+  const [now] = useState(() => new Date());
+  const today = now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Page Title & Onboarding CTA */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* Top Live Status exact same to same */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Restaurant Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Live overview for today · Connaught Place Branch · INR (₹)
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="relative flex h-2 w-2" aria-hidden>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60 motion-reduce:animate-none" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+            </span>
+            Live · {today}
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Link href="/demo/pos">
-            <Button className="h-9 gap-1.5 shadow-sm">
-              <UtensilsCrossed className="size-4" />
-              Open POS Register
-            </Button>
-          </Link>
-          <Link href="/onboarding">
-            <Button variant="outline" className="h-9 gap-1.5 border-amber-500/40 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400">
-              <Sparkles className="size-4" />
-              Setup My Restaurant
-            </Button>
-          </Link>
-        </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {/* Revenue */}
-        <Card className="col-span-2 border-border/60 bg-gradient-to-br from-card to-card/50 shadow-sm sm:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Today&apos;s Revenue
-            </CardTitle>
-            <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
-              <Wallet className="size-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold tracking-tight">₹48,250</div>
-            <p className="mt-1 flex items-center text-xs text-emerald-600 dark:text-emerald-400">
-              <TrendingUp className="mr-1 size-3" />
-              +14% vs yesterday
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Total Orders */}
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Today&apos;s Orders
-            </CardTitle>
-            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
-              <ReceiptText className="size-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold tracking-tight">42</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              31 Dine-in · 7 Takeaway · 4 QR
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Occupied Tables */}
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Active Tables
-            </CardTitle>
-            <div className="rounded-lg bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
-              <Store className="size-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold tracking-tight">8 / 16</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              50% floor occupancy right now
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Kitchen Queue */}
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Kitchen Queue
-            </CardTitle>
-            <div className="rounded-lg bg-rose-500/10 p-2 text-rose-600 dark:text-rose-400">
-              <Flame className="size-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold tracking-tight">5 tickets</div>
-            <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">
-              Avg. prep time: 11 mins
-            </p>
-          </CardContent>
-        </Card>
+      {/* Quick Actions exact same */}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" render={<Link href="/demo/pos" />}>
+          <ShoppingCart className="h-4 w-4" />
+          New order
+        </Button>
+        <Button variant="outline" size="sm" render={<Link href="/demo/tables" />}>
+          <LayoutGrid className="h-4 w-4" />
+          Tables
+        </Button>
+        <Button variant="outline" size="sm" render={<Link href="/demo/kds" />}>
+          <ChefHat className="h-4 w-4" />
+          Kitchen display
+        </Button>
+        <Button variant="outline" size="sm" render={<Link href="/demo/menu" />}>
+          <UtensilsCrossed className="h-4 w-4" />
+          Menu
+        </Button>
       </div>
 
-      {/* Quick Action Hub */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Link href="/demo/pos" className="group rounded-xl border border-border/80 bg-card p-4 transition-all hover:border-primary hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary group-hover:scale-105 transition-transform">
-              <UtensilsCrossed className="size-5" />
-            </div>
-            <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-          <h3 className="mt-3 font-semibold text-sm">POS Terminal</h3>
-          <p className="text-xs text-muted-foreground">Fast order punching &amp; billing</p>
-        </Link>
-
-        <Link href="/demo/kds" className="group rounded-xl border border-border/80 bg-card p-4 transition-all hover:border-primary hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="rounded-lg bg-rose-500/10 p-2 text-rose-600 group-hover:scale-105 transition-transform">
-              <ChefHat className="size-5" />
-            </div>
-            <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-          <h3 className="mt-3 font-semibold text-sm">Kitchen KDS</h3>
-          <p className="text-xs text-muted-foreground">Cook orders &amp; ticket timers</p>
-        </Link>
-
-        <Link href="/demo/tables" className="group rounded-xl border border-border/80 bg-card p-4 transition-all hover:border-primary hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="rounded-lg bg-amber-500/10 p-2 text-amber-600 group-hover:scale-105 transition-transform">
-              <Store className="size-5" />
-            </div>
-            <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-          <h3 className="mt-3 font-semibold text-sm">Table Layout</h3>
-          <p className="text-xs text-muted-foreground">Floors, seating &amp; QR tokens</p>
-        </Link>
-
-        <Link href="/demo/menu" className="group rounded-xl border border-border/80 bg-card p-4 transition-all hover:border-primary hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 group-hover:scale-105 transition-transform">
-              <ClipboardList className="size-5" />
-            </div>
-            <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-          <h3 className="mt-3 font-semibold text-sm">Menu Catalog</h3>
-          <p className="text-xs text-muted-foreground">Dishes, modifiers &amp; prices</p>
-        </Link>
+      {/* Top 4 KPI Cards Grid */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5 [&>a:last-child:nth-child(odd)]:col-span-2 xl:[&>a:last-child:nth-child(odd)]:col-span-1">
+        <StatCard
+          label="Today's Revenue"
+          value="₹84,250"
+          icon={Wallet}
+          accent="success"
+          href="/demo/reports"
+          size="hero"
+          className="col-span-2 xl:col-span-2"
+        />
+        <StatCard
+          label="Today's Orders"
+          value="142"
+          icon={ReceiptText}
+          href="/demo/orders"
+        />
+        <StatCard
+          label="Occupied Tables"
+          value="5"
+          icon={ClipboardList}
+          href="/demo/tables"
+        />
+        <StatCard
+          label="Kitchen Queue"
+          value="4"
+          icon={Flame}
+          accent="warning"
+          href="/demo/kds"
+          className="col-span-2 xl:col-span-1"
+        />
       </div>
 
-      {/* Middle Section: 7-Day Revenue Trend & Channel Breakdown */}
+      {/* Attention Strip */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5 [&>a:last-child:nth-child(odd)]:col-span-2 xl:[&>a:last-child:nth-child(odd)]:col-span-1">
+        <StatCard
+          size="compact"
+          label="Pending payments"
+          value="2 · ₹2,840"
+          icon={HandCoins}
+          accent="warning"
+          href="/demo/orders"
+        />
+        <StatCard
+          size="compact"
+          label="Low stock items"
+          value="3"
+          icon={AlertTriangle}
+          accent="warning"
+          href="/demo/menu"
+        />
+        <StatCard
+          size="compact"
+          label="Active customers"
+          value="248"
+          icon={Users}
+          href="/demo/orders"
+        />
+        <StatCard
+          size="compact"
+          label="Team on duty"
+          value="8"
+          icon={UserRound}
+          href="/demo"
+        />
+      </div>
+
+      {/* Two Column Layout: Charts & Live Operations */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Trend Bar Chart */}
-        <Card className="lg:col-span-2 border-border/60 shadow-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold">Weekly Sales Volume</CardTitle>
-                <CardDescription>Daily revenue past 7 days (INR)</CardDescription>
+        {/* Left Column: Revenue Trend Chart */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-border/60 p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-4 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="size-4 text-emerald-600" />
+                <h3 className="font-semibold text-sm">Revenue — Last 7 Days</h3>
               </div>
               <Badge variant="outline" className="text-xs font-mono">
-                Total: ₹3.12 Lakhs
+                Average ₹76,400/day
               </Badge>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex h-52 items-end gap-3 pt-6">
+
+            {/* Simulated 7-day Bar Chart */}
+            <div className="mt-6 flex h-48 items-end justify-between gap-2 pt-4">
               {[
-                { day: "Mon", amount: 38000, height: "65%" },
-                { day: "Tue", amount: 41000, height: "70%" },
-                { day: "Wed", amount: 36500, height: "60%" },
-                { day: "Thu", amount: 45000, height: "78%" },
-                { day: "Fri", amount: 56000, height: "92%" },
-                { day: "Sat", amount: 62000, height: "100%" },
-                { day: "Sun", amount: 48250, height: "82%" },
+                { day: "Mon", amount: 62000, height: "60%" },
+                { day: "Tue", amount: 68000, height: "65%" },
+                { day: "Wed", amount: 74000, height: "72%" },
+                { day: "Thu", amount: 71000, height: "70%" },
+                { day: "Fri", amount: 89000, height: "86%" },
+                { day: "Sat", amount: 104000, height: "100%" },
+                { day: "Today", amount: 84250, height: "82%", current: true },
               ].map((bar) => (
-                <div key={bar.day} className="flex flex-1 flex-col items-center gap-2">
-                  <span className="text-[11px] font-mono text-muted-foreground">₹{Math.round(bar.amount / 1000)}k</span>
-                  <div className="relative w-full rounded-t-md bg-muted/60 overflow-hidden flex items-end h-36">
-                    <div
-                      className="w-full rounded-t-md bg-primary transition-all duration-500 hover:opacity-85"
-                      style={{ height: bar.height }}
-                    />
-                  </div>
-                  <span className="text-xs font-medium text-foreground">{bar.day}</span>
+                <div key={bar.day} className="flex flex-1 flex-col items-center gap-2 group cursor-pointer">
+                  <span className="text-[10px] font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    ₹{(bar.amount / 1000).toFixed(0)}k
+                  </span>
+                  <div
+                    className={cn(
+                      "w-full max-w-[48px] rounded-t-md transition-all group-hover:opacity-80",
+                      bar.current ? "bg-primary shadow-sm" : "bg-emerald-500/70 dark:bg-emerald-600/70",
+                    )}
+                    style={{ height: bar.height }}
+                  />
+                  <span className={cn("text-xs font-medium", bar.current ? "font-bold text-primary" : "text-muted-foreground")}>
+                    {bar.day}
+                  </span>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </Card>
 
-        {/* Revenue by Payment Method */}
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Payment Methods</CardTitle>
-            <CardDescription>Collection split today</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div>
-              <div className="flex justify-between text-xs mb-1.5 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-emerald-500" /> UPI Dynamic QR
-                </span>
-                <span>68% (₹32,810)</span>
+          {/* Recent Orders Table */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-border/50 bg-muted/20">
+              <div className="flex items-center gap-2">
+                <ReceiptText className="size-4 text-primary" />
+                <h3 className="font-semibold text-sm">Live Order Stream</h3>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: "68%" }} />
-              </div>
+              <Link href="/demo/orders" className="text-xs text-primary font-medium hover:underline">
+                View all orders →
+              </Link>
             </div>
 
-            <div>
-              <div className="flex justify-between text-xs mb-1.5 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-amber-500" /> Cash
-                </span>
-                <span>24% (₹11,580)</span>
+            <div className="divide-y divide-border/40 text-xs">
+              {INITIAL_ORDERS.map((order) => (
+                <div
+                  key={order.id}
+                  onClick={() => setSelectedOrder(order)}
+                  className="flex items-center justify-between p-3.5 hover:bg-muted/30 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-foreground font-mono">{order.orderNumber}</span>
+                      <span className="text-[11px] text-muted-foreground">{order.time}</span>
+                    </div>
+                    <div className="hidden sm:block">
+                      <span className="font-medium text-foreground">{order.table}</span>
+                      <p className="text-[11px] text-muted-foreground truncate max-w-[240px]">{order.items}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold text-sm text-foreground">₹{order.total}</span>
+                    <Badge
+                      variant={order.status === "PAID" ? "outline" : "secondary"}
+                      className={cn(
+                        "text-[10px] font-medium",
+                        order.status === "PAID" && "bg-emerald-600 text-white hover:bg-emerald-700",
+                        order.status === "PREPARING" && "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+                        order.status === "READY" && "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+                      )}
+                    >
+                      {order.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* Right Column: Live Table Status & Top Dishes */}
+        <div className="space-y-6">
+          {/* Floor Status Card */}
+          <Card className="border-border/60 p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <Store className="size-4 text-primary" />
+                <h3 className="font-semibold text-sm">Live Tables Occupancy</h3>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: "24%" }} />
-              </div>
+              <Link href="/demo/tables" className="text-xs text-primary font-medium hover:underline">
+                Floor Plan →
+              </Link>
             </div>
 
-            <div>
-              <div className="flex justify-between text-xs mb-1.5 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-blue-500" /> Credit/Debit Card
-                </span>
-                <span>8% (₹3,860)</span>
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              {[
+                { name: "T-1", status: "OCCUPIED" },
+                { name: "T-2", status: "BILLED" },
+                { name: "T-3", status: "AVAILABLE" },
+                { name: "T-4", status: "OCCUPIED" },
+                { name: "T-5", status: "AVAILABLE" },
+                { name: "T-6", status: "AVAILABLE" },
+                { name: "T-7", status: "RESERVED" },
+                { name: "T-8", status: "AVAILABLE" },
+                { name: "T-9", status: "OCCUPIED" },
+                { name: "T-10", status: "AVAILABLE" },
+                { name: "T-11", status: "BILLED" },
+                { name: "T-12", status: "AVAILABLE" },
+              ].map((table) => (
+                <Link
+                  key={table.name}
+                  href="/demo/tables"
+                  className={cn(
+                    "flex flex-col items-center justify-center rounded-lg p-2 text-center text-xs border transition-transform hover:scale-105",
+                    table.status === "OCCUPIED" && "bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300 font-bold",
+                    table.status === "BILLED" && "bg-blue-500/10 border-blue-500/40 text-blue-700 dark:text-blue-300 font-bold",
+                    table.status === "RESERVED" && "bg-purple-500/10 border-purple-500/40 text-purple-700 dark:text-purple-300",
+                    table.status === "AVAILABLE" && "bg-muted/40 border-border text-muted-foreground",
+                  )}
+                >
+                  <span className="font-mono text-xs">{table.name}</span>
+                  <span className="text-[9px] uppercase tracking-wider">{table.status.slice(0, 3)}</span>
+                </Link>
+              ))}
+            </div>
+          </Card>
+
+          {/* Top Selling Items */}
+          <Card className="border-border/60 p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <ChefHat className="size-4 text-primary" />
+                <h3 className="font-semibold text-sm">Top Velocity Dishes</h3>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: "8%" }} />
-              </div>
+              <Link href="/demo/menu" className="text-xs text-primary font-medium hover:underline">
+                Menu →
+              </Link>
             </div>
 
-            <div className="mt-3 rounded-lg border border-border/80 bg-muted/30 p-3 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">GST Summary:</span> CGST ₹1,148 + SGST ₹1,148 calculated on tax-inclusive billing.
+            <div className="mt-4 space-y-3 text-xs">
+              {[
+                { name: "Dal Makhani (Slow-Cooked)", qty: 48, revenue: "₹15,360" },
+                { name: "Butter Chicken", qty: 34, revenue: "₹14,280" },
+                { name: "Butter Naan", qty: 142, revenue: "₹9,230" },
+                { name: "Paneer Tikka (Tandoori)", qty: 29, revenue: "₹8,410" },
+                { name: "Sweet Lassi (Kulhad)", qty: 45, revenue: "₹4,950" },
+              ].map((dish, i) => (
+                <div key={dish.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-5 items-center justify-center rounded-full bg-muted font-bold text-[10px]">
+                      {i + 1}
+                    </span>
+                    <span className="font-medium text-foreground">{dish.name}</span>
+                  </div>
+                  <span className="font-mono font-semibold text-foreground">{dish.revenue}</span>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
 
-      {/* Live Recent Transactions */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-semibold">Live Orders &amp; Billing Stream</CardTitle>
-            <CardDescription>Click any order to preview invoice &amp; item breakdown</CardDescription>
-          </div>
-          <Link href="/demo/orders">
-            <Button variant="ghost" size="sm" className="text-xs">
-              View All Orders →
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border/80 text-xs font-medium uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2.5 px-3">Order #</th>
-                  <th className="py-2.5 px-3">Table / Channel</th>
-                  <th className="py-2.5 px-3">Items Summary</th>
-                  <th className="py-2.5 px-3">Time</th>
-                  <th className="py-2.5 px-3">Total</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {INITIAL_ORDERS.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="hover:bg-muted/40 transition-colors cursor-pointer"
-                    onClick={() => setSelectedOrder(order)}
-                  >
-                    <td className="py-3 px-3 font-mono font-medium text-foreground">
-                      {order.orderNumber}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="font-medium text-foreground">{order.table}</span>
-                      <span className="block text-xs text-muted-foreground capitalize">
-                        {order.type.toLowerCase().replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 max-w-xs truncate text-muted-foreground">
-                      {order.items}
-                    </td>
-                    <td className="py-3 px-3 text-xs text-muted-foreground">
-                      {order.time}
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-foreground">
-                      ₹{order.total}
-                    </td>
-                    <td className="py-3 px-3">
-                      <Badge
-                        variant={
-                          order.status === "PAID"
-                            ? "default"
-                            : order.status === "READY"
-                              ? "outline"
-                              : "secondary"
-                        }
-                        className={cn(
-                          "text-[10px] font-medium",
-                          order.status === "PAID" && "bg-emerald-600 text-white hover:bg-emerald-700",
-                          order.status === "PREPARING" && "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
-                          order.status === "READY" && "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
-                        )}
-                      >
-                        {order.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOrder(order);
-                        }}
-                      >
-                        Inspect
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Click-to-Inspect Order Modal */}
-      {selectedOrder && (
-        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+      {/* Order Inspect Dialog */}
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        {selectedOrder && (
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <div className="flex items-center justify-between">
-                <DialogTitle className="text-lg font-bold">
-                  {selectedOrder.orderNumber}
-                </DialogTitle>
-                <Badge>{selectedOrder.status}</Badge>
-              </div>
+              <DialogTitle className="flex items-center gap-2">
+                <ReceiptText className="size-5 text-primary" />
+                {selectedOrder.orderNumber} · {selectedOrder.table}
+              </DialogTitle>
               <DialogDescription>
-                {selectedOrder.table} · {selectedOrder.time} · Simulated Order
+                Placed {selectedOrder.time} · Status: {selectedOrder.status}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex flex-col gap-3 py-3 border-y border-border/80">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Ordered Items
-              </h4>
-              <p className="text-sm font-medium leading-relaxed">{selectedOrder.items}</p>
-            </div>
+            <div className="space-y-3 py-2 text-xs">
+              <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                <p className="font-semibold text-muted-foreground mb-1">Items in this ticket:</p>
+                <p className="text-foreground leading-relaxed">{selectedOrder.items}</p>
+              </div>
 
-            <div className="flex flex-col gap-1.5 text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span>₹{(selectedOrder.total * 0.952).toFixed(2)}</span>
+              <div className="flex justify-between items-center border-t border-border/60 pt-2 text-sm font-bold">
+                <span>Total Amount:</span>
+                <span className="text-primary font-mono">₹{selectedOrder.total}</span>
               </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>GST (5% Inclusive)</span>
-                <span>₹{(selectedOrder.total * 0.048).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
-                <span>Grand Total</span>
-                <span className="text-primary">₹{selectedOrder.total}</span>
-              </div>
-            </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedOrder(null)}>
-                Close
-              </Button>
-              <Link href="/demo/pos">
-                <Button size="sm">Open in POS</Button>
-              </Link>
+              <div className="flex gap-2 pt-2">
+                <Link href="/demo/pos" className="flex-1">
+                  <Button variant="outline" className="w-full text-xs">
+                    Open POS
+                  </Button>
+                </Link>
+                <Link href="/demo/orders" className="flex-1">
+                  <Button className="w-full text-xs font-semibold">
+                    View Full Invoice
+                  </Button>
+                </Link>
+              </div>
             </div>
           </DialogContent>
-        </Dialog>
-      )}
+        )}
+      </Dialog>
     </div>
   );
 }

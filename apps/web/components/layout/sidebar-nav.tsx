@@ -10,6 +10,16 @@ import { useNavBadges } from "@/hooks/use-nav-badges";
 import { NavDot } from "./nav-dot";
 import { NAV_ITEMS } from "./nav-items";
 
+const DEMO_ROUTE_MAP: Record<string, string> = {
+  "/dashboard": "/demo",
+  "/pos": "/demo/pos",
+  "/kds": "/demo/kds",
+  "/tables": "/demo/tables",
+  "/orders": "/demo/orders",
+  "/menu": "/demo/menu",
+  "/reports": "/demo/reports",
+};
+
 export function SidebarNav({
   user,
   onNavigate,
@@ -20,17 +30,23 @@ export function SidebarNav({
   const pathname = usePathname();
   const { t } = useI18n();
   const badges = useNavBadges();
+  const isDemoMode = Boolean(pathname?.startsWith("/demo"));
 
   return (
     <nav className="flex flex-col gap-1 px-3">
       {NAV_ITEMS.filter((item) => !item.permission || hasPermission(user, item.permission)).map(
         (item) => {
-          const isActive = pathname?.startsWith(item.href);
+          const href = isDemoMode && DEMO_ROUTE_MAP[item.href] ? DEMO_ROUTE_MAP[item.href] : item.href;
+          const isActive = isDemoMode
+            ? item.href === "/dashboard"
+              ? pathname === "/demo"
+              : pathname?.startsWith(DEMO_ROUTE_MAP[item.href] ?? item.href)
+            : pathname?.startsWith(item.href);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",

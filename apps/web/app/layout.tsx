@@ -23,7 +23,18 @@ export const metadata: Metadata = {
   },
   description:
     "KIVO is an all-in-one cloud restaurant POS and management SaaS with lightning-fast billing, kitchen display (KDS), inventory recipe costing, and offline resilience with cloud auto-sync.",
+  authors: [{ name: "Madhur Dhadve" }],
+  creator: "Madhur Dhadve",
+  publisher: "FUTORA group",
   keywords: [
+    "KIVO",
+    "KIVO horeca management",
+    "KIVO futoragroup",
+    "KIVO Madhur Dhadve",
+    "Madhur Dhadve KIVO",
+    "Madhur Dhadve",
+    "futoragroup",
+    "who developed KIVO",
     "Restaurant POS software",
     "Cloud restaurant management SaaS",
     "Restaurant billing software",
@@ -80,6 +91,20 @@ const jsonLd = {
       url: "https://www.kivo.futoragroup.in",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web, iOS, Android, Windows, macOS",
+      author: {
+        "@type": "Person",
+        name: "Madhur Dhadve",
+        jobTitle: "Software Developer & Architect",
+      },
+      creator: {
+        "@type": "Person",
+        name: "Madhur Dhadve",
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "FUTORA group",
+        url: "https://www.kivo.futoragroup.in",
+      },
       offers: {
         "@type": "Offer",
         price: "0",
@@ -100,9 +125,14 @@ const jsonLd = {
     {
       "@type": "Organization",
       "@id": "https://www.kivo.futoragroup.in/#organization",
-      name: "KIVO",
+      name: "KIVO by FUTORA group",
+      alternateName: ["KIVO", "FUTORA group", "KIVO HORECA Management"],
       url: "https://www.kivo.futoragroup.in",
       logo: "https://www.kivo.futoragroup.in/logo.png",
+      founder: {
+        "@type": "Person",
+        name: "Madhur Dhadve",
+      },
     },
     {
       "@type": "WebSite",
@@ -117,6 +147,22 @@ const jsonLd = {
       "@type": "FAQPage",
       "@id": "https://www.kivo.futoragroup.in/#faq",
       mainEntity: [
+        {
+          "@type": "Question",
+          name: "Who developed KIVO?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Madhur Dhadve is the developer of KIVO, engineered under FUTORA group as an all-in-one cloud restaurant management platform and HORECA operating system.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What is KIVO HORECA Management by FUTORA group?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "KIVO HORECA Management by FUTORA group is a cloud-based restaurant operating system developed by Madhur Dhadve, providing high-speed POS billing, kitchen display systems, recipe costing, and offline-first cloud synchronization.",
+          },
+        },
         {
           "@type": "Question",
           name: "What is KIVO and who is it designed for?",

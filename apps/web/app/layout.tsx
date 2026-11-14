@@ -16,8 +16,50 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KIVO — Cloud Restaurant Management Platform & POS",
-  description: "KIVO — All-in-one cloud-based SaaS restaurant management platform and POS with offline resilience, kitchen display, and automatic sync.",
+  metadataBase: new URL("https://kivo.futora.com"),
+  title: {
+    default: "KIVO — Cloud Restaurant Management Platform & POS",
+    template: "%s | KIVO",
+  },
+  description:
+    "KIVO is an all-in-one cloud restaurant POS and management SaaS with lightning-fast billing, kitchen display (KDS), inventory recipe costing, and offline resilience with cloud auto-sync.",
+  keywords: [
+    "Restaurant POS software",
+    "Cloud restaurant management SaaS",
+    "Restaurant billing software",
+    "Kitchen Display System KDS",
+    "Petpooja alternative",
+    "Restaurant inventory management",
+    "Offline POS with cloud sync",
+    "QSR billing software",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "KIVO — Cloud Restaurant Management Platform & POS",
+    description:
+      "All-in-one cloud restaurant management SaaS and POS with offline resilience, kitchen display, and automatic sync.",
+    url: "https://kivo.futora.com",
+    siteName: "KIVO",
+    images: [
+      {
+        url: "/brand-lockup.png",
+        width: 1200,
+        height: 630,
+        alt: "KIVO Cloud Restaurant Management Platform",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KIVO — Cloud Restaurant Management Platform & POS",
+    description:
+      "All-in-one cloud restaurant management SaaS and POS with offline resilience, kitchen display, and automatic sync.",
+    images: ["/brand-lockup.png"],
+  },
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],
@@ -26,6 +68,52 @@ export const metadata: Metadata = {
   verification: {
     google: "hECFKBPwQf_lW-vfcqA7_xYodGYNUmu8DGNz89EvjGY",
   },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://kivo.futora.com/#software",
+      name: "KIVO",
+      url: "https://kivo.futora.com",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, iOS, Android, Windows, macOS",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "INR",
+        description: "Free trial available",
+      },
+      description:
+        "All-in-one cloud restaurant POS and management SaaS featuring fast billing, kitchen display system (KDS), inventory recipe management, and offline resilience with cloud auto-sync.",
+      featureList: [
+        "Cloud Restaurant POS Billing",
+        "Kitchen Display System (KDS)",
+        "Inventory & Recipe Costing",
+        "Offline-First Auto Sync",
+        "Table Management & Floor Layout",
+        "GST Invoicing & Analytics",
+      ],
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://kivo.futora.com/#organization",
+      name: "KIVO",
+      url: "https://kivo.futora.com",
+      logo: "https://kivo.futora.com/logo.png",
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://kivo.futora.com/#website",
+      url: "https://kivo.futora.com",
+      name: "KIVO",
+      publisher: {
+        "@id": "https://kivo.futora.com/#organization",
+      },
+    },
+  ],
 };
 
 export const viewport: Viewport = {
@@ -45,6 +133,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <AppProviders>{children}</AppProviders>
       </body>

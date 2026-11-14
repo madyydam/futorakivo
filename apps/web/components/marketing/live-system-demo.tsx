@@ -144,7 +144,7 @@ export function LiveSystemDemo() {
           Interactive System Walkthrough · Cloud SaaS &amp; Offline Sync
         </div>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Watch KIVO - HORECA management simplified in Live Action
+          Watch KIVO in Live Action
         </h2>
         <p className="mt-3 text-base text-muted-foreground sm:text-lg">
           Simulating real operations: watch the operator cursor place an order on Table 4, fire KOT to the kitchen, and update billing in real time.
@@ -196,7 +196,7 @@ export function LiveSystemDemo() {
             <span className="size-2.5 rounded-full bg-warning/60" />
             <span className="size-2.5 rounded-full bg-success/60" />
             <span className="ml-2 font-mono text-xs text-muted-foreground hidden sm:inline-block">
-              https://kivo.futora.com/dashboard
+              https://www.kivo.futoragroup.in/dashboard
             </span>
           </div>
 
@@ -219,7 +219,7 @@ export function LiveSystemDemo() {
               <div className="flex items-center gap-2 px-1 py-0.5">
                 <Logo size={22} />
                 <span className="text-xs font-bold tracking-tight text-foreground">
-                  FUTORA group <span className="text-primary font-semibold">HORECA</span>
+                  KIVO
                 </span>
               </div>
 
@@ -275,7 +275,7 @@ export function LiveSystemDemo() {
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-3">
                 <div ref={overviewRef}>
                   <h3 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
-                    Good afternoon, Madhur
+                    Good afternoon, Manager
                   </h3>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="size-1.5 rounded-full bg-emerald-500" />

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PosMockup } from "@/components/marketing/pos-mockup";
 import { useCurrentUser } from "@/hooks/use-auth";
 
-const words = ["All-in-one", "cloud", "platform", "for", "restaurants."];
+const words = ["Software", "for", "restaurant", "management,", "simplified."];
 
 export function Hero() {
   const { data: userData } = useCurrentUser();
@@ -33,7 +33,7 @@ export function Hero() {
               className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary"
             >
               <span className="size-2 rounded-full bg-primary animate-pulse" />
-              KIVO · All-in-One Restaurant Management POS &amp; SaaS
+              KIVO · Restaurant Management Simplified
             </motion.div>
 
             <h1 className="mt-4 flex flex-wrap justify-center gap-x-2.5 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:justify-start lg:text-5xl xl:text-6xl leading-[1.1]">
@@ -43,7 +43,7 @@ export function Hero() {
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                  className={word === "restaurants." ? "text-primary font-bold" : undefined}
+                  className={word === "simplified." ? "text-primary font-bold" : undefined}
                 >
                   {word}
                 </motion.span>
@@ -57,8 +57,7 @@ export function Hero() {
               transition={{ duration: 0.35, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
             >
-              Cloud POS, kitchen display, and billing for restaurants and cafés.
-              Works offline, syncs automatically.
+              All-in-one cloud software for restaurant management: 3-tap POS billing, kitchen display (KDS), recipe inventory, and offline resilience with cloud auto-sync.
             </motion.p>
 
             <motion.div

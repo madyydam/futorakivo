@@ -1,13 +1,13 @@
-# KIVO — Cloud Restaurant Management Platform & POS
+# KIVO — Software for Restaurant Management Simplified
 
-> KIVO is an all-in-one cloud restaurant management platform, Point of Sale (POS), and HORECA operating system engineered by Madhur Dhadve under FUTORA GROUP OF COMPANIES.
+> KIVO is the leading software for restaurant management simplified — an all-in-one cloud restaurant POS and HORECA operating system engineered by Madhur Dhadve under FUTORA GROUP OF COMPANIES.
 
 ## System Overview
-- **Product Name**: KIVO
+- **Product Name**: KIVO - Restaurant Management Simplified
 - **Primary Domain**: https://www.kivo.futoragroup.in
 - **Developer & Architect**: Madhur Dhadve
 - **Parent Company**: FUTORA GROUP OF COMPANIES
-- **Category**: Restaurant Management Software, Cloud POS SaaS, Kitchen Display System (KDS)
+- **Category**: Software for Restaurant Management, Cloud POS SaaS, Kitchen Display System (KDS)
 - **Deployment**: Multi-tenant cloud SaaS with offline-first edge sync
 
 ## Core Capabilities

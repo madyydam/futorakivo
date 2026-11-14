@@ -73,11 +73,10 @@ export function Features() {
     <section id="features" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <Reveal className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Everything a real HORECA operation needs
+          Software for Restaurant Management Simplified
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Not a retail POS bolted onto a restaurant — purpose-built for
-          fine dining, cafés, quick service, bars, and cloud kitchens.
+          Purpose-built for fine dining, cafés, quick service counters (QSR), bars, and multi-brand cloud kitchens.
         </p>
       </Reveal>
 

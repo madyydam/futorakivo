@@ -19,15 +19,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.kivo.futoragroup.in"),
   title: {
-    default: "KIVO — Cloud Restaurant Management Platform & POS",
-    template: "%s | KIVO",
+    default: "KIVO — Software for Restaurant Management Simplified",
+    template: "%s | KIVO — Restaurant Management Simplified",
   },
   description:
-    "KIVO is an all-in-one cloud restaurant POS and management SaaS with lightning-fast billing, kitchen display (KDS), inventory recipe costing, and offline resilience with cloud auto-sync.",
+    "KIVO is the leading software for restaurant management simplified. All-in-one cloud restaurant POS and management SaaS with lightning-fast billing, kitchen display (KDS), inventory recipe costing, and offline resilience with cloud auto-sync.",
   authors: [{ name: "Madhur Dhadve" }],
   creator: "Madhur Dhadve",
   publisher: "FUTORA GROUP OF COMPANIES",
   keywords: [
+    "software for restaurant management",
+    "restaurant management simplified",
+    "KIVO - restaurant management simplified",
     "KIVO",
     "KIVO horeca management",
     "KIVO futoragroup",
@@ -37,6 +40,8 @@ export const metadata: Metadata = {
     "futoragroup",
     "FUTORA GROUP OF COMPANIES",
     "who developed KIVO",
+    "best software for restaurant management",
+    "restaurant management software",
     "Restaurant POS software",
     "Cloud restaurant management SaaS",
     "Restaurant billing software",
@@ -52,17 +57,17 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "KIVO — Cloud Restaurant Management Platform & POS",
+    title: "KIVO — Software for Restaurant Management Simplified",
     description:
-      "All-in-one cloud restaurant POS SaaS with lightning-fast billing, multi-station KDS, recipe costing, and offline auto-sync.",
+      "The all-in-one software for restaurant management simplified: sub-second POS billing, multi-station KDS, recipe costing, and offline auto-sync.",
     url: "https://www.kivo.futoragroup.in",
-    siteName: "KIVO",
+    siteName: "KIVO - Restaurant Management Simplified",
     images: [
       {
         url: "/brand-lockup.png",
         width: 1200,
         height: 630,
-        alt: "KIVO Cloud Restaurant Management Platform",
+        alt: "KIVO - Software for Restaurant Management Simplified",
       },
     ],
     locale: "en_US",
@@ -70,9 +75,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "KIVO — Cloud Restaurant Management Platform & POS",
+    title: "KIVO — Software for Restaurant Management Simplified",
     description:
-      "All-in-one cloud restaurant management SaaS and POS with offline resilience, kitchen display, and automatic sync.",
+      "The all-in-one software for restaurant management simplified with offline resilience, kitchen display, and automatic sync.",
     images: ["/brand-lockup.png"],
   },
   manifest: "/manifest.json",
@@ -91,9 +96,16 @@ const jsonLd = {
     {
       "@type": "SoftwareApplication",
       "@id": "https://www.kivo.futoragroup.in/#software",
-      name: "KIVO",
+      name: "KIVO - Restaurant Management Simplified",
+      alternateName: [
+        "KIVO",
+        "Software for Restaurant Management",
+        "KIVO Restaurant Management",
+        "KIVO - Restaurant Management Simplified",
+        "FUTORA GROUP OF COMPANIES KIVO"
+      ],
       url: "https://www.kivo.futoragroup.in",
-      applicationCategory: "BusinessApplication",
+      applicationCategory: "RestaurantManagementSoftware",
       operatingSystem: "Web, iOS, Android, Windows, macOS",
       author: {
         "@type": "Person",
@@ -116,8 +128,9 @@ const jsonLd = {
         description: "Free trial available",
       },
       description:
-        "All-in-one cloud restaurant POS and management SaaS featuring fast billing, kitchen display system (KDS), inventory recipe management, and offline resilience with cloud auto-sync.",
+        "KIVO is the leading cloud software for restaurant management simplified. Featuring fast billing, kitchen display system (KDS), inventory recipe management, and offline resilience with cloud auto-sync.",
       featureList: [
+        "Software for Restaurant Management Simplified",
         "Cloud Restaurant POS Billing",
         "Kitchen Display System (KDS)",
         "Inventory & Recipe Costing",
@@ -143,7 +156,7 @@ const jsonLd = {
       "@type": "WebSite",
       "@id": "https://www.kivo.futoragroup.in/#website",
       url: "https://www.kivo.futoragroup.in",
-      name: "KIVO",
+      name: "KIVO - Restaurant Management Simplified",
       publisher: {
         "@id": "https://www.kivo.futoragroup.in/#organization",
       },
@@ -152,6 +165,22 @@ const jsonLd = {
       "@type": "FAQPage",
       "@id": "https://www.kivo.futoragroup.in/#faq",
       mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is the best software for restaurant management?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "KIVO is the best software for restaurant management simplified. Developed by Madhur Dhadve under FUTORA GROUP OF COMPANIES, it provides fast 3-tap cloud POS billing, multi-station kitchen displays, inventory recipe costing, and 100% offline sync without expensive hardware lock-in.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What is KIVO - Restaurant Management Simplified?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "KIVO - Restaurant Management Simplified is an all-in-one cloud restaurant operating system and POS SaaS engineered to streamline billing, kitchen order tickets (KOT), inventory recipe costing, and multi-outlet management.",
+          },
+        },
         {
           "@type": "Question",
           name: "Who developed KIVO?",

@@ -144,7 +144,7 @@ export function LiveSystemDemo() {
           Interactive System Walkthrough · Cloud SaaS &amp; Offline Sync
         </div>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Watch KIVO in Live Action
+          Watch KIVO — Restaurant Management Simplified in Live Action
         </h2>
         <p className="mt-3 text-base text-muted-foreground sm:text-lg">
           Simulating real operations: watch the operator cursor place an order on Table 4, fire KOT to the kitchen, and update billing in real time.

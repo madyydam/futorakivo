@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kivo.futora.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.kivo.futoragroup.in"),
   title: {
     default: "KIVO — Cloud Restaurant Management Platform & POS",
     template: "%s | KIVO",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     title: "KIVO — Cloud Restaurant Management Platform & POS",
     description:
       "All-in-one cloud restaurant management SaaS and POS with offline resilience, kitchen display, and automatic sync.",
-    url: "https://kivo.futora.com",
+    url: "https://www.kivo.futoragroup.in",
     siteName: "KIVO",
     images: [
       {
@@ -75,9 +75,9 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "@id": "https://kivo.futora.com/#software",
+      "@id": "https://www.kivo.futoragroup.in/#software",
       name: "KIVO",
-      url: "https://kivo.futora.com",
+      url: "https://www.kivo.futoragroup.in",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web, iOS, Android, Windows, macOS",
       offers: {
@@ -99,18 +99,18 @@ const jsonLd = {
     },
     {
       "@type": "Organization",
-      "@id": "https://kivo.futora.com/#organization",
+      "@id": "https://www.kivo.futoragroup.in/#organization",
       name: "KIVO",
-      url: "https://kivo.futora.com",
-      logo: "https://kivo.futora.com/logo.png",
+      url: "https://www.kivo.futoragroup.in",
+      logo: "https://www.kivo.futoragroup.in/logo.png",
     },
     {
       "@type": "WebSite",
-      "@id": "https://kivo.futora.com/#website",
-      url: "https://kivo.futora.com",
+      "@id": "https://www.kivo.futoragroup.in/#website",
+      url: "https://www.kivo.futoragroup.in",
       name: "KIVO",
       publisher: {
-        "@id": "https://kivo.futora.com/#organization",
+        "@id": "https://www.kivo.futoragroup.in/#organization",
       },
     },
   ],

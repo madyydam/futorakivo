@@ -4,7 +4,7 @@ import type { SessionUser } from "@futora/types";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { EntityDialogHost } from "@/components/layout/entity-dialog-host";
 import { NotificationBell } from "@/components/notifications/notification-bell";
@@ -79,6 +79,21 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsImpersonating(Boolean(localStorage.getItem("kivo_impersonated_user")));
+    }
+  }, []);
+
+  const handleExitImpersonate = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("kivo_impersonated_user");
+    }
+    window.location.href = "/super-admin";
+  };
+
   const [todayString] = useState(() => {
     return new Date().toLocaleDateString("en-US", {
       weekday: "long",
@@ -134,6 +149,21 @@ export function AppShell({
       </Sheet>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col h-full overflow-hidden">
+        {isImpersonating && (
+          <div className="bg-amber-500/15 border-b border-amber-500/30 text-amber-900 dark:text-amber-200 px-4 py-1.5 text-xs flex items-center justify-between z-30 font-medium">
+            <div className="flex items-center gap-2">
+              <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>Super Admin Impersonation: Viewing {user?.name || "Restaurant"} as Owner</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleExitImpersonate}
+              className="underline hover:no-underline font-bold text-amber-700 dark:text-amber-300 cursor-pointer"
+            >
+              Exit to Super Admin &rarr;
+            </button>
+          </div>
+        )}
         {/* Floating island top header - crisp solid white with round corners, compact height & clear margin from sidebar */}
         <header className="mt-3 mr-3 ml-3 mb-2 flex h-12 shrink-0 items-center justify-between rounded-[22px] border border-slate-200/80 dark:border-border bg-white dark:bg-card px-3.5 sm:px-5 shadow-sm z-20">
           <div className="flex items-center gap-2.5">

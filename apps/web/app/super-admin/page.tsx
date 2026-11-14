@@ -43,6 +43,7 @@ import {
   Wifi,
   XCircle,
 } from "lucide-react";
+import { PERMISSIONS } from "@futora/types";
 import { Logo } from "@/components/layout/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -421,17 +422,19 @@ export default function SuperAdminPage() {
 
   const handleImpersonate = (admin: RestaurantAdmin) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("FUTORA group_restaurant_name", admin.restaurantName);
-      localStorage.setItem("FUTORA group_branch_name", admin.branches?.[0]?.name || "Main Outlet");
+      const fullPermissions = PERMISSIONS.map((p) => p.key);
       const impersonatedUser = {
         id: "owner-" + admin.id,
         restaurantId: admin.id,
         name: admin.ownerName,
         roleId: "role-owner",
         roleName: "OWNER",
-        permissions: ["all"],
+        permissions: fullPermissions,
       };
+      localStorage.setItem("kivo_impersonated_user", JSON.stringify(impersonatedUser));
       localStorage.setItem("FUTORA group_demo_user", JSON.stringify(impersonatedUser));
+      localStorage.setItem("FUTORA group_restaurant_name", admin.restaurantName);
+      localStorage.setItem("FUTORA group_branch_name", admin.branches?.[0]?.name || "Main Outlet");
     }
     router.push("/dashboard");
   };

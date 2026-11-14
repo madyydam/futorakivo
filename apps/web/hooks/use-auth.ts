@@ -24,6 +24,8 @@ export const DEMO_USER: SessionUser = {
 function getSavedUser(): SessionUser | null {
   if (typeof window !== "undefined") {
     try {
+      const impersonated = localStorage.getItem("kivo_impersonated_user");
+      if (impersonated) return JSON.parse(impersonated);
       const stored =
         localStorage.getItem("FUTORA group_demo_user") || localStorage.getItem("nodedr_demo_user");
       if (stored) {
@@ -51,6 +53,17 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: ["auth", "me"],
     queryFn: async (): Promise<{ user: SessionUser }> => {
+      // If actively impersonating a restaurant tenant from Super Admin, use it immediately
+      if (typeof window !== "undefined") {
+        const impersonated = localStorage.getItem("kivo_impersonated_user");
+        if (impersonated) {
+          try {
+            const parsed = JSON.parse(impersonated);
+            if (parsed) return { user: parsed };
+          } catch {}
+        }
+      }
+
       try {
         const res = await api.get<{ user: SessionUser }>("/auth/me");
         if (res?.user) {
@@ -147,6 +160,7 @@ export function useLogout() {
     mutationFn: async () => {
       if (typeof window !== "undefined") {
         try {
+          localStorage.removeItem("kivo_impersonated_user");
           localStorage.removeItem("FUTORA group_demo_user");
           localStorage.removeItem("nodedr_demo_user");
           localStorage.removeItem("FUTORA group_restaurant_name");
@@ -170,5 +184,8 @@ export function useLogout() {
 }
 
 export function hasPermission(user: SessionUser | undefined, permission: string): boolean {
-  return user ? permissionSatisfied(user.permissions, permission) : true;
+  if (!user) return true;
+  // Restaurant Owners and Platform Administrators hold global permission across all screens
+  if (user.roleName === "OWNER" || user.roleName === "ADMINISTRATOR") return true;
+  return permissionSatisfied(user.permissions, permission);
 }

@@ -3,12 +3,21 @@ import { Logo } from "@/components/layout/logo";
 
 const columns = [
   {
-    title: "Product",
+    title: "Solutions",
     links: [
-      { href: "#features", label: "Features" },
-      { href: "#live-demo", label: "Live System Demo" },
-      { href: "#showcase", label: "Product Views" },
-      { href: "#security", label: "Security & offline" },
+      { href: "/solutions/qsr", label: "QSR & Fast Food" },
+      { href: "/solutions/cloud-kitchen", label: "Cloud Kitchens" },
+      { href: "/solutions/fine-dining", label: "Fine Dining & Bars" },
+      { href: "/compare/petpooja", label: "KIVO vs Petpooja" },
+    ],
+  },
+  {
+    title: "Product & Demo",
+    links: [
+      { href: "/demo", label: "Interactive Demo" },
+      { href: "/demo/pos", label: "Cloud POS Terminal" },
+      { href: "/demo/kds", label: "Kitchen Display (KDS)" },
+      { href: "/demo/tables", label: "Table Floor Plan" },
     ],
   },
   {
@@ -16,15 +25,8 @@ const columns = [
     links: [
       { href: "/docs", label: "Overview" },
       { href: "/docs/api", label: "API & MCP" },
-      { href: "/docs/accessibility", label: "Accessibility statement" },
-      { href: "/docs/compliance-india", label: "India compliance notes" },
-    ],
-  },
-  {
-    title: "Account",
-    links: [
-      { href: "/login", label: "Sign in" },
-      { href: "/signup", label: "Create account" },
+      { href: "/docs/compliance-india", label: "India GST Compliance" },
+      { href: "/docs/accessibility", label: "Accessibility Statement" },
     ],
   },
 ];
@@ -54,12 +56,12 @@ export function MarketingFooter() {
               <ul className="mt-3 flex flex-col gap-2.5">
                 {col.links.map((l) => (
                   <li key={l.label}>
-                    <a
+                    <Link
                       href={l.href}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {l.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

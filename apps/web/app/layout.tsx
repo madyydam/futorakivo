@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     "KIVO is an all-in-one cloud restaurant POS and management SaaS with lightning-fast billing, kitchen display (KDS), inventory recipe costing, and offline resilience with cloud auto-sync.",
   authors: [{ name: "Madhur Dhadve" }],
   creator: "Madhur Dhadve",
-  publisher: "FUTORA group",
+  publisher: "FUTORA GROUP OF COMPANIES",
   keywords: [
     "KIVO",
     "KIVO horeca management",
@@ -34,6 +35,7 @@ export const metadata: Metadata = {
     "Madhur Dhadve KIVO",
     "Madhur Dhadve",
     "futoragroup",
+    "FUTORA GROUP OF COMPANIES",
     "who developed KIVO",
     "Restaurant POS software",
     "Cloud restaurant management SaaS",
@@ -43,6 +45,8 @@ export const metadata: Metadata = {
     "Restaurant inventory management",
     "Offline POS with cloud sync",
     "QSR billing software",
+    "Cloud kitchen software",
+    "Fine dining table management",
   ],
   alternates: {
     canonical: "/",
@@ -50,7 +54,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "KIVO — Cloud Restaurant Management Platform & POS",
     description:
-      "All-in-one cloud restaurant management SaaS and POS with offline resilience, kitchen display, and automatic sync.",
+      "All-in-one cloud restaurant POS SaaS with lightning-fast billing, multi-station KDS, recipe costing, and offline auto-sync.",
     url: "https://www.kivo.futoragroup.in",
     siteName: "KIVO",
     images: [
@@ -102,7 +106,7 @@ const jsonLd = {
       },
       publisher: {
         "@type": "Organization",
-        name: "FUTORA group",
+        name: "FUTORA GROUP OF COMPANIES",
         url: "https://www.kivo.futoragroup.in",
       },
       offers: {
@@ -125,8 +129,9 @@ const jsonLd = {
     {
       "@type": "Organization",
       "@id": "https://www.kivo.futoragroup.in/#organization",
-      name: "KIVO by FUTORA group",
-      alternateName: ["KIVO", "FUTORA group", "KIVO HORECA Management"],
+      name: "FUTORA GROUP OF COMPANIES",
+      legalName: "FUTORA GROUP OF COMPANIES",
+      alternateName: ["KIVO", "FUTORA group", "KIVO HORECA Management", "FUTORA group of companies"],
       url: "https://www.kivo.futoragroup.in",
       logo: "https://www.kivo.futoragroup.in/logo.png",
       founder: {
@@ -152,7 +157,15 @@ const jsonLd = {
           name: "Who developed KIVO?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Madhur Dhadve is the developer of KIVO, engineered under FUTORA group as an all-in-one cloud restaurant management platform and HORECA operating system.",
+            text: "Madhur Dhadve is the developer of KIVO, engineered under FUTORA GROUP OF COMPANIES as an all-in-one cloud restaurant management platform and HORECA operating system.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Who is Madhur Dhadve?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Madhur Dhadve is the lead software architect and developer of KIVO (HORECA Management Platform) under FUTORA GROUP OF COMPANIES.",
           },
         },
         {
@@ -160,7 +173,7 @@ const jsonLd = {
           name: "What is KIVO HORECA Management by FUTORA group?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "KIVO HORECA Management by FUTORA group is a cloud-based restaurant operating system developed by Madhur Dhadve, providing high-speed POS billing, kitchen display systems, recipe costing, and offline-first cloud synchronization.",
+            text: "KIVO HORECA Management by FUTORA GROUP OF COMPANIES is a cloud-based restaurant operating system developed by Madhur Dhadve, providing high-speed POS billing, kitchen display systems, recipe costing, and offline-first cloud synchronization.",
           },
         },
         {
@@ -218,7 +231,6 @@ const jsonLd = {
 
 export const viewport: Viewport = {
   themeColor: "#9f1239",
-  // Lets the bottom nav / sheets sit inside the notch + home-indicator safe areas.
   viewportFit: "cover",
 };
 
@@ -227,6 +239,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+
   return (
     <html
       lang="en"
@@ -234,12 +249,47 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {gtmId && (
+          <Script id="gtm-script" strategy="afterInteractive">
+            {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${gtmId}');`}
+          </Script>
+        )}
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-script" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${gaId}', { page_path: window.location.pathname });`}
+            </Script>
+          </>
+        )}
       </head>
       <body className="min-h-full flex flex-col">
+        {gtmId && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        )}
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

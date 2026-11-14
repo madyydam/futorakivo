@@ -9,9 +9,10 @@ import { useCurrentUser } from "@/hooks/use-auth";
 
 const links = [
   { href: "/demo", label: "See Demo" },
-  { href: "#features", label: "Features" },
-  { href: "#showcase", label: "Product Views" },
-  { href: "#security", label: "Security" },
+  { href: "/solutions/qsr", label: "Solutions" },
+  { href: "/compare/petpooja", label: "vs Petpooja" },
+  { href: "/#features", label: "Features" },
+  { href: "/docs", label: "Docs" },
 ];
 
 export function MarketingNav() {
@@ -29,15 +30,15 @@ export function MarketingNav() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-7 md:flex">
           {links.map((l) => (
-            <a
+            <Link
               key={l.href}
               href={l.href}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {l.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -73,14 +74,14 @@ export function MarketingNav() {
         <div className="border-t border-border/60 px-4 pb-4 md:hidden">
           <nav className="flex flex-col gap-1.5 pt-2">
             {links.map((l) => (
-              <a
+              <Link
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
             <div className="mt-3 flex flex-col gap-2">
               {isLoggedIn ? (

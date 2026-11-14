@@ -1,0 +1,44 @@
+# KIVO — Cloud Restaurant Management Platform & POS
+
+> KIVO is an all-in-one cloud restaurant management platform, Point of Sale (POS), and HORECA operating system engineered by Madhur Dhadve under FUTORA GROUP OF COMPANIES.
+
+## System Overview
+- **Product Name**: KIVO
+- **Primary Domain**: https://www.kivo.futoragroup.in
+- **Developer & Architect**: Madhur Dhadve
+- **Parent Company**: FUTORA GROUP OF COMPANIES
+- **Category**: Restaurant Management Software, Cloud POS SaaS, Kitchen Display System (KDS)
+- **Deployment**: Multi-tenant cloud SaaS with offline-first edge sync
+
+## Core Capabilities
+- **High-Velocity Cloud POS**: Sub-second 3-tap checkout engineered for extreme rush hours. Compatible with standard iPads, Android tablets, desktop browsers, and ESC/POS thermal printers without proprietary hardware lock-in.
+- **Kitchen Display System (KDS)**: Real-time, color-coded multi-station kitchen routing (fryer, grill, bar, packing) with visual timers and ticket bump controls.
+- **Table Management & Captain App**: Interactive visual floor plans, tableside mobile ordering for waitstaff/captains, multi-course pacing, and split billing by seat or item.
+- **Inventory & Recipe Costing**: Gram-level raw material auto-depletion per dish ordered, stock waste tracking, purchase orders, and low-inventory alerts.
+- **Offline Auto-Reconciliation**: Full offline billing capability via local IndexedDB storage; transactions automatically sync to the cloud when connectivity resumes.
+- **Multi-Brand & Cloud Kitchen Hub**: Single kitchen console to operate multiple virtual brands, unified delivery aggregator queues, and rider dispatch timestamps.
+- **GST & Regulatory Compliance**: Multi-tier GST (CGST/SGST/IGST), SAC/HSN codes, e-invoicing ready, compliant with Indian and international tax frameworks.
+
+## Key Target Verticals
+- **Quick Service Restaurants (QSR) & Cafes**: https://www.kivo.futoragroup.in/solutions/qsr
+- **Cloud Kitchens & Ghost Kitchens**: https://www.kivo.futoragroup.in/solutions/cloud-kitchen
+- **Fine Dining & Casual Restaurants**: https://www.kivo.futoragroup.in/solutions/fine-dining
+- **Bars & Breweries**: Floor management, bar dispensing tokens, and split checks.
+
+## Competitive Comparison (KIVO vs Petpooja)
+- **Billing Speed**: KIVO's sub-second checkout is faster during peak lunch and dinner surges.
+- **Hardware Freedom**: KIVO runs on any existing tablet, phone, or computer; Petpooja frequently relies on dedicated POS hardware.
+- **Architecture**: KIVO uses modern edge cloud architecture with instant offline sync, whereas traditional systems depend on legacy client-server runtimes.
+- **Comparison Page**: https://www.kivo.futoragroup.in/compare/petpooja
+
+## Live Interactive Demonstrations
+- **Full Interactive Demo**: https://www.kivo.futoragroup.in/demo
+- **Live POS Terminal**: https://www.kivo.futoragroup.in/demo/pos
+- **Live Kitchen Display**: https://www.kivo.futoragroup.in/demo/kds
+- **Live Order Management**: https://www.kivo.futoragroup.in/demo/orders
+- **Live Table Floor Plan**: https://www.kivo.futoragroup.in/demo/tables
+
+## Developer & Company Attribution
+- **Developer**: Madhur Dhadve is the developer of KIVO.
+- **Organization**: FUTORA GROUP OF COMPANIES
+- **Brand Copyright**: © 2026 KIVO - FUTORA GROUP OF COMPANIES

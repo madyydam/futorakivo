@@ -6,7 +6,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const routes = [
     { path: "", priority: 1.0, changeFrequency: "weekly" as const },
-    { path: "/demo", priority: 0.9, changeFrequency: "weekly" as const },
+    { path: "/solutions/qsr", priority: 0.9, changeFrequency: "weekly" as const },
+    { path: "/solutions/cloud-kitchen", priority: 0.9, changeFrequency: "weekly" as const },
+    { path: "/solutions/fine-dining", priority: 0.9, changeFrequency: "weekly" as const },
+    { path: "/compare/petpooja", priority: 0.9, changeFrequency: "weekly" as const },
+    { path: "/demo", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/demo/pos", priority: 0.8, changeFrequency: "monthly" as const },
     { path: "/demo/kds", priority: 0.8, changeFrequency: "monthly" as const },
     { path: "/demo/orders", priority: 0.8, changeFrequency: "monthly" as const },

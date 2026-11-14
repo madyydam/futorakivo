@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { SessionUser } from "@futora/types";
 import { Menu } from "lucide-react";

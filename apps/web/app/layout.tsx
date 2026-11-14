@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KIVO - HORECA management simplified — Cloud Restaurant Management Platform",
-  description: "KIVO - HORECA management simplified — Cloud-based SaaS restaurant management platform with offline resilience & automatic sync.",
+  title: "KIVO — Cloud Restaurant Management Platform & POS",
+  description: "KIVO — All-in-one cloud-based SaaS restaurant management platform and POS with offline resilience, kitchen display, and automatic sync.",
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],

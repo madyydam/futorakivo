@@ -42,7 +42,7 @@ export function MarketingFooter() {
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Self-hosted restaurant management software. Runs on your own machine, works fully offline. Your data never leaves your server. By FUTORA group.
+              All-in-one cloud restaurant management platform and POS. Fast billing, KDS, inventory, and analytics built for modern restaurants and cafés.
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 {
-  "name": "KIVO - HORECA management simplified",
+  "name": "KIVO",
   "short_name": "KIVO",
-  "description": "KIVO - HORECA management simplified. By FUTORA group.",
+  "description": "KIVO — Cloud Restaurant Management Platform and POS.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

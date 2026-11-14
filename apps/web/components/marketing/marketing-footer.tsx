@@ -38,7 +38,7 @@ export function MarketingFooter() {
             <Link href="/" className="flex items-center gap-2.5">
               <Logo size={28} />
               <span className="text-sm font-bold text-foreground">
-                KIVO <span className="text-primary font-semibold">by FUTORA group</span>
+                KIVO
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">

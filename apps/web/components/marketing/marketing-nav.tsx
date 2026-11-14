@@ -25,7 +25,7 @@ export function MarketingNav() {
         <Link href="/" className="flex items-center gap-2.5">
           <Logo size={32} />
           <span className="text-base font-bold tracking-tight text-foreground">
-            KIVO <span className="text-primary font-semibold">by FUTORA group</span>
+            KIVO
           </span>
         </Link>
 

@@ -1,8 +1,9 @@
-Modexsys HORECA
-Copyright (C) 2026 Modexsys and Modexsys Team
+KIVO - Restaurant Management Simplified
+Copyright (C) 2026 KIVO - FUTORA GROUP OF COMPANIES
 Licensed under the GNU Affero General Public License v3.0 only (see LICENSE).
 
-Official site: https://horeca.modexsys.com/
+Official site: https://www.kivo.futoragroup.in/
+Parent Company: FUTORA GROUP OF COMPANIES (https://www.futoragroup.in/)
 
 NETWORK USE (AGPL-3.0 section 13)
 If you run a modified version of this program as a service that other people
@@ -14,7 +15,7 @@ Keep it, and point it at your own source if you modify the program.
 MODIFIED VERSIONS (AGPL-3.0 section 5(a))
 A modified version must carry prominent notices that you changed the files and
 the date of each change, must keep these copyright notices, and must not be
-presented as the official Modexsys HORECA release (see docs/TRADEMARK_POLICY.md).
+presented as the official KIVO or FUTORA GROUP OF COMPANIES release.
 
 THIRD-PARTY SOFTWARE
 This product bundles or depends on open-source packages under their own

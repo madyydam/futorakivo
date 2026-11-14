@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env bash
-# One-click installer for KIVO - HORECA management simplified (kivo-horeca).
+# One-click installer for KIVO - Restaurant Management Simplified (kivo-restaurant).
 #
 # Run this from the repo root after cloning:
 #   ./install.sh
@@ -77,7 +77,7 @@ EOF
 fi
 
 # --- 3. Build the images and start the stack --------------------------------
-echo "Building KIVO - HORECA management simplified images and starting the stack (this can take a few minutes on first run)..."
+echo "Building KIVO - Restaurant Management Simplified images and starting the stack (this can take a few minutes on first run)..."
 docker compose up -d --build
 
 # --- 4. Wait for the app to report healthy ----------------------------------
@@ -107,12 +107,12 @@ fi
 # re-install without duplicating or clobbering anything.
 if [ "$load_demo" = true ]; then
   echo "Loading demo data (restaurant, menu, staff logins)..."
-  docker exec FUTORA group-restaurant-backend npx ts-node prisma/seed.ts
+  docker exec kivo-backend npx ts-node prisma/seed.ts
 fi
 
 # --- 6. Done -----------------------------------------------------------------
 echo ""
-echo "KIVO - HORECA management simplified is up and running."
+echo "KIVO - Restaurant Management Simplified is up and running."
 echo "Open http://localhost:${HOST_PORT}"
 if [ "$load_demo" = true ]; then
   echo "Sign in with the demo account: owner@demo.local / Password123!"

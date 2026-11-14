@@ -1,7 +1,7 @@
 ﻿services:
   postgres:
     image: postgres:16-alpine
-    container_name: kivo-horecatgres
+    container_name: kivo-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: nodedr

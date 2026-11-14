@@ -1,10 +1,10 @@
-﻿# Commercial licence
+# Commercial licence
 
 NodeDR KIVO - HORECA management simplified is released under the [GNU AGPL-3.0](LICENSE). Anyone may use, modify and redistribute it under those terms, which include publishing the source of a modified version that other people use over a network.
 
 If you want to use or modify NodeDR KIVO - HORECA management simplified without those obligations (for example to run a modified, closed-source service), a separate commercial licence is available from the copyright holder.
 
-Contact: support@futora.com
+Contact: support@futoragroup.in
 
 ## Name and logo
 

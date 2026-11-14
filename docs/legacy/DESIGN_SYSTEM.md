@@ -1,16 +1,16 @@
-ï»¿# Design System
+# Design System
 
 Bar to hit: Stripe Dashboard, Linear, Notion, Vercel, Raycast, Arc, Figma,
 Framer, Shopify Admin, Clerk Dashboard. Minimal, spacious, confident
-typography, restrained color, real motion â€” not a "POS with rounded
+typography, restrained color, real motion — not a "POS with rounded
 corners." A screen that looks like a generic admin template is not done.
 
 Every nontrivial UI task in this repo should pull from the installed
 frontend skills in this order (see global `~/.claude/CLAUDE.md` for full
-detail): `frontend-design` for the initial Design Read â†’
+detail): `frontend-design` for the initial Design Read ?
 `bencium-controlled-ux-designer`'s ask-first protocol for real
-color/typography stakes â†’ `react-best-practices` / `composition-patterns`
-while writing components â†’ `web-design-guidelines` + `accesslint` audit
+color/typography stakes ? `react-best-practices` / `composition-patterns`
+while writing components ? `web-design-guidelines` + `accesslint` audit
 before calling anything done.
 
 ## Color tokens (light)
@@ -25,7 +25,7 @@ before calling anything done.
 --success:          #22C55E
 --warning:          #F59E0B
 --danger:           #EF4444
---primary:          #9F1239   /* wine/burgundy â€” see rationale below */
+--primary:          #9F1239   /* wine/burgundy — see rationale below */
 --primary-foreground: #FFFFFF
 ```
 
@@ -47,9 +47,9 @@ Dark mode (own token set, not `background * 0.1` math):
 
 **Primary accent decision (the one deliberate risk):** wine/burgundy
 instead of the expected SaaS indigo/blurple (Stripe, Linear) or restaurant
-clichÃ© tomato-red. It's a considered nod to HORECA dining (wine lists, velvet
+cliché tomato-red. It's a considered nod to HORECA dining (wine lists, velvet
 banquettes, fine dining) that stays distinct from the danger-red already in
-the palette, and reads as premium rather than generic-dashboard-default â€”
+the palette, and reads as premium rather than generic-dashboard-default —
 finalized directly rather than looped back for a color-swatch vote, since
 this is an internal operator tool, not a client-facing brand identity where
 that stakes-based ask-first call would apply. Revisit only if a real
@@ -58,23 +58,23 @@ existing brand color instead.
 
 ## Typography
 
-Font: Geist (or Inter as fallback) â€” one premium sans, no mixing.
+Font: Geist (or Inter as fallback) — one premium sans, no mixing.
 
 | Role | Size | Weight |
 |---|---|---|
 | Dashboard title | 32px | semibold |
 | Section title | 24px | semibold |
 | Card title | 18px | medium |
-| Body | 15â€“16px | regular |
+| Body | 15–16px | regular |
 | Small label | 13px | medium, muted |
-| Numbers (KPIs) | large, bold, tabular-nums | â€” |
+| Numbers (KPIs) | large, bold, tabular-nums | — |
 
 ## Layout
 
 Top nav (workspace switcher, search/command palette, notifications, user
 menu) + collapsible icon+label sidebar + content area. Sidebar collapses to
 an off-canvas drawer below `lg` (this is a correctness requirement, not
-cosmetic â€” `FUTORA group-pos` shipped a fixed-256px sidebar that ate 66% of a
+cosmetic — `FUTORA group-pos` shipped a fixed-256px sidebar that ate 66% of a
 phone viewport before it was caught and fixed; do not repeat that here,
 verify at ~375px/~768px/desktop with real screenshots before calling any
 layout done).
@@ -85,7 +85,7 @@ uniform 3-column grid of identical boxes).
 ## Components (all in `packages/ui`, one consistent spacing/shadow/radius scale)
 
 Cards: 24px padding, 16px radius, soft shadow, hover elevation.
-Tables: TanStack Table wrapper â€” sticky header, rounded corners, hover
+Tables: TanStack Table wrapper — sticky header, rounded corners, hover
 row, inline edit, bulk actions, column visibility, filters, sort, search,
 pagination, skeleton loading, real empty states (illustration + helper
 text + primary action, never a blank div).
@@ -102,24 +102,24 @@ Skeleton.
 ## Motion
 
 Fast, natural: fade/slide/scale/spring on hover, press, page transition,
-drawer open/close, toast enter/exit. Avoid excessive animation â€” every
+drawer open/close, toast enter/exit. Avoid excessive animation — every
 motion should communicate state change, not decorate.
 
 ## Accessibility
 
 WCAG AA minimum. Keyboard-navigable everywhere (POS and KDS screens
-especially â€” they're used under time pressure). Visible focus states.
+especially — they're used under time pressure). Visible focus states.
 Screen-reader labels on icon-only buttons. Run `accesslint`'s `audit` skill
 (live-DOM, not just static code read) before marking any UI surface done.
 
 ## Surface-specific notes
 
-- **POS order screen:** built for speed â€” large touch targets, fast search,
+- **POS order screen:** built for speed — large touch targets, fast search,
   keyboard shortcuts, instant checkout, minimal clicks. This screen trades
   some of the "spacious" aesthetic for density/speed deliberately; that's a
   considered exception, not an inconsistency.
 - **KDS:** large legible tickets, visible timers, color-coded status,
-  drag between status columns, full-screen mode, touch-optimized â€” this
+  drag between status columns, full-screen mode, touch-optimized — this
   screen is read from 2-3 meters away in a kitchen, so type size floors are
   higher than the rest of the app.
 - **Reservation calendar:** timeline view, drag-to-reschedule, color-coded

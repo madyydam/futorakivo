@@ -1,4 +1,4 @@
-﻿# Customer kiosk and kitchen display (KDS) setup
+# Customer kiosk and kitchen display (KDS) setup
 
 This covers the self-service customer kiosk (a 23.8" landscape Android touchscreen,
 RK3576 / Android 14 / 4 GB RAM) and the staff kitchen-display tablet (HONOR Pad X8a),
@@ -12,7 +12,7 @@ full-screen web app (PWA shortcut).
 |---|---|
 | Public kiosk page | `/kiosk/<token>` (`apps/web/app/kiosk`, `apps/web/components/kiosk`) |
 | Public API (anonymous, token-gated) | `GET /api/v1/public/kiosk/:token` (menu) and `POST /api/v1/public/kiosk/:token/order` (`apps/backend/src/modules/public/public-kiosk.*`) |
-| Turn it on / rotate / off | **Settings → Customer kiosk** (owner/admin, `settings.manage`) |
+| Turn it on / rotate / off | **Settings ? Customer kiosk** (owner/admin, `settings.manage`) |
 | "Eat here" / "Take away" switches | Same card; if only one is on the choice screen is skipped |
 | KDS station picker | Kitchen Display page (remembered per device and branch) |
 | Staff scan field | Orders page: scan the kiosk ticket QR or type the order number |
@@ -20,16 +20,16 @@ full-screen web app (PWA shortcut).
 
 **Backward compatible:** with no token set the kiosk does not exist (404) and nothing else
 changes. The only behaviour changes to existing screens are (a) the KDS gained optional
-station chips, (b) realtime now always connects through the web origin (see §6), (c) the
+station chips, (b) realtime now always connects through the web origin (see �6), (c) the
 `GET /public/menu/:qrToken` payload gained `taxRatePercent` per item.
 
 ## 2. Kiosk URL and launch
 
-1. In the staff app: **Settings → Customer kiosk → Enable kiosk**. Copy the address, e.g.
+1. In the staff app: **Settings ? Customer kiosk ? Enable kiosk**. Copy the address, e.g.
    `https://orderrestro.nodedrdev.com/kiosk/<32 hex characters>`. The address *is* the
    credential: anyone who has it can place orders (and nothing else). **Create new address**
    invalidates the old one immediately; **Turn kiosk off** removes it.
-2. On the kiosk (Android 14, Chrome): open that address → ⋮ menu → **Add to Home screen / Install app**.
+2. On the kiosk (Android 14, Chrome): open that address ? ? menu ? **Add to Home screen / Install app**.
    The generated manifest (`/kiosk/<token>/manifest.webmanifest`) opens that exact kiosk
    full-screen, landscape, in Spanish.
 3. Use the **HTTPS** address. Service worker, install, and screen wake lock only exist in a
@@ -48,8 +48,8 @@ browser for full-screen on that tap; both are best-effort and silently skipped i
 
 ## 3. Customer flow and rules
 
-Welcome → eat here / take away (if both configured) → categories + search → options (required
-groups enforced) → basket → review → **submit once** → big order number, shown for 25 s (or until
+Welcome ? eat here / take away (if both configured) ? categories + search ? options (required
+groups enforced) ? basket ? review ? **submit once** ? big order number, shown for 25 s (or until
 "Nuevo pedido"), then a clean start screen.
 
 - **Money is server-side.** The browser sends only item ids, quantities and option ids. Prices,
@@ -60,7 +60,7 @@ groups enforced) → basket → review → **submit once** → big order number,
   (`orders.clientRequestId`, unique per branch). A retry or a double-tap returns the original order.
   After a network/5xx failure the basket is locked and the only options are **Reintentar** (same key)
   or **Empezar de nuevo**, because the server may already have the order.
-- **Unavailable product** → the server answers `409 ITEM_UNAVAILABLE`; those lines are removed, the
+- **Unavailable product** ? the server answers `409 ITEM_UNAVAILABLE`; those lines are removed, the
   customer is told, and the menu is re-fetched. **Empty menu**, **server unreachable**, **kiosk
   switched off**, **browser offline**, **rate limit** and **validation** each have their own screen/message.
 - **Not paid.** Kiosk orders are created `OPEN` with channel `ONLINE`, type `KIOSK`, no acceptance gate
@@ -72,21 +72,21 @@ groups enforced) → basket → review → **submit once** → big order number,
   static app shell and icons (`/kiosk/sw.js`, scope `/kiosk/`); it never touches `/api`, never stores
   menu/prices/orders, and a cached screen is never treated as proof of an order.
 
-## 4. HONOR Pad X8a — kitchen display handoff
+## 4. HONOR Pad X8a � kitchen display handoff
 
 Install nothing special.
 1. Open the **same instance URL** (the HTTPS one) in Chrome.
 2. Sign in with a **least-privilege kitchen account**: create a staff member with the
-   `KITCHEN_STAFF` role (permission `kds.manage` only — it sees tickets, not settings, orders,
+   `KITCHEN_STAFF` role (permission `kds.manage` only � it sees tickets, not settings, orders,
    customers or the kiosk token).
 3. Open **Kitchen Display** and press the chip for the station this tablet serves (e.g. *Bar*,
    *Main Kitchen*). It is remembered on that tablet. "All stations" shows everything.
-4. Rotate to landscape and keep it awake while charging (Settings → Display → Screen timeout, or
-   Developer options → Stay awake while charging).
+4. Rotate to landscape and keep it awake while charging (Settings ? Display ? Screen timeout, or
+   Developer options ? Stay awake while charging).
 5. New kiosk tickets appear live over the socket connection with a sound; the card shows
-   `#<order number>`, `KIOSK · <station>`.
+   `#<order number>`, `KIOSK � <station>`.
 
-## 5. Printer and scanner — what is and is not verified
+## 5. Printer and scanner � what is and is not verified
 
 **No physical printer or scanner was available. Everything below marked "unverified" has only been
 exercised in a desktop browser, not on the RK3576 / the real devices.**
@@ -102,7 +102,7 @@ exercised in a desktop browser, not on the RK3576 / the real devices.**
 
 ### Facts needed from the vendors for direct integration
 - **Printer:** exact make/model, connection (internal serial, USB, Bluetooth, LAN), command set
-  (ESC/POS? vendor SDK?), code page for ñ/€/accents, cutter and drawer-kick commands, and whether an
+  (ESC/POS? vendor SDK?), code page for �/�/accents, cutter and drawer-kick commands, and whether an
   Android print service exists for it. Then a separately scoped companion app / `WebView` JS bridge
   (Android permissions: USB host or Bluetooth) behind a feature flag, keeping `window.print()` as the fallback.
 - **Scanner:** make/model, interface (HID keyboard / SPP / SDK), configured prefix/suffix (we expect a
@@ -128,5 +128,5 @@ KIOSK_E2E=1 npx jest --config ./test/jest-e2e.json kiosk --forceExit
 KIOSK_URL=https://<host>/kiosk/<token> SHOTS=./shots python3 apps/web/e2e/kiosk_flow.py
 ```
 Hardware-only checks still **pending**: real RK3576 touch/DPI behaviour in Android Chrome, install-as-app
-and full-screen, wake lock, Android print dialog → 80 mm printer and cutter, scanner wedge input,
+and full-screen, wake lock, Android print dialog ? 80 mm printer and cutter, scanner wedge input,
 HONOR Pad X8a rendering and sound autoplay policy.

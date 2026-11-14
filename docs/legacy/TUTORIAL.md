@@ -1,8 +1,8 @@
-﻿# KIVO - HORECA management simplified tutorial
+# KIVO - HORECA management simplified tutorial
 
 Get from zero to your first UPI-paid order in about ten minutes, then set up staff, stock and accounts. Screenshots use fictional demo data.
 
-**Contents:** [1. Start](#1-start-the-app) · [2. Sign in & set up](#2-sign-in-and-set-up) · [3. Menu, tables & customers](#3-build-your-menu-tables-and-customers) · [4. Take an order](#4-take-an-order) · [5. Get paid with UPI](#5-get-paid-with-upi) · [6. Kitchen](#6-kitchen-display) · [7. Staff & payroll](#7-staff-attendance-and-payroll) · [8. Inventory](#8-inventory) · [9. Accounting](#9-accounting) · [10. Reports](#10-reports-exports-and-scheduled-emails) · [11. The other screens](#11-the-other-screens) · [12. Connect other systems](#12-connect-other-systems)
+**Contents:** [1. Start](#1-start-the-app) � [2. Sign in & set up](#2-sign-in-and-set-up) � [3. Menu, tables & customers](#3-build-your-menu-tables-and-customers) � [4. Take an order](#4-take-an-order) � [5. Get paid with UPI](#5-get-paid-with-upi) � [6. Kitchen](#6-kitchen-display) � [7. Staff & payroll](#7-staff-attendance-and-payroll) � [8. Inventory](#8-inventory) � [9. Accounting](#9-accounting) � [10. Reports](#10-reports-exports-and-scheduled-emails) � [11. The other screens](#11-the-other-screens) � [12. Connect other systems](#12-connect-other-systems)
 
 ---
 
@@ -107,7 +107,7 @@ KIVO - HORECA management simplified builds a standard UPI payment link for the *
 
 ### Set up
 
-1. Go to **Settings → Restaurant**.
+1. Go to **Settings ? Restaurant**.
 2. Enter your **UPI id** (for example `yourshop@okbank`) and the **payee name** customers should see.
 3. Save.
 
@@ -205,14 +205,14 @@ Open **Accounting**. It has eight tabs.
 | --- | --- | --- |
 | **Expenses** | Record spending. Mark "paid from till" to count it in cash close. | ![Expenses](docs/screenshots/tutorial/accounting-expenses.png) |
 | **Cash close** | Count the drawer at night. Shows expected cash and the variance. | ![Cash close](docs/screenshots/tutorial/accounting-cash-close.png) |
-| **Profit & loss** | Net sales − expenses − payroll, for any range. | ![Profit and loss](docs/screenshots/tutorial/accounting-profit-loss.png) |
+| **Profit & loss** | Net sales - expenses - payroll, for any range. | ![Profit and loss](docs/screenshots/tutorial/accounting-profit-loss.png) |
 | **Balance sheet** | A snapshot of cash, inventory, unpaid supplier invoices and gift-card balances. A management view, **not** a statutory filing. | ![Balance sheet](docs/screenshots/tutorial/accounting-balance-sheet.png) |
 | **Budgets** | A monthly budget per expense category, with spending against it. | ![Budgets](docs/screenshots/tutorial/accounting-budgets.png) |
 | **Bank** | Import a bank statement CSV and match it to expenses. | ![Bank](docs/screenshots/tutorial/accounting-bank.png) |
 | **GST** | Tax summary by rate. | ![GST](docs/screenshots/tutorial/accounting-gst.png) |
 | **Branches** | Sales, open orders, low stock and inventory value across locations. | ![Branches](docs/screenshots/tutorial/accounting-branches.png) |
 
-**Bank reconciliation**: download your statement as **CSV** (a date, a description and either one `amount` column, negative for money out, or `debit` and `credit` columns). In **Accounting → Bank**, choose **Import bank statement**. Money-out lines are auto-matched to expenses with the same amount within 5 days. Press **Match** to pick one yourself or **Ignore** for lines you do not track. Importing the same file twice is safe.
+**Bank reconciliation**: download your statement as **CSV** (a date, a description and either one `amount` column, negative for money out, or `debit` and `credit` columns). In **Accounting ? Bank**, choose **Import bank statement**. Money-out lines are auto-matched to expenses with the same amount within 5 days. Press **Match** to pick one yourself or **Ignore** for lines you do not track. Importing the same file twice is safe.
 
 ## 10. Reports, exports and scheduled emails
 
@@ -237,11 +237,11 @@ Reports go out at 06:00 branch time: daily covers yesterday, weekly goes on Mond
 | **Marketing** | Coupons, happy-hour pricing and email campaigns. |
 | **Delivery** | Delivery zones and the pickup-to-delivered status of delivery orders. |
 | **Operations** | Documents (SOPs, contracts, recipes) and equipment maintenance. Use **Attach file** to add PDFs, images, text, Word or Excel files (5 MB each, up to 10 per document). |
-| **Settings → Audit log** | Who did what, and when. |
-| **Settings → Backup** | Schedule and restore backups. Test a restore before you need one. |
-| **Settings → Security** | Two-factor sign-in and recovery codes. |
-| **Settings → API keys, Webhooks** | Let other systems talk to KIVO - HORECA management simplified. |
-| **Settings → Updates** | Check for a new version. |
+| **Settings ? Audit log** | Who did what, and when. |
+| **Settings ? Backup** | Schedule and restore backups. Test a restore before you need one. |
+| **Settings ? Security** | Two-factor sign-in and recovery codes. |
+| **Settings ? API keys, Webhooks** | Let other systems talk to KIVO - HORECA management simplified. |
+| **Settings ? Updates** | Check for a new version. |
 
 <table>
 <tr>
@@ -277,7 +277,7 @@ KIVO - HORECA management simplified has a REST API (`/api/v1`, docs at `/api/doc
 | Problem | Fix |
 | --- | --- |
 | Login works, then "Unauthorized" | Using HTTPS? Set `COOKIE_SECURE=true`. Plain HTTP? Keep it `false`. |
-| No UPI QR at checkout | Add a UPI id in **Settings → Restaurant** and save. |
+| No UPI QR at checkout | Add a UPI id in **Settings ? Restaurant** and save. |
 | Customer display is silent | Tap the display page once so the browser allows sound. |
 | Customer display does not follow the till | Open it in the **same browser profile** as the POS. |
 | "Email is not set up" | Set `SMTP_URL` and `SMTP_FROM`, then restart the backend. |
@@ -285,10 +285,10 @@ KIVO - HORECA management simplified has a REST API (`/api/v1`, docs at `/api/doc
 
 ## Backups
 
-Everything lives in your Postgres volume. Use **Settings → Backup** for scheduled backups, and test a restore before you need one.
+Everything lives in your Postgres volume. Use **Settings ? Backup** for scheduled backups, and test a restore before you need one.
 
 Questions or bugs: [open an issue](https://github.com/futora/kivo/issues).
 
 ---
 
-<sub>KIVO - HORECA management simplified is developed by [FUTORA group](https://futora.com) · [nodedr.com](https://futora.com)</sub>
+<sub>KIVO - HORECA management simplified is developed by [FUTORA group](https://futora.com) � [nodedr.com](https://futora.com)</sub>

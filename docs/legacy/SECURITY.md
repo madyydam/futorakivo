@@ -1,7 +1,7 @@
-﻿# Security policy
+# Security policy
 
 ## Reporting a vulnerability
-Please do **not** open a public issue. Email **support@futora.com** with a
+Please do **not** open a public issue. Email **support@futoragroup.in** with a
 description, affected version, and steps to reproduce, or use GitHub's private
 vulnerability reporting on this repository. Do not include real customer data.
 

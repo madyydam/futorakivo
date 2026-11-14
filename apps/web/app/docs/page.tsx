@@ -50,8 +50,8 @@ export default function DocsIndexPage() {
       <DocSection heading="Support & Custom Integrations">
         <p>
           For setup assistance, specialized hardware drivers (thermal printers, barcode scanners, cash drawers),
-          and multi-branch cloud federation, contact FUTORA group Enterprise Support at{" "}
-          <strong className="text-foreground">support@futora.com</strong>.
+          and multi-branch cloud federation, contact FUTORA GROUP OF COMPANIES Enterprise Support at{" "}
+          <strong className="text-foreground">support@futoragroup.in</strong>.
         </p>
       </DocSection>
     </DocPage>

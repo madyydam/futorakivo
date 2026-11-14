@@ -1,10 +1,10 @@
-ï»¿# Contributing to KIVO - HORECA management simplified
+# Contributing to KIVO - HORECA management simplified
 
-First off â€” thank you for considering a contribution. This is a young,
+First off — thank you for considering a contribution. This is a young,
 fast-moving project (Phases 0-3 of a 20-module scope are done; see
 [`ROADMAP.md`](./ROADMAP.md)), which means two things for you as a
 contributor: there's a lot of surface area to help with, and the project
-docs are the actual source of truth, updated every session â€” read them
+docs are the actual source of truth, updated every session — read them
 before you read the code.
 
 This guide covers environment setup, the non-negotiable conventions the
@@ -31,11 +31,11 @@ anything here is out of date, trust [`PROJECT.md`](./PROJECT.md) and
 
 This project follows the [Contributor Covenant](./CODE_OF_CONDUCT.md). By
 participating, you agree to uphold it. Report unacceptable behavior to
-**support@futora.com**.
+**support@futoragroup.in**.
 
 ## Maintainers & copyright
 
-See [`MAINTAINERS.md`](./MAINTAINERS.md) â€” FUTORA group Team is the lead
+See [`MAINTAINERS.md`](./MAINTAINERS.md) — FUTORA group Team is the lead
 maintainer; project copyright is held jointly by
 [FUTORA group](https://futora.com) and FUTORA group
 Ranjit. By submitting a PR, you agree your contribution is licensed under
@@ -49,19 +49,19 @@ security issues go to [`SECURITY.md`](./SECURITY.md), not public issues.
 
 Read, in this order:
 
-1. [`PROJECT.md`](./PROJECT.md) â€” what this is, the non-negotiable product
+1. [`PROJECT.md`](./PROJECT.md) — what this is, the non-negotiable product
    principles, the full 20-module scope, and current status. This is the
-   source of truth; don't silently re-litigate a decision recorded here â€”
+   source of truth; don't silently re-litigate a decision recorded here —
    if you think it's wrong, open a discussion (see below) and update it.
-2. [`ARCHITECTURE.md`](./ARCHITECTURE.md) â€” tech stack and, more
+2. [`ARCHITECTURE.md`](./ARCHITECTURE.md) — tech stack and, more
    importantly, *why* each choice was made (NestJS over Express, Postgres
    over the originally-specced SQLite, the offline/multi-branch sync
    model stated honestly). Reading the rationale saves you from proposing
    something already considered and rejected for a documented reason.
-3. [`ROADMAP.md`](./ROADMAP.md) â€” the phased build plan and living TODO.
+3. [`ROADMAP.md`](./ROADMAP.md) — the phased build plan and living TODO.
    Checkboxes here (and `git log`) are the ground truth for what's
-   actually done vs. planned â€” trust them over prose elsewhere.
-4. [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) â€” visual language, tokens,
+   actually done vs. planned — trust them over prose elsewhere.
+4. [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) — visual language, tokens,
    component inventory, and the acceptance bar for UI work ("a screen
    that looks like a generic admin template is not done").
 
@@ -71,23 +71,23 @@ Read, in this order:
 Postgres, or the whole stack), and a Postgres instance if not using
 Docker for it.
 
-### Option A â€” full stack via Docker
+### Option A — full stack via Docker
 
 ```bash
 git clone https://github.com/futora/kivo.git
 cd kivo-horeca
 cp .env.example .env                 # edit JWT_SECRET / POSTGRES_PASSWORD for anything beyond local dev
 docker compose up -d --build
-docker exec kivo-backend npx ts-node prisma/seed.ts   # first run only â€” demo data + login
+docker exec kivo-backend npx ts-node prisma/seed.ts   # first run only — demo data + login
 ```
 
 Open <http://localhost:1995> and sign in with `owner@demo.local` /
-`Password123!` (seeded demo account â€” never use this in a real
+`Password123!` (seeded demo account — never use this in a real
 deployment). The backend API and Swagger docs (`/api/docs`) are reachable
-only through the web app's `/api` proxy, matching `nodedr-pos`'s pattern â€”
+only through the web app's `/api` proxy, matching `nodedr-pos`'s pattern —
 they are not published directly to the host.
 
-### Option B â€” local dev (apps run on the host, Postgres in Docker)
+### Option B — local dev (apps run on the host, Postgres in Docker)
 
 ```bash
 pnpm install
@@ -107,15 +107,15 @@ pnpm build
 ```
 
 There is no CI workflow wired up yet (tracked in `PROJECT.md`/`ROADMAP.md`
-â€” a good first contribution if you want one) â€” until it lands, a green
+— a good first contribution if you want one) — until it lands, a green
 local `lint` + `typecheck` + `build` is the actual gate, so run all three
 before requesting review.
 
 ## Project structure
 
 ```
-apps/backend    NestJS API â€” REST (/api/v1), Swagger at /api/docs, Socket.IO gateways
-apps/web        Next.js â€” back-office, POS, KDS, public QR-ordering site
+apps/backend    NestJS API — REST (/api/v1), Swagger at /api/docs, Socket.IO gateways
+apps/web        Next.js — back-office, POS, KDS, public QR-ordering site
 packages/types  Shared Zod schemas / TS types (DTOs) used by both apps
 docker/         Container assets
 docs/           Screenshots and supplementary docs
@@ -124,7 +124,7 @@ docs/           Screenshots and supplementary docs
 Each backend domain is its own NestJS module
 (`apps/backend/src/modules/<domain>`) with its own controllers, services,
 and DTOs, wired together at `AppModule`. Adding a new domain means adding
-a module, not threading new routes through a shared app â€” see
+a module, not threading new routes through a shared app — see
 `ARCHITECTURE.md` for why.
 
 ## Conventions that are not optional
@@ -135,13 +135,13 @@ bugs in production). PRs that violate them will be asked to change before
 merge, regardless of otherwise-good code:
 
 - **Server-authoritative money.** All pricing, tax, discount, and loyalty
-  math is computed server-side â€” never trust a total/amount from the
+  math is computed server-side — never trust a total/amount from the
   client. Menu prices are tax-inclusive; GST/VAT is backed out, never
   added on top (see `apps/backend/src/modules/orders/pricing.ts`).
-- **Round, then `set` â€” never DB-side `increment`.** Any running money
+- **Round, then `set` — never DB-side `increment`.** Any running money
   balance (loyalty points, gift card balance, wallet credit) is updated
   via a rounded read-modify-write `set`. `increment` on a Float column
-  drifts over many transactions â€” this is a real bug this project
+  drifts over many transactions — this is a real bug this project
   inherited a lesson from, not a style preference.
 - **One Zod schema per DTO, shared.** Validation schemas live in
   `packages/types` and drive both the NestJS `ZodValidationPipe` and the
@@ -151,7 +151,7 @@ merge, regardless of otherwise-good code:
 - **RBAC via decorator, never a hardcoded role check.** Every
   permission-gated action uses `@Auth('permission.key')`
   (JwtAuthGuard + PermissionsGuard combined). If the permission you need
-  doesn't exist yet, add it to the seeded permission list â€” don't branch
+  doesn't exist yet, add it to the seeded permission list — don't branch
   on `user.role === 'owner'` in business logic.
 - **Realtime via the gateway + hook, not polling.** `RealtimeGateway`
   (Socket.IO) pushes KOT/table/order events into a per-branch room; the
@@ -162,13 +162,13 @@ merge, regardless of otherwise-good code:
 ## Design bar
 
 This is explicitly not "POS-ugly": every screen is held to the same bar
-as Stripe Dashboard, Linear, Notion, Vercel, Shopify Admin â€” see
+as Stripe Dashboard, Linear, Notion, Vercel, Shopify Admin — see
 `DESIGN_SYSTEM.md` for tokens, type scale, component inventory, and
 per-surface notes (POS trades some spaciousness for speed/density on
 purpose; KDS type sizes are larger because it's read from across a
 kitchen). If a UI contribution looks like a generic admin template, it's
 not done yet, regardless of whether it works. WCAG AA is the accessibility
-floor â€” keyboard-navigable everywhere, visible focus states, especially
+floor — keyboard-navigable everywhere, visible focus states, especially
 on POS/KDS screens used under time pressure.
 
 ## Making a change
@@ -183,13 +183,13 @@ on POS/KDS screens used under time pressure.
    relevant rule above and say in the PR description how you satisfied it.
 4. Update the relevant doc in the same PR: check off the matching item in
    `ROADMAP.md` if you closed a roadmap item, or note a scope-cut /
-   deviation there if you took a different approach than planned â€” this
+   deviation there if you took a different approach than planned — this
    repo's convention is to record deviations inline rather than let docs
    silently drift from the code.
 
 ## Commit messages
 
-Write for the *why*, not the *what* â€” the diff already shows what changed.
+Write for the *why*, not the *what* — the diff already shows what changed.
 
 ```
 Fix loyalty point drift on repeated redemptions
@@ -200,20 +200,20 @@ rounded read-modify-write set, matching the rule this project inherited
 from nodedr-pos's original bug.
 ```
 
-No fixed prefix convention (`feat:`/`fix:`) is enforced yet â€” clear prose
+No fixed prefix convention (`feat:`/`fix:`) is enforced yet — clear prose
 is more important than format. Keep the subject line under ~70 characters.
 
 ## Opening a pull request
 
 - Target the `master` branch.
 - Fill in the PR template (what changed, why, how you tested it).
-- Make sure `pnpm lint && pnpm typecheck && pnpm build` pass locally â€”
+- Make sure `pnpm lint && pnpm typecheck && pnpm build` pass locally —
   see [Development setup](#development-setup).
-- Screenshots or a short clip for anything touching `apps/web` UI â€”
+- Screenshots or a short clip for anything touching `apps/web` UI —
   this project is held to a real visual bar, and "trust me, it looks
   fine" isn't reviewable.
 - Link the issue it closes, if any (`Closes #123`).
-- Expect review comments referencing the conventions above by name â€”
+- Expect review comments referencing the conventions above by name —
   that's not personal, it's the same bar every change (including the
   maintainer's own) gets held to.
 
@@ -222,18 +222,18 @@ is more important than format. Keep the subject line under ~70 characters.
 Open an issue with:
 
 - What you expected vs. what happened.
-- Repro steps (exact â€” "click X, then Y" beats "sometimes breaks").
+- Repro steps (exact — "click X, then Y" beats "sometimes breaks").
 - Whether it's Docker or local dev, and your Node/pnpm/Postgres versions.
 - Logs/screenshots if the bug is visual or server-side.
 
 Money-correctness and RBAC bugs (a permission that doesn't actually gate
 an action, a total that doesn't match line items) are treated as high
-priority â€” call that out explicitly in the issue title.
+priority — call that out explicitly in the issue title.
 
 ## Proposing features / architecture changes
 
 The 20-module scope in `PROJECT.md` is the north star, sequenced by
-`ROADMAP.md` â€” before proposing a new module or a different sequencing,
+`ROADMAP.md` — before proposing a new module or a different sequencing,
 check both; there's a good chance the tradeoff is already discussed
 there. For anything that changes an already-recorded decision (e.g.
 database choice, auth model, sync strategy in `ARCHITECTURE.md`), open a
@@ -250,7 +250,7 @@ PR.
 ## Questions & discussion
 
 Use [GitHub Discussions](https://github.com/futora/kivo/discussions)
-for "how do Iâ€¦" / "why does X work this way" / general chat. Use Issues
+for "how do I…" / "why does X work this way" / general chat. Use Issues
 for concrete bugs and feature requests. Keep architecture debates in
 Discussions or a tagged issue rather than scattered across PR comments,
 so the reasoning is findable later instead of buried in a merged PR's

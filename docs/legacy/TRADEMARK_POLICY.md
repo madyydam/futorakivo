@@ -1,4 +1,4 @@
-﻿# Trademark policy
+# Trademark policy
 
 The software is licensed under the [AGPL-3.0](./LICENSE). That licence covers
 the code. It does **not** grant any right to the names, logos or brand assets
@@ -26,7 +26,7 @@ owned by FUTORA group and FUTORA group Team.
 ## Ask first
 Written permission is needed to use the marks in a product or company name,
 domain name, app-store listing, or in a way that suggests an official
-relationship. Contact: support@futora.com.
+relationship. Contact: support@futoragroup.in.
 
 This policy is a statement of the owners' intent, not legal advice. Trademark
 registration status has not been verified; see the licensing report.

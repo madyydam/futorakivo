@@ -38,8 +38,8 @@ function RestaurantBrand() {
   const { branchId } = useBranch();
   const { data } = useDisplaySettings(branchId);
   const restaurant = data?.restaurant;
-  const brandName = sanitizeBrandName(restaurant?.name);
   const isDemo = pathname?.startsWith("/demo");
+  const brandName = isDemo ? "KIVO Demo" : sanitizeBrandName(restaurant?.name);
   const homeHref = isDemo ? "/demo" : "/dashboard";
 
   return (

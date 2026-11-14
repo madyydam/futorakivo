@@ -32,57 +32,90 @@ export function SidebarNav({
   const badges = useNavBadges();
   const isDemoMode = Boolean(pathname?.startsWith("/demo"));
 
+  // In demo mode, strictly show the dedicated interactive demo routes so no clicks
+  // accidentally route to unauthenticated backend pages that trigger login redirects.
+  const items = isDemoMode
+    ? NAV_ITEMS.filter((item) => Boolean(DEMO_ROUTE_MAP[item.href]))
+    : NAV_ITEMS.filter((item) => !item.permission || hasPermission(user, item.permission));
+
   return (
     <nav className="flex flex-col gap-1.5 px-3 py-1">
-      {NAV_ITEMS.filter((item) => !item.permission || hasPermission(user, item.permission)).map(
-        (item) => {
-          const href = isDemoMode && DEMO_ROUTE_MAP[item.href] ? DEMO_ROUTE_MAP[item.href] : item.href;
-          const isActive = isDemoMode
-            ? item.href === "/dashboard"
-              ? pathname === "/demo"
-              : pathname?.startsWith(DEMO_ROUTE_MAP[item.href] ?? item.href)
-            : pathname?.startsWith(item.href);
-          const Icon = item.icon;
-          const isOrders = item.href === "/orders";
-          return (
-            <Link
-              key={item.href}
-              href={href}
-              onClick={onNavigate}
+      {items.map((item) => {
+        const href = isDemoMode && DEMO_ROUTE_MAP[item.href] ? DEMO_ROUTE_MAP[item.href] : item.href;
+        const isActive = isDemoMode
+          ? item.href === "/dashboard"
+            ? pathname === "/demo"
+            : pathname?.startsWith(DEMO_ROUTE_MAP[item.href] ?? item.href)
+          : pathname?.startsWith(item.href);
+        const Icon = item.icon;
+        const isOrders = item.href === "/orders";
+
+        return (
+          <Link
+            key={item.href}
+            href={href}
+            onClick={onNavigate}
+            className={cn(
+              "group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-200 select-none border-0",
+              isActive
+                ? "bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] text-white shadow-[0_6px_20px_rgba(159,18,57,0.32)] font-bold scale-[1.02] z-10"
+                : "bg-white dark:bg-card text-slate-700 dark:text-slate-300 shadow-[0_2px_8px_rgba(159,18,57,0.06),0_1px_2px_rgba(0,0,0,0.03)] hover:scale-[1.03] hover:shadow-[0_8px_20px_rgba(159,18,57,0.18)] hover:text-[#9f1239] dark:hover:text-rose-400 active:scale-[0.99] hover:z-20",
+            )}
+          >
+            <Icon
               className={cn(
-                "group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-200 select-none border-0",
+                "h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110",
                 isActive
-                  ? "bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] text-white shadow-[0_6px_20px_rgba(159,18,57,0.32)] font-bold scale-[1.02] z-10"
-                  : "bg-white dark:bg-card text-slate-700 dark:text-slate-300 shadow-[0_2px_8px_rgba(159,18,57,0.06),0_1px_2px_rgba(0,0,0,0.03)] hover:scale-[1.03] hover:shadow-[0_8px_20px_rgba(159,18,57,0.18)] hover:text-[#9f1239] dark:hover:text-rose-400 active:scale-[0.99] hover:z-20",
+                  ? "text-white"
+                  : "text-slate-600 dark:text-slate-400 group-hover:text-[#9f1239] dark:group-hover:text-rose-400",
               )}
-            >
-              <Icon
+              strokeWidth={isActive ? 2.4 : 2}
+            />
+            <span className="truncate">{t(item.labelKey)}</span>
+            {isOrders ? (
+              <span
                 className={cn(
-                  "h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110",
+                  "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold shadow-2xs transition-all",
                   isActive
-                    ? "text-white"
-                    : "text-slate-600 dark:text-slate-400 group-hover:text-[#9f1239] dark:group-hover:text-rose-400",
+                    ? "bg-white text-[#9f1239] shadow-sm font-extrabold"
+                    : "bg-[#9f1239] text-white group-hover:scale-110",
                 )}
-                strokeWidth={isActive ? 2.4 : 2}
-              />
-              <span className="truncate">{t(item.labelKey)}</span>
-              {isOrders ? (
-                <span
-                  className={cn(
-                    "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold shadow-2xs transition-all",
-                    isActive
-                      ? "bg-white text-[#9f1239] shadow-sm font-extrabold"
-                      : "bg-[#9f1239] text-white group-hover:scale-110",
-                  )}
-                >
-                  3
-                </span>
-              ) : badges.nav[item.href] && !isActive ? (
-                <NavDot />
-              ) : null}
+              >
+                3
+              </span>
+            ) : badges.nav[item.href] && !isActive ? (
+              <NavDot />
+            ) : null}
+          </Link>
+        );
+      })}
+
+      {isDemoMode && (
+        <div className="mt-4 mx-1 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-950/20 p-3 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+            Interactive Demo Mode
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Exploring preloaded live data
+          </p>
+          <div className="mt-2.5 flex flex-col gap-1.5">
+            <Link
+              href="/onboarding"
+              onClick={onNavigate}
+              className="w-full rounded-xl bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] py-1.5 text-[11px] font-bold text-white shadow-xs hover:opacity-95 transition-all text-center block"
+            >
+              Start Free Trial
             </Link>
-          );
-        },
+            <Link
+              href="/"
+              onClick={onNavigate}
+              className="w-full rounded-xl border border-border/80 bg-white dark:bg-card py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-all text-center block"
+            >
+              Exit to Website
+            </Link>
+          </div>
+        </div>
       )}
     </nav>
   );

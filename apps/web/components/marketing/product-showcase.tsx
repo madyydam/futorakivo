@@ -80,7 +80,7 @@ export function ProductShowcase() {
                 />
               </div>
               <span className="truncate text-xs font-bold tracking-tight text-foreground sm:text-sm">
-                HORECA
+                KIVO
               </span>
             </div>
 

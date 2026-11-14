@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SuperAdminService } from './super-admin.service';
 
@@ -17,6 +17,25 @@ export class SuperAdminController {
     return this.superAdminService.getPlatformAnalytics();
   }
 
+  @Get('plans')
+  getPlans() {
+    return this.superAdminService.getPlans();
+  }
+
+  @Get('broadcasts')
+  getBroadcasts() {
+    return this.superAdminService.getBroadcasts();
+  }
+
+  @Post('broadcasts')
+  createBroadcast(
+    @Body('title') title: string,
+    @Body('message') message: string,
+    @Body('level') level: 'INFO' | 'WARNING' | 'CRITICAL',
+  ) {
+    return this.superAdminService.createBroadcast(title, message, level || 'INFO');
+  }
+
   @Patch('tenants/:id/status')
   async updateTenantStatus(
     @Param('id') id: string,
@@ -31,5 +50,13 @@ export class SuperAdminController {
     @Body('plan') plan: string,
   ) {
     return this.superAdminService.updateTenantPlan(id, plan);
+  }
+
+  @Post('tenants/:id/extend-trial')
+  async extendTrial(
+    @Param('id') id: string,
+    @Body('days') days: number,
+  ) {
+    return this.superAdminService.extendTrial(id, Number(days) || 14);
   }
 }

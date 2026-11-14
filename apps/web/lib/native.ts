@@ -40,7 +40,7 @@ export function changeServer() {
   void plugin<{ forget: () => Promise<void> }>("ServerLink")?.forget();
 }
 
-const PUSH_TOKEN_KEY = "orderrestro.pushToken";
+const PUSH_TOKEN_KEY = "kivo.pushToken";
 
 export function savedPushToken(): string | null {
   try {

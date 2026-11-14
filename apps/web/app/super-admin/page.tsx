@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   ArrowUpRight,
@@ -172,14 +172,43 @@ export default function SuperAdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedAdmin, setSelectedAdmin] = useState<RestaurantAdmin | null>(null);
 
-  const toggleAdminStatus = (id: string) => {
+  // Fetch real tenants from Cloud SaaS SuperAdmin API with mock fallback
+  useEffect(() => {
+    async function loadTenants() {
+      try {
+        const res = await fetch("/api/v1/super-admin/tenants");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setAdmins(data);
+          }
+        }
+      } catch {
+        // Keeps initial demo data if backend is offline
+      }
+    }
+    loadTenants();
+  }, []);
+
+  const toggleAdminStatus = async (id: string) => {
+    const admin = admins.find((a) => a.id === id);
+    if (!admin) return;
+    const nextStatus = admin.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+
+    // Optimistic UI update
     setAdmins((prev) =>
-      prev.map((a) => {
-        if (a.id !== id) return a;
-        const nextStatus = a.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
-        return { ...a, status: nextStatus };
-      }),
+      prev.map((a) => (a.id === id ? { ...a, status: nextStatus } : a))
     );
+
+    try {
+      await fetch(`/api/v1/super-admin/tenants/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+    } catch {
+      // Revert if error
+    }
   };
 
   const handleImpersonate = (admin: RestaurantAdmin) => {

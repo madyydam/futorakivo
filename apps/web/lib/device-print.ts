@@ -15,7 +15,7 @@ interface NativePrinterApi {
   printHtml: (o: { html: string; name?: string }) => Promise<void>;
 }
 
-const KEY = "orderrestro.btPrinter";
+const KEY = "kivo.btPrinter";
 
 export function nativePrinter(): NativePrinterApi | null {
   return plugin<NativePrinterApi>("NativePrinter");

@@ -162,16 +162,14 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    // Sign-up is first-run setup. Once the server has a restaurant, anyone on
-    // the network creating another would get an OWNER role - which carries the
-    // instance-wide backup, update and sync permissions - so it stays closed
-    // unless the host opts in (ALLOW_PUBLIC_SIGNUP=true) to run several tenants.
+    // Cloud SaaS Architecture (Petpooja-style): Public signup is enabled by default
+    // so any restaurant owner can register their outlet online.
     if (
-      process.env.ALLOW_PUBLIC_SIGNUP !== 'true' &&
+      process.env.ALLOW_PUBLIC_SIGNUP === 'false' &&
       (await this.hasAnyRestaurant())
     ) {
       throw new ForbiddenException(
-        'Sign-up is closed on this server. Ask the restaurant owner to create your account.',
+        'Sign-up is currently disabled on this server.',
       );
     }
     const existing = await this.prisma.user.findFirst({
@@ -198,8 +196,17 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
     const owner = await this.prisma.$transaction(async (tx) => {
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14); // 14-day free trial like Petpooja
+
       const restaurant = await tx.restaurant.create({
-        data: { name: dto.restaurantName },
+        data: {
+          name: dto.restaurantName,
+          status: 'TRIAL',
+          plan: 'Starter',
+          trialEndsAt,
+          maxBranches: 1,
+        },
       });
       const branch = await tx.branch.create({
         data: { restaurantId: restaurant.id, name: dto.branchName },

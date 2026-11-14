@@ -87,6 +87,14 @@ model Restaurant {
   maxManualDiscountPercent Decimal @default(100) @db.Decimal(5, 2)
   requireDiscountReason    Boolean @default(false)
 
+  // SaaS Tenant Management & Subscription (Petpooja-style Cloud Architecture)
+  status       String    @default("TRIAL") // TRIAL, ACTIVE, SUSPENDED, EXPIRED
+  plan         String    @default("Starter") // Starter, Growth, Enterprise
+  trialEndsAt  DateTime?
+  maxBranches  Int       @default(1)
+  ownerPhone   String?
+  city         String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

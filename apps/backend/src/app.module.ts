@@ -48,6 +48,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { McpModule } from './mcp/mcp.module';
 import { SystemModule } from './system/system.module';
 import { VerifactuModule } from './modules/verifactu/verifactu.module';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { VerifactuModule } from './modules/verifactu/verifactu.module';
     PrismaModule,
     RealtimeModule,
     AuthModule,
+    SuperAdminModule,
     MenuModule,
     TablesModule,
     AttendanceModule,

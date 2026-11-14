@@ -14,7 +14,7 @@ export type ScanResult =
   | { kind: "table"; qrToken: string }
   | { kind: "invalid"; reason: "empty" | "unrecognized" };
 
-export const ORDER_QR_PREFIX = "orderrestro:order:";
+export const ORDER_QR_PREFIX = "kivo:order:";
 const ORDER_NUMBER = /^[A-Z0-9]{1,12}(?:-[A-Z0-9]{1,12}){1,3}$/;
 const TABLE_URL = /\/order\/([a-f0-9]{32})\/?$/i;
 

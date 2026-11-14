@@ -3,8 +3,12 @@ import Link from "next/link";
 import { DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
-  title: "Documentation — KIVO - HORECA management simplified",
-  description: "API & MCP, accessibility, and India compliance docs for the KIVO - HORECA management simplified cloud platform.",
+  title: "Documentation & Developer Guides",
+  description:
+    "Comprehensive guides for KIVO cloud restaurant POS, API & MCP integrations, GST compliance notes, and accessibility standards.",
+  alternates: {
+    canonical: "/docs",
+  },
 };
 
 const docs = [

@@ -113,6 +113,60 @@ const jsonLd = {
         "@id": "https://www.kivo.futoragroup.in/#organization",
       },
     },
+    {
+      "@type": "FAQPage",
+      "@id": "https://www.kivo.futoragroup.in/#faq",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is KIVO and who is it designed for?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "KIVO is a modern all-in-one cloud restaurant management platform and point-of-sale (POS) SaaS. It is purpose-built for fine dining restaurants, cafes, quick-service counters (QSR), restobars, and multi-brand cloud kitchens to streamline billing, kitchen order tickets (KOT), inventory recipe costing, and floor operations.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How does KIVO's offline mode work during internet outages?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "KIVO runs with full offline-first resilience. If your internet drops during rush hours, your staff can continue creating orders, printing thermal receipts and kitchen tickets, and billing customers without interruption. All sales, payments, and stock movements are cached securely and automatically reconcile with the cloud the instant connectivity returns.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How does KIVO compare to older systems like Petpooja or POSist?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "KIVO delivers the power of a modern cloud platform without hardware lock-in or clunky interfaces. You can run KIVO on any device — iPads, Android tablets, desktop browsers, or specialized POS hardware. You get lightning-fast 3-tap billing, modern Kitchen Display System (KDS) routing, and centralized real-time analytics without expensive proprietary hardware.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Does KIVO support GST billing and thermal receipt printers in India?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes, KIVO is fully compliant with Indian GST requirements, supporting SGST, CGST, IGST, HSN codes, and tax-inclusive pricing. It connects directly with standard 2-inch (58mm) and 3-inch (80mm) ESC/POS thermal receipt printers via USB, Bluetooth, and network LAN (port 9100).",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Can I manage multi-outlet restaurant chains and central inventory?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes. KIVO's centralized cloud dashboard allows multi-outlet operators to manage menus, push standardized pricing, monitor live branch revenue, and transfer stock between central commissaries and retail outlets with role-based access controls.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How do I get started with KIVO?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "You can test drive the system directly through our interactive live demo without signing in, or create your restaurant account in under 60 seconds with our free cloud trial.",
+          },
+        },
+      ],
+    },
   ],
 };
 

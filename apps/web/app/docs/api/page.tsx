@@ -2,9 +2,12 @@
 import { DocList, DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
-  title: "API & MCP — KIVO - HORECA management simplified",
+  title: "API & Model Context Protocol (MCP) Integrations",
   description:
-    "Connect an AI client via MCP, or use KIVO - HORECA management simplified as a backend for your own website: browse the menu, place orders, and book tables through a scoped API key.",
+    "Developer API and Model Context Protocol (MCP) integration guides for KIVO cloud restaurant platform. Connect AI agents, delivery aggregators, and kiosks.",
+  alternates: {
+    canonical: "/docs/api",
+  },
 };
 
 function Code({ children }: { children: string }) {

@@ -2,8 +2,12 @@
 import { DocList, DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
-  title: "India compliance notes — KIVO - HORECA management simplified",
-  description: "How KIVO - HORECA management simplified's architecture relates to Indian data-protection, IT, and consumer-protection law.",
+  title: "India Compliance, GST & Receipts Notes",
+  description:
+    "How KIVO complies with Indian restaurant regulations, GST invoicing standards, DPDP Act data privacy, and electronic receipt records.",
+  alternates: {
+    canonical: "/docs/compliance-india",
+  },
 };
 
 export default function ComplianceIndiaPage() {

@@ -2,6 +2,7 @@
 
 import { MotionConfig } from "motion/react";
 import { Features } from "@/components/marketing/features";
+import { FaqSection } from "@/components/marketing/faq";
 import { Hero } from "@/components/marketing/hero";
 import { InstallSection } from "@/components/marketing/install-section";
 import { LiveSystemDemo } from "@/components/marketing/live-system-demo";
@@ -30,6 +31,7 @@ export default function MarketingHomePage() {
           <section id="security">
             <SecuritySection />
           </section>
+          <FaqSection />
           <section id="get-started">
             <InstallSection />
           </section>

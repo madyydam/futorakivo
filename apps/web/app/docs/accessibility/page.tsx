@@ -2,8 +2,12 @@
 import { DocList, DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
-  title: "Accessibility statement — KIVO - HORECA management simplified",
-  description: "KIVO - HORECA management simplified's accessibility conformance target, testing methodology, and known gaps.",
+  title: "Accessibility Conformance Statement",
+  description:
+    "KIVO's accessibility conformance standards (WCAG 2.1 Level AA), screen reader testing methodology, keyboard navigation, and reduced motion design.",
+  alternates: {
+    canonical: "/docs/accessibility",
+  },
 };
 
 export default function AccessibilityPage() {

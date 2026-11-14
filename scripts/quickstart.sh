@@ -1,23 +1,23 @@
-#!/usr/bin/env bash
-# Modexsys HORECA quickstart — macOS & Linux.
+﻿#!/usr/bin/env bash
+# KIVO - HORECA management simplified quickstart — macOS & Linux.
 #
 # Checks whether Docker is installed and running; installs it if not
 # (Docker Desktop via Homebrew on macOS, installing Homebrew first if needed, Docker Engine via the official
 # get.docker.com script on Linux). Does the same for git (Homebrew on macOS,
 # the system package manager on Linux) if it's missing too. Then clones (or
-# updates) nodedr-restaurant-pos into ./nodedr-restaurant-pos and runs its
+# updates) kivo-horeca into ./kivo-horeca and runs its
 # installer (which generates a .env with random secrets on first run).
 #
 # Usage:
-#   curl -fsSL https://horeca.modexsys.com/scripts/quickstart.sh | bash
+#   curl -fsSL https://kivo.futora.com/scripts/quickstart.sh | bash
 #
 # Safe to re-run: every step only acts if the previous one didn't already
-# succeed, and an existing ./nodedr-restaurant-pos checkout is updated in
+# succeed, and an existing ./kivo-horeca checkout is updated in
 # place rather than clobbered.
 set -euo pipefail
 
-REPO_URL="https://github.com/modexsys/horeca.git"
-REPO_DIR="nodedr-restaurant-pos"
+REPO_URL="https://github.com/futora/kivo.git"
+REPO_DIR="kivo-horeca"
 SUDO=""
 
 install_docker_linux() {
@@ -152,7 +152,7 @@ case "$(uname -s)" in
     ;;
 esac
 
-echo "==> Getting nodedr-restaurant-pos..."
+echo "==> Getting kivo-horeca..."
 if [ -d "$REPO_DIR/.git" ]; then
   echo "Existing checkout found in ./$REPO_DIR — updating it instead of re-cloning."
   git -C "$REPO_DIR" pull --ff-only
@@ -161,5 +161,5 @@ else
 fi
 
 cd "$REPO_DIR"
-echo "==> Installing and starting Modexsys HORECA..."
+echo "==> Installing and starting KIVO - HORECA management simplified..."
 $SUDO ./install.sh <"$TTY_IN"

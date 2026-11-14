@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { TableStatusDto } from "@modexsys/types";
+import type { TableStatusDto } from "@futora/types";
 import { ClipboardList, Merge, Plus, QrCode, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

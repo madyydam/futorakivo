@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Get,
@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { SessionUser } from '@modexsys/types';
+import type { SessionUser } from '@futora/types';
 import { z } from 'zod';
 import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';

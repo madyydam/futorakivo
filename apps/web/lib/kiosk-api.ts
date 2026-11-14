@@ -1,9 +1,9 @@
-// Thin client for the public kiosk endpoints. Separate from lib/api.ts
+﻿// Thin client for the public kiosk endpoints. Separate from lib/api.ts
 // because the kiosk must tell "no connection" and "server broke" apart from
 // "the server said no", and needs a hard timeout so a stalled network can't
 // leave a customer staring at a spinner forever.
 
-import type { KioskServiceType } from "@modexsys/types";
+import type { KioskServiceType } from "@futora/types";
 
 export interface KioskModifier {
   id: string;

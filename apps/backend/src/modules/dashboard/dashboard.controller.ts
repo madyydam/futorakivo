@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Body,
   Controller,
@@ -7,7 +7,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { SessionUser } from '@modexsys/types';
+import type { SessionUser } from '@futora/types';
 import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { BranchAccessService } from '../../common/services/branch-access.service';

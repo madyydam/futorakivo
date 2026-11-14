@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { RestoreBackupDto, SetBackupConfigDto } from "@modexsys/types";
+import type { RestoreBackupDto, SetBackupConfigDto } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 

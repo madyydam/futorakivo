@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { CreateIntegrationApiKeyDto, CreateStaffApiKeyDto, IntegrationScope } from "@modexsys/types";
+import type { CreateIntegrationApiKeyDto, CreateStaffApiKeyDto, IntegrationScope } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 

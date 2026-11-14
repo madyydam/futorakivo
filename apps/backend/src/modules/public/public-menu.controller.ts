@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Param, Post, UsePipes } from '@nestjs/common';
+﻿import { Body, Controller, Get, Param, Post, UsePipes } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
   publicOrderSchema,
   publicRequestSchema,
-} from '@modexsys/types';
+} from '@futora/types';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { PublicMenuService } from './public-menu.service';
 

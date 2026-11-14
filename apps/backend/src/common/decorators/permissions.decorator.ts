@@ -1,5 +1,5 @@
-import { SetMetadata } from '@nestjs/common';
-import type { PermissionKey } from '@modexsys/types';
+﻿import { SetMetadata } from '@nestjs/common';
+import type { PermissionKey } from '@futora/types';
 
 export const PERMISSIONS_KEY = 'requiredPermissions';
 

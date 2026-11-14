@@ -1,6 +1,6 @@
-import { applyDecorators, UseGuards } from '@nestjs/common';
+﻿import { applyDecorators, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth } from '@nestjs/swagger';
-import type { PermissionKey } from '@modexsys/types';
+import type { PermissionKey } from '@futora/types';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { RequirePermission } from './permissions.decorator';

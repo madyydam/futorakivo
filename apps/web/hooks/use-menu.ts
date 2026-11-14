@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { MenuCategoryDto, MenuItemDto } from "@modexsys/types";
+import type { MenuCategoryDto, MenuItemDto } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 

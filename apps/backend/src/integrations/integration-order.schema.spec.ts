@@ -1,7 +1,7 @@
-import {
+﻿import {
   createIntegrationOrderSchema,
   integrationIdempotencyKeySchema,
-} from '@modexsys/types';
+} from '@futora/types';
 
 const valid = {
   type: 'DELIVERY',

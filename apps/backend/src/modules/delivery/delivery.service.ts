@@ -1,4 +1,4 @@
-import { PushService } from '../../push/push.service';
+﻿import { PushService } from '../../push/push.service';
 import {
   BadRequestException,
   Injectable,
@@ -8,7 +8,7 @@ import type {
   DeliveryStatusDto,
   DeliveryZoneDto,
   DeliveryZoneUpdateDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { WebhooksService } from '../webhooks/webhooks.service';

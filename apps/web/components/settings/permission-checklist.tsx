@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { PERMISSIONS } from "@modexsys/types";
+import { PERMISSIONS } from "@futora/types";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // Computed once at module load — PERMISSIONS is a static const, no need to

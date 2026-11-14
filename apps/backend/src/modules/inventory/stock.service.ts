@@ -1,10 +1,10 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma, StockMovementType } from '@prisma/client';
-import type { StockAdjustmentDto } from '@modexsys/types';
+import type { StockAdjustmentDto } from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { round3 } from '../../common/money';
 

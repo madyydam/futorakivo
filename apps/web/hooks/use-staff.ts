@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { CreateStaffDto, UpdateStaffDto } from "@modexsys/types";
+import type { CreateStaffDto, UpdateStaffDto } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 

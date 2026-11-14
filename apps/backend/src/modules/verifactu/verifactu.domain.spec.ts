@@ -1,4 +1,4 @@
-import {
+﻿import {
   altaHash,
   altaString,
   altaXml,
@@ -21,7 +21,7 @@ const sys: SystemInfo = {
   producerCountry: 'IN',
   producerIdType: '04',
   producerId: 'U00000AA0000AAA000000',
-  systemName: 'Modexsys HORECA',
+  systemName: 'KIVO - HORECA management simplified',
   systemId: 'OR',
   version: '1.0.0',
   installationNumber: 'inst-1',

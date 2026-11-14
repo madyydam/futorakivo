@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -9,7 +9,7 @@ import type {
   CampaignDto,
   CouponDto,
   PromotionDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { BranchTimeService } from '../../common/services/branch-time.service';
 import { localMinuteAndDay } from '../../common/time';
 import { PrismaService } from '../../prisma/prisma.service';

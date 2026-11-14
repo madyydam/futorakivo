@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+﻿import { randomBytes } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -13,7 +13,7 @@ import type {
   TableLayoutUpdateDto,
   TableStatusDto,
   TableUpdateDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 

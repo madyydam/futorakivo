@@ -1,8 +1,8 @@
-{
-  "name": "@modexsys/backend",
+﻿{
+  "name": "@futora/backend",
   "version": "1.0.0",
-  "description": "Modexsys HORECA API",
-  "author": "Modexsys",
+  "description": "KIVO - HORECA management simplified API",
+  "author": "FUTORA group",
   "private": true,
   "license": "Proprietary",
   "scripts": {
@@ -39,7 +39,7 @@
     "@nestjs/swagger": "^8.1.1",
     "@nestjs/throttler": "^6.7.0",
     "@nestjs/websockets": "^11.2.6",
-    "@modexsys/types": "workspace:*",
+    "@futora/types": "workspace:*",
     "@prisma/client": "^6.19.3",
     "archiver": "^7.0.1",
     "bcrypt": "^6.0.0",

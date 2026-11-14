@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { KOT_NEXT_STATUS, type KotStatusDto } from "@modexsys/types";
+import { KOT_NEXT_STATUS, type KotStatusDto } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 

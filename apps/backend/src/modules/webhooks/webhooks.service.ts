@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+﻿import { randomBytes } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
 import {
@@ -224,7 +224,7 @@ export class WebhooksService {
         payload: {
           event: 'test',
           createdAt: new Date().toISOString(),
-          data: { message: 'Hello from Modexsys HORECA' },
+          data: { message: 'Hello from KIVO - HORECA management simplified' },
         },
       },
     });
@@ -298,9 +298,9 @@ export class WebhooksService {
         netOptionsFromEnv(),
       );
       statusCode = await this.post(target, body, {
-        'X-Modexsys HORECA-Event': d.event,
-        'X-Modexsys HORECA-Delivery': d.id,
-        'X-Modexsys HORECA-Signature': signPayload(
+        'X-KIVO - HORECA management simplified-Event': d.event,
+        'X-KIVO - HORECA management simplified-Delivery': d.id,
+        'X-KIVO - HORECA management simplified-Signature': signPayload(
           secret,
           body,
           Math.floor(Date.now() / 1000),
@@ -357,7 +357,7 @@ export class WebhooksService {
           headers: {
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(body),
-            'User-Agent': 'Modexsys-HORECA-Webhooks/1',
+            'User-Agent': 'kivo-horeca-Webhooks/1',
             ...headers,
           },
           // Connect to the address we already vetted; TLS still validates

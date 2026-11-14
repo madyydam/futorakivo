@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSIONS,
   STAFF_ROLES,
-} from '@modexsys/types';
+} from '@futora/types';
 
 // Deliberately not imported from src/modules/orders/pricing — the runtime
 // image only ships apps/backend/dist + prisma (see ARCHITECTURE.md /
@@ -46,7 +46,7 @@ async function main() {
     update: {},
     create: {
       id: 'demo-restaurant',
-      name: 'Modexsys HORECA',
+      name: 'KIVO - HORECA management simplified',
       currency: 'INR',
     },
   });

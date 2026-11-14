@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
@@ -75,13 +75,13 @@ export default function OnboardingPage() {
 
   const handleFinish = async () => {
     setIsSubmitting(true);
-    const finalRestaurantName = restaurantName.trim() || "Modexsys HORECA";
+    const finalRestaurantName = restaurantName.trim() || "KIVO - HORECA management simplified";
     const finalBranchName = branchName.trim() || "Main Branch";
     const finalOwnerName = ownerName.trim() || "Restaurant Owner";
 
     if (typeof window !== "undefined") {
-      localStorage.setItem("modexsys_restaurant_name", finalRestaurantName);
-      localStorage.setItem("modexsys_branch_name", finalBranchName);
+      localStorage.setItem("FUTORA group_restaurant_name", finalRestaurantName);
+      localStorage.setItem("FUTORA group_branch_name", finalBranchName);
     }
 
     try {
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
         <div className="mx-auto flex max-w-4xl items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Logo size={34} />
-            <span className="font-bold tracking-tight text-base sm:text-lg">Modexsys HORECA</span>
+            <span className="font-bold tracking-tight text-base sm:text-lg">KIVO - HORECA management simplified</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -462,7 +462,7 @@ export default function OnboardingPage() {
                   <div className="rounded-xl border border-border/80 bg-muted/30 p-4 text-left text-xs space-y-2.5 max-w-md mx-auto">
                     <div className="flex justify-between pb-2 border-b border-border/50">
                       <span className="text-muted-foreground">Restaurant:</span>
-                      <span className="font-bold text-foreground">{restaurantName || "Modexsys HORECA"}</span>
+                      <span className="font-bold text-foreground">{restaurantName || "KIVO - HORECA management simplified"}</span>
                     </div>
                     <div className="flex justify-between pb-2 border-b border-border/50">
                       <span className="text-muted-foreground">Primary Branch:</span>
@@ -513,7 +513,7 @@ export default function OnboardingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/60 py-4 text-center text-xs text-muted-foreground">
-        Modexsys HORECA Platform · Multi-tenant Cloud OS for Restaurants &amp; Cafes
+        KIVO - HORECA management simplified Platform · Multi-tenant Cloud OS for Restaurants &amp; Cafes
       </footer>
     </div>
   );

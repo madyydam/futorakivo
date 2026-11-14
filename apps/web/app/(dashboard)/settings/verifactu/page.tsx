@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRef, useState } from "react";
 import { toast } from "@/lib/toast";
@@ -54,7 +54,7 @@ function SettingsForm({ branchId, s }: { branchId: string; s: VerifactuSettings 
       </div>
 
       <div role="note" className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
-        <strong>Implemented, not certified.</strong> Modexsys HORECA has not been run against the live AEAT portal and Modexsys has not issued
+        <strong>Implemented, not certified.</strong> KIVO - HORECA management simplified has not been run against the live AEAT portal and FUTORA group has not issued
         its Declaración Responsable. Test with AEAT&rsquo;s pre-production portal and ask your gestor before relying on it.
       </div>
 

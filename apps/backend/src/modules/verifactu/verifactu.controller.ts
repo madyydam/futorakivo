@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Body,
   Controller,
@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
-import type { SessionUser } from '@modexsys/types';
+import type { SessionUser } from '@futora/types';
 import { memoryStorage } from 'multer';
 import { z } from 'zod';
 import { Auth } from '../../common/decorators/auth.decorator';

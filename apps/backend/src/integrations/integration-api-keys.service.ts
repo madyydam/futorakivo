@@ -1,4 +1,4 @@
-import { randomBytes, createHash } from 'node:crypto';
+﻿import { randomBytes, createHash } from 'node:crypto';
 import {
   BadRequestException,
   Injectable,
@@ -7,7 +7,7 @@ import {
 import type {
   CreateIntegrationApiKeyDto,
   SessionUser,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { BranchAccessService } from '../common/services/branch-access.service';
 

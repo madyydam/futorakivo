@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ImagePlus, X } from "lucide-react";
 import { useRef, useState } from "react";
@@ -9,7 +9,7 @@ import {
   TAX_REGIMES,
   type TaxMode,
   type TaxRegime,
-} from "@modexsys/types";
+} from "@futora/types";
 import { KioskCard } from "@/components/settings/kiosk-card";
 import { MobileAppCard } from "@/components/settings/mobile-app-card";
 import { PrinterDiagnosticsCard } from "@/components/settings/printer-diagnostics-card";
@@ -331,7 +331,7 @@ function GeneralSettingsForm({
                 </button>
               )}
               <p className="text-xs text-muted-foreground">
-                Shows in the app sidebar and login screen instead of the Modexsys HORECA mark.
+                Shows in the app sidebar and login screen instead of the KIVO - HORECA management simplified mark.
                 Square, at least 256×256px, PNG with a transparent background works best.
               </p>
             </div>
@@ -693,7 +693,7 @@ function GeneralSettingsForm({
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Modexsys HORECA — Restaurant & HORECA Operating System by Modexsys.
+        KIVO - HORECA management simplified — Restaurant & HORECA Operating System by FUTORA group.
       </p>
     </div>
   );

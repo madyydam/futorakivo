@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
-import { INTEGRATION_SCOPES, type IntegrationScope } from "@modexsys/types";
+import { INTEGRATION_SCOPES, type IntegrationScope } from "@futora/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";

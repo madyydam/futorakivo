@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { DocList, DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
-  title: "Accessibility statement — Modexsys HORECA",
-  description: "Modexsys HORECA's accessibility conformance target, testing methodology, and known gaps.",
+  title: "Accessibility statement — KIVO - HORECA management simplified",
+  description: "KIVO - HORECA management simplified's accessibility conformance target, testing methodology, and known gaps.",
 };
 
 export default function AccessibilityPage() {
@@ -11,7 +11,7 @@ export default function AccessibilityPage() {
     <DocPage title="Accessibility statement" updated="15 August 2026">
       <DocSection heading="Our target">
         <p>
-          Modexsys HORECA targets{" "}
+          KIVO - HORECA management simplified targets{" "}
           <strong className="text-foreground">WCAG 2.1 Level AA</strong> across
           this marketing site and the product application (POS, dashboard,
           kitchen display, settings). This is the standard referenced by
@@ -95,10 +95,10 @@ export default function AccessibilityPage() {
             href="#contact"
             className="text-primary underline underline-offset-4"
           >
-            Modexsys Support
+            FUTORA group Support
           </a>{" "}
           with as much detail as you can (page, assistive technology used,
-          what you expected vs. what happened). Accessibility issues are treated with highest priority by the Modexsys engineering team.
+          what you expected vs. what happened). Accessibility issues are treated with highest priority by the FUTORA group engineering team.
         </p>
       </DocSection>
     </DocPage>

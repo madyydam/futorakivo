@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { TableStatusDto } from "@modexsys/types";
+import type { TableStatusDto } from "@futora/types";
 import { Users } from "lucide-react";
 import { useState } from "react";
 import { ElapsedTimer } from "@/components/tables/elapsed-timer";

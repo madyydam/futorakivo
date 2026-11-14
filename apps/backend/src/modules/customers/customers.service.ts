@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CustomerAddressDto,
   CustomerAddressUpdateDto,
   CustomerDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()

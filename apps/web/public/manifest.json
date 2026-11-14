@@ -1,7 +1,7 @@
 {
-  "name": "Modexsys HORECA",
-  "short_name": "Modexsys HORECA",
-  "description": "Modexsys HORECA — Cloud-based SaaS restaurant management platform with offline resilience.",
+  "name": "KIVO - HORECA management simplified",
+  "short_name": "KIVO",
+  "description": "KIVO - HORECA management simplified. By FUTORA group.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

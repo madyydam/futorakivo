@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { SessionUser } from "@modexsys/types";
+import type { SessionUser } from "@futora/types";
 import { ChevronDown, LogOut, Moon, Server, Sun, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";

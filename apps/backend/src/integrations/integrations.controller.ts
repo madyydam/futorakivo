@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Body,
   Controller,
@@ -24,7 +24,7 @@ import {
   integrationRewardsLookupSchema,
   createIntegrationReservationSchema,
   integrationIdempotencyKeySchema,
-} from '@modexsys/types';
+} from '@futora/types';
 import { z } from 'zod';
 import { CurrentIntegrationKey } from '../common/decorators/current-integration-key.decorator';
 import { RequireScope } from '../common/decorators/require-scope.decorator';

@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { IssueGiftCardDto } from "@modexsys/types";
+import type { IssueGiftCardDto } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 

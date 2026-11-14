@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
@@ -104,7 +104,7 @@ export default function UpdatesPage() {
           <div>
             <h2 className="text-base font-medium">Application Updates</h2>
             <p className="text-sm text-muted-foreground">
-              Check the current version against the latest release on Modexsys servers.
+              Check the current version against the latest release on FUTORA group servers.
             </p>
           </div>
           <Button

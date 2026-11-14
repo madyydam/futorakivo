@@ -1,4 +1,4 @@
-import {
+﻿import {
   canTransitionKot,
   KOT_NEXT_STATUS,
   KOT_STARTED_STATUSES,
@@ -6,7 +6,7 @@ import {
   KOT_TRANSITIONS,
   kitchenProgress,
   type KotStatusDto,
-} from '@modexsys/types';
+} from '@futora/types';
 
 const ALL: KotStatusDto[] = [
   'NEW',

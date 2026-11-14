@@ -1,4 +1,4 @@
-// Builds raw ESC/POS jobs for direct-USB thermal printing from this app's
+﻿// Builds raw ESC/POS jobs for direct-USB thermal printing from this app's
 // Order data (receipt.html.ts / kot.html.ts render the same data as HTML for
 // the browser-print fallback). Everything is native printer text: items,
 // quantities, modifiers, notes and totals use the printer's own fonts with
@@ -15,7 +15,7 @@ import {
   TAX_REGIME_PRESETS,
   type TaxMode,
   type TaxRegime,
-} from '@modexsys/types';
+} from '@futora/types';
 import {
   CMD,
   EscposWriter,
@@ -381,7 +381,7 @@ export function buildTestSlip(
   profile: PrinterProfile = resolveProfile(),
 ): Buffer {
   const w = new EscposWriter(profile);
-  w.text('Modexsys HORECA', { align: 'center', bold: true, size: 'big' });
+  w.text('KIVO - HORECA management simplified', { align: 'center', bold: true, size: 'big' });
   w.text('Printer test OK', { align: 'center' });
   w.rule();
   const ruler = '1234567890'.repeat(7).slice(0, profile.columns);

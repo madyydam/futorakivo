@@ -1,18 +1,18 @@
-{
-  "name": "modexsys-horeca",
+﻿{
+  "name": "kivo-horeca",
   "private": true,
   "version": "1.0.0",
-  "description": "Modexsys HORECA — offline-first Restaurant Management System & POS",
-  "author": "Modexsys",
+  "description": "KIVO — HORECA management simplified",
+  "author": "FUTORA group",
   "license": "Proprietary",
   "repository": {
     "type": "git",
-    "url": "https://github.com/futoralift/modexsyshoreca.git"
+    "url": "https://github.com/madyydam/futorakivo.git"
   },
   "bugs": {
-    "url": "https://github.com/futoralift/modexsyshoreca/issues"
+    "url": "https://github.com/madyydam/futorakivo/issues"
   },
-  "homepage": "https://horeca.modexsys.com/",
+  "homepage": "https://kivo.futora.com/",
   "keywords": [
     "restaurant-management",
     "restaurant-pos",
@@ -29,7 +29,7 @@
     "qr-ordering",
     "nestjs",
     "nextjs",
-    "modexsys",
+    "futora",
     "horeca"
   ],
   "scripts": {
@@ -38,7 +38,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "postinstall": "pnpm --filter @modexsys/backend prisma:generate"
+    "postinstall": "pnpm --filter @futora/backend prisma:generate"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

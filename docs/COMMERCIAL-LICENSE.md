@@ -1,14 +1,14 @@
-# Commercial licence
+﻿# Commercial licence
 
-NodeDR Modexsys HORECA is released under the [GNU AGPL-3.0](LICENSE). Anyone may use, modify and redistribute it under those terms, which include publishing the source of a modified version that other people use over a network.
+NodeDR KIVO - HORECA management simplified is released under the [GNU AGPL-3.0](LICENSE). Anyone may use, modify and redistribute it under those terms, which include publishing the source of a modified version that other people use over a network.
 
-If you want to use or modify NodeDR Modexsys HORECA without those obligations (for example to run a modified, closed-source service), a separate commercial licence is available from the copyright holder.
+If you want to use or modify NodeDR KIVO - HORECA management simplified without those obligations (for example to run a modified, closed-source service), a separate commercial licence is available from the copyright holder.
 
-Contact: support@modexsys.com
+Contact: support@futora.com
 
 ## Name and logo
 
-The NodeDR Modexsys HORECA name and logo are not licensed under the AGPL. You may refer to the project by name and link to it. Do not use the name or logo for a modified version or a competing service without written permission.
+The NodeDR KIVO - HORECA management simplified name and logo are not licensed under the AGPL. You may refer to the project by name and link to it. Do not use the name or logo for a modified version or a competing service without written permission.
 
 ## Contributions
 

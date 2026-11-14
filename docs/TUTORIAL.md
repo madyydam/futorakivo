@@ -1,4 +1,4 @@
-# Modexsys HORECA tutorial
+﻿# KIVO - HORECA management simplified tutorial
 
 Get from zero to your first UPI-paid order in about ten minutes, then set up staff, stock and accounts. Screenshots use fictional demo data.
 
@@ -11,14 +11,14 @@ Get from zero to your first UPI-paid order in about ten minutes, then set up sta
 You need a machine that stays on in the restaurant (a mini PC, an old laptop, a NAS or a VPS) with Docker. The database is created for you on first start.
 
 ```bash
-curl -fsSL https://horeca.modexsys.com/scripts/quickstart.sh | bash
+curl -fsSL https://kivo.futora.com/scripts/quickstart.sh | bash
 ```
 
 Or from a clone:
 
 ```bash
-git clone https://github.com/modexsys/horeca.git
-cd modexsys-horeca
+git clone https://github.com/futora/kivo.git
+cd kivo-horeca
 ./install.sh
 ```
 
@@ -103,7 +103,7 @@ The till works on a phone too:
 
 ## 5. Get paid with UPI
 
-Modexsys HORECA builds a standard UPI payment link for the **exact amount due**. There is nothing to type in the customer's app, and no payment-gateway fees.
+KIVO - HORECA management simplified builds a standard UPI payment link for the **exact amount due**. There is nothing to type in the customer's app, and no payment-gateway fees.
 
 ### Set up
 
@@ -240,7 +240,7 @@ Reports go out at 06:00 branch time: daily covers yesterday, weekly goes on Mond
 | **Settings → Audit log** | Who did what, and when. |
 | **Settings → Backup** | Schedule and restore backups. Test a restore before you need one. |
 | **Settings → Security** | Two-factor sign-in and recovery codes. |
-| **Settings → API keys, Webhooks** | Let other systems talk to Modexsys HORECA. |
+| **Settings → API keys, Webhooks** | Let other systems talk to KIVO - HORECA management simplified. |
 | **Settings → Updates** | Check for a new version. |
 
 <table>
@@ -270,7 +270,7 @@ Reports go out at 06:00 branch time: daily covers yesterday, weekly goes on Mond
 
 ## 12. Connect other systems
 
-Modexsys HORECA has a REST API (`/api/v1`, docs at `/api/docs`), API keys, webhooks and an MCP server. See [docs/integrations-api.md](docs/integrations-api.md).
+KIVO - HORECA management simplified has a REST API (`/api/v1`, docs at `/api/docs`), API keys, webhooks and an MCP server. See [docs/integrations-api.md](docs/integrations-api.md).
 
 ## Troubleshooting
 
@@ -287,8 +287,8 @@ Modexsys HORECA has a REST API (`/api/v1`, docs at `/api/docs`), API keys, webho
 
 Everything lives in your Postgres volume. Use **Settings → Backup** for scheduled backups, and test a restore before you need one.
 
-Questions or bugs: [open an issue](https://github.com/modexsys/horeca/issues).
+Questions or bugs: [open an issue](https://github.com/futora/kivo/issues).
 
 ---
 
-<sub>Modexsys HORECA is developed by [Modexsys](https://modexsys.com) · [nodedr.com](https://modexsys.com)</sub>
+<sub>KIVO - HORECA management simplified is developed by [FUTORA group](https://futora.com) · [nodedr.com](https://futora.com)</sub>

@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Controller,
   Get,
@@ -10,7 +10,7 @@ import { ApiTags } from '@nestjs/swagger';
 import {
   notificationListQuerySchema,
   type SessionUser,
-} from '@modexsys/types';
+} from '@futora/types';
 import { Auth } from '../common/decorators/auth.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { NotificationsService } from './notifications.service';

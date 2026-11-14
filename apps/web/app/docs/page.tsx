@@ -1,27 +1,27 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
-  title: "Documentation — Modexsys HORECA",
-  description: "API & MCP, accessibility, and India compliance docs for the Modexsys HORECA cloud platform.",
+  title: "Documentation — KIVO - HORECA management simplified",
+  description: "API & MCP, accessibility, and India compliance docs for the KIVO - HORECA management simplified cloud platform.",
 };
 
 const docs = [
   {
     href: "/docs/api",
     title: "API & MCP integrations",
-    description: "Connect an AI client via MCP, or use Modexsys HORECA as a backend for your own website.",
+    description: "Connect an AI client via MCP, or use KIVO - HORECA management simplified as a backend for your own website.",
   },
   {
     href: "/docs/accessibility",
     title: "Accessibility statement",
-    description: "How Modexsys HORECA is built to work with keyboards, screen readers, and reduced motion.",
+    description: "How KIVO - HORECA management simplified is built to work with keyboards, screen readers, and reduced motion.",
   },
   {
     href: "/docs/compliance-india",
     title: "India compliance notes",
-    description: "GST, receipts, and data-residency notes for running Modexsys HORECA in India.",
+    description: "GST, receipts, and data-residency notes for running KIVO - HORECA management simplified in India.",
   },
 ];
 
@@ -46,8 +46,8 @@ export default function DocsIndexPage() {
       <DocSection heading="Support & Custom Integrations">
         <p>
           For setup assistance, specialized hardware drivers (thermal printers, barcode scanners, cash drawers),
-          and multi-branch cloud federation, contact Modexsys Enterprise Support at{" "}
-          <strong className="text-foreground">support@modexsys.com</strong>.
+          and multi-branch cloud federation, contact FUTORA group Enterprise Support at{" "}
+          <strong className="text-foreground">support@futora.com</strong>.
         </p>
       </DocSection>
     </DocPage>

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Delete,
@@ -11,7 +11,7 @@ import { ApiTags } from '@nestjs/swagger';
 import {
   createStaffApiKeySchema,
   type SessionUser,
-} from '@modexsys/types';
+} from '@futora/types';
 import { Auth } from '../common/decorators/auth.decorator';
 import { AuditAction } from '../audit/audit-action';
 import { CurrentUser } from '../common/decorators/current-user.decorator';

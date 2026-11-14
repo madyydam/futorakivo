@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -9,7 +9,7 @@ import type {
   PayrollPayDto,
   ShiftDto,
   StaffPayDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { localDate, zonedRange } from '../../common/time';
 import { BranchTimeService } from '../../common/services/branch-time.service';
 import { PrismaService } from '../../prisma/prisma.service';

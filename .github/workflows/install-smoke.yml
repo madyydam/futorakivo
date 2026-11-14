@@ -1,4 +1,4 @@
-name: Install smoke test
+﻿name: Install smoke test
 
 # Runs the exact one-line command shown on the website, on a clean runner, and
 # checks the app actually comes up. Catches a broken quickstart script, a
@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: One-line install (as published)
         working-directory: ${{ runner.temp }}
-        run: curl -fsSL https://raw.githubusercontent.com/modexsys/horeca/master/scripts/quickstart.sh | bash
+        run: curl -fsSL https://raw.githubusercontent.com/futora/kivo/master/scripts/quickstart.sh | bash
 
       - name: App answers on port 1995
         run: |
@@ -36,7 +36,7 @@ jobs:
 
       - name: Logs on failure
         if: failure()
-        working-directory: ${{ runner.temp }}/modexsys-restaurant-pos
+        working-directory: ${{ runner.temp }}/FUTORA group-restaurant-pos
         run: docker compose logs --tail=80
 
   windows-script-syntax:

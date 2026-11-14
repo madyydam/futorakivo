@@ -1,6 +1,6 @@
-<div align="center">
+﻿<div align="center">
 
-<img src="apps/web/public/brand-lockup.png" alt="Modexsys HORECA" width="520">
+<img src="apps/web/public/brand-lockup.png" alt="KIVO - HORECA management simplified" width="520">
 
 
 **Open-source, self-hosted restaurant POS & management system** — billing
@@ -19,12 +19,12 @@ dine-in, takeaway, delivery and kitchen operations.
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![Status](https://img.shields.io/badge/status-active%20development-orange.svg)](docs/ROADMAP.md)
 
-Developed by **Modexsys**
+Developed by **FUTORA group**
 
-**[Try Modexsys HORECA](https://horeca.modexsys.com/)** · **[Case study](https://horeca.modexsys.com)** · **[Maintainer: Modexsys](https://modexsys.com)**
+**[Try KIVO - HORECA management simplified](https://kivo.futora.com/)** · **[Case study](https://kivo.futora.com)** · **[Maintainer: FUTORA group](https://futora.com)**
 
 <p align="center">
-  <a href="https://horeca.modexsys.com/"><img src="https://img.shields.io/badge/Go%20to%20the%20Modexsys HORECA%20website-horeca.modexsys.com-E0234E?style=for-the-badge" alt="Go to the Modexsys HORECA website"></a>
+  <a href="https://kivo.futora.com/"><img src="https://img.shields.io/badge/Go%20to%20the%20KIVO - HORECA management simplified%20website-kivo.futora.com-E0234E?style=for-the-badge" alt="Go to the KIVO - HORECA management simplified website"></a>
 </p>
 
 <p align="center">
@@ -32,7 +32,7 @@ Developed by **Modexsys**
 
 
 [Quick Start](#quick-start) ·
-[How to use](#how-to-use-modexsys-horeca) ·
+[How to use](#how-to-use-kivo-horeca) ·
 [Full tutorial](docs/TUTORIAL.md) ·
 [Features](#features) ·
 [Screenshots](#screenshots) ·
@@ -46,7 +46,7 @@ Developed by **Modexsys**
 
 ## What this is
 
-**Modexsys HORECA** is a modern cloud-based SaaS restaurant management platform designed for restaurants, cafés, coffee shops, bakeries, fast food, fine dining, bars, food courts, cloud kitchens, and multi-branch chains. It enables operators to manage menus, customers, orders, billing, finances, and daily operations from one centralized platform. Built with offline-first capabilities: all operations continue without an internet connection, storing data locally and automatically syncing to the cloud server as soon as connection is restored.
+**KIVO - HORECA management simplified** is a modern cloud-based SaaS restaurant management platform designed for restaurants, cafés, coffee shops, bakeries, fast food, fine dining, bars, food courts, cloud kitchens, and multi-branch chains. It enables operators to manage menus, customers, orders, billing, finances, and daily operations from one centralized platform. Built with offline-first capabilities: all operations continue without an internet connection, storing data locally and automatically syncing to the cloud server as soon as connection is restored.
 
 (the retail-shop POS), reusing its proven patterns — auth/session model,
 receipt rendering, ESC/POS printing, currency-rounding discipline — but
@@ -152,7 +152,7 @@ roles) under **Settings** in the sidebar, photo upload on menu items, and
 an English/Spanish/French language switcher on the guest-facing QR
 ordering page and staff sidebar.
 
-## Why Modexsys HORECA
+## Why KIVO - HORECA management simplified
 
 - **UPI-first checkout (India)** — pick UPI and a QR for the exact bill
   amount appears at the till *and* on the customer-facing screen; a
@@ -167,7 +167,7 @@ ordering page and staff sidebar.
 - **India-ready** — GST (inclusive or exclusive), UPI, ₹ formatting, plus
   US sales tax, EU VAT and Spanish IVA for other markets.
 
-## How to use Modexsys HORECA
+## How to use KIVO - HORECA management simplified
 
 Start with the [screenshot-guided tutorial](docs/TUTORIAL.md) for the full
 first-run walkthrough. It covers sign-up, setup, daily service, and the
@@ -219,7 +219,7 @@ management tools with **56 screenshots of the app**.
 ## FAQ
 
 **Is there a free, open-source restaurant POS I can self-host?**
-Yes — Modexsys HORECA is AGPL-3.0 and installs with `docker compose up`, or as
+Yes — KIVO - HORECA management simplified is AGPL-3.0 and installs with `docker compose up`, or as
 a one-click app on CasaOS / ZimaOS.
 
 **Does it support UPI payments and GST billing?**
@@ -278,12 +278,12 @@ Postgres over the originally-specced SQLite — is in
 ### One-line install (Ubuntu / Debian, amd64 and arm64)
 
 ```bash
-curl -fsSL https://horeca.modexsys.com/install-linux.sh | sudo bash
+curl -fsSL https://kivo.futora.com/install-linux.sh | sudo bash
 ```
 
-Installs the `nodedr-modexsys-horeca` .deb (runs in Docker; installs Docker if
-missing). Modexsys HORECA opens on port 1995. Direct downloads and checksums are on
-the [releases page](https://github.com/modexsys/horeca/releases/latest).
+Installs the `kivo-horeca` .deb (runs in Docker; installs Docker if
+missing). KIVO - HORECA management simplified opens on port 1995. Direct downloads and checksums are on
+the [releases page](https://github.com/futora/kivo/releases/latest).
 
 ### Installing Docker
 
@@ -325,7 +325,7 @@ already bundled, which is all this project requires.
 ### One-click install
 
 ```bash
-git clone https://github.com/modexsys/horeca.git && cd nodedr-restaurant-pos && ./install.sh
+git clone https://github.com/futora/kivo.git && cd kivo-horeca && ./install.sh
 ```
 
 [`install.sh`](install.sh) generates a `.env` with random secrets (only if
@@ -346,11 +346,11 @@ If you'd rather run each step yourself (e.g. to set your own secrets instead
 of generated ones):
 
 ```bash
-git clone https://github.com/modexsys/horeca.git
-cd nodedr-restaurant-pos
+git clone https://github.com/futora/kivo.git
+cd kivo-horeca
 cp .env.example .env        # edit JWT_SECRET / POSTGRES_PASSWORD for anything beyond local dev
 docker compose up -d --build
-docker exec nodedr-restaurant-backend npx ts-node prisma/seed.ts   # optional: demo data + login; upsert-based, safe to re-run
+docker exec kivo-backend npx ts-node prisma/seed.ts   # optional: demo data + login; upsert-based, safe to re-run
 ```
 
 ### Local dev (no Docker for the apps)
@@ -362,7 +362,7 @@ service from Docker Compose).
 pnpm install
 docker compose up -d postgres
 cp apps/backend/.env.example apps/backend/.env   # point DATABASE_URL at your Postgres
-pnpm --filter @nodedr-restaurant/types build
+pnpm --filter @kivo/types build
 cd apps/backend && npx prisma migrate dev && npx ts-node prisma/seed.ts && cd ../..
 pnpm dev   # runs backend (:4001) and web (:1995) together via Turborepo
 ```
@@ -396,7 +396,7 @@ docker compose up -d --build
 ```bash
 git pull
 pnpm install
-pnpm --filter @nodedr-restaurant/types build
+pnpm --filter @kivo/types build
 cd apps/backend && npx prisma migrate dev && cd ../..
 pnpm dev
 ```
@@ -472,8 +472,8 @@ This project follows the [Contributor Covenant](docs/CODE_OF_CONDUCT.md).
 
 ## License
 
-Copyright © 2026 [Modexsys](https://modexsys.com)
-and Modexsys. Licensed under the
+Copyright © 2026 [FUTORA group](https://futora.com)
+and FUTORA group. Licensed under the
 [GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0). In short:
 you are free to use and build with this software for your restaurant or business.
 
@@ -482,15 +482,15 @@ See [`MAINTAINERS.md`](docs/MAINTAINERS.md) for project maintainers.
 ---
 
 <div align="center">
-<img src="apps/web/public/logo.png" alt="Modexsys HORECA" width="72">
+<img src="apps/web/public/logo.png" alt="KIVO - HORECA management simplified" width="72">
 </div>
 
 
 ## Case study
 
-Read the [Modexsys HORECA case study](https://horeca.modexsys.com) for the product background and design decisions.
+Read the [KIVO - HORECA management simplified case study](https://kivo.futora.com) for the product background and design decisions.
 
-Maintainer: [Modexsys](https://modexsys.com)
+Maintainer: [FUTORA group](https://futora.com)
 
 ---
 
@@ -502,4 +502,4 @@ offline-first POS, NestJS, Next.js, PostgreSQL, Prisma, CasaOS, ZimaOS.</sub>
 
 ## Commercial licence
 
-Licensed under the AGPL-3.0. A [commercial licence](docs/COMMERCIAL-LICENSE.md) is available on request for use without the AGPL obligations. The NodeDR Modexsys HORECA name and logo are not covered by the AGPL.
+Licensed under the AGPL-3.0. A [commercial licence](docs/COMMERCIAL-LICENSE.md) is available on request for use without the AGPL obligations. The NodeDR KIVO - HORECA management simplified name and logo are not covered by the AGPL.

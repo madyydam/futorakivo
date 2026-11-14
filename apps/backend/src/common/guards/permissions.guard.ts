@@ -1,4 +1,4 @@
-import {
+﻿import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
@@ -8,7 +8,7 @@ import { Reflector } from '@nestjs/core';
 import {
   permissionSatisfied,
   type PermissionKey,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import type { AuthenticatedRequest } from '../types/authenticated-request';
 

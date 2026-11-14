@@ -1,11 +1,11 @@
-import {
+﻿import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
-import type { SessionUser } from '@modexsys/types';
+import type { SessionUser } from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   effectivePermissions,

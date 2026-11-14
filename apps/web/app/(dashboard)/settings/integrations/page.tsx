@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { AlertTriangle, CheckCircle2, CircleDashed, Copy, KeyRound, Link2, PauseCircle, ShieldAlert, Webhook } from "lucide-react";
 import Link from "next/link";
@@ -90,8 +90,8 @@ function WebhookDetails({ p }: { p: IntegrationProviderInfo }) {
           <CopyButton text={url} label="webhook URL" />
         </div>
         <p>
-          Send <code>POST</code> JSON with headers <code>X-Modexsys HORECA-Timestamp</code> (unix seconds) and{" "}
-          <code>X-Modexsys HORECA-Signature: sha256=HMAC_SHA256(secret, timestamp + &quot;.&quot; + body)</code>. Items are matched by
+          Send <code>POST</code> JSON with headers <code>X-KIVO - HORECA management simplified-Timestamp</code> (unix seconds) and{" "}
+          <code>X-KIVO - HORECA management simplified-Signature: sha256=HMAC_SHA256(secret, timestamp + &quot;.&quot; + body)</code>. Items are matched by
           menu item name or id; prices always come from your menu. Send <code>{`{"event":"ping"}`}</code> to test —
           this card turns Connected only when a correctly signed event arrives.
         </p>
@@ -316,7 +316,7 @@ export default function IntegrationsPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-[32px] font-semibold tracking-tight text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground">Connect Modexsys HORECA to the platforms you use</p>
+        <p className="text-sm text-muted-foreground">Connect KIVO - HORECA management simplified to the platforms you use</p>
       </div>
       <SettingsTabs />
 

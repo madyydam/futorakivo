@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
@@ -61,7 +61,7 @@ export function ProductShowcase() {
             <span className="size-2.5 rounded-full bg-warning/50" />
             <span className="size-2.5 rounded-full bg-success/50" />
             <span className="ml-3 text-xs font-mono text-muted-foreground">
-              Modexsys HORECA · {current.label} View
+              KIVO - HORECA management simplified · {current.label} View
             </span>
           </div>
           <div className="relative aspect-[1440/900] w-full bg-muted/20">
@@ -73,7 +73,7 @@ export function ProductShowcase() {
               <div className="relative size-5 shrink-0 sm:size-6">
                 <Image
                   src="/logo.png"
-                  alt="Modexsys HORECA"
+                  alt="KIVO - HORECA management simplified"
                   fill
                   className="object-contain"
                   unoptimized

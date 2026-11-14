@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -6,7 +6,7 @@ import {
 import type {
   QuotationStatus,
   SupplierQuotationDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const NEXT_STATUS: Record<QuotationStatus, QuotationStatus[]> = {

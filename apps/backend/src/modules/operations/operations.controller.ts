@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Delete,
@@ -26,7 +26,7 @@ import {
   type EquipmentDto,
   type ServiceLogDto,
   type SessionUser,
-} from '@modexsys/types';
+} from '@futora/types';
 import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';

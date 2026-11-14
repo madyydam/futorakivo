@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
@@ -25,7 +25,7 @@ export function MarketingNav() {
         <Link href="/" className="flex items-center gap-2.5">
           <Logo size={32} />
           <span className="text-base font-bold tracking-tight text-foreground">
-            Modexsys <span className="text-primary font-semibold">HORECA</span>
+            FUTORA group <span className="text-primary font-semibold">HORECA</span>
           </span>
         </Link>
 

@@ -1,10 +1,10 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { CreateRoleDto, UpdateRoleDto } from '@modexsys/types';
+import type { CreateRoleDto, UpdateRoleDto } from '@futora/types';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 

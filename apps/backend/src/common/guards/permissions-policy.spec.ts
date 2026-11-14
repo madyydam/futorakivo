@@ -1,10 +1,10 @@
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
+﻿import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   STAFF_ROLES,
   type StaffRole,
-} from '@modexsys/types';
+} from '@futora/types';
 import { DashboardController } from '../../modules/dashboard/dashboard.controller';
 import { MenuController } from '../../modules/menu/menu.controller';
 import { TablesController } from '../../modules/tables/tables.controller';

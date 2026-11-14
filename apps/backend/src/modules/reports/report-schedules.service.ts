@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   Logger,
@@ -130,7 +130,7 @@ export class ReportSchedulesService {
       s.recipients.map((to_) => ({
         to: to_,
         subject,
-        text: `Your scheduled ${result.title} report for ${from} to ${to} is attached.\n\nSent by Modexsys HORECA.`,
+        text: `Your scheduled ${result.title} report for ${from} to ${to} is attached.\n\nSent by KIVO - HORECA management simplified.`,
         attachments: [
           {
             filename: `${s.reportKey}_${from}_${to}.${t.ext}`,

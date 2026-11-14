@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { PaymentMethodButtons } from "@/components/pos/payment-method-buttons";
-import type { PaymentMethodDto } from "@modexsys/types";
+import type { PaymentMethodDto } from "@futora/types";
 import { RotateCcw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";

@@ -1,9 +1,9 @@
-import {
+﻿import {
   BadRequestException,
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { permissionSatisfied } from '@modexsys/types';
+import { permissionSatisfied } from '@futora/types';
 import { BranchTimeService } from '../../common/services/branch-time.service';
 import { localDate, localMinuteAndDay, zonedRange } from '../../common/time';
 import { PrismaService } from '../../prisma/prisma.service';

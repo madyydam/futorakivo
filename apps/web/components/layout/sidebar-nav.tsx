@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { SessionUser } from "@modexsys/types";
+import type { SessionUser } from "@futora/types";
 import { hasPermission } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/context";

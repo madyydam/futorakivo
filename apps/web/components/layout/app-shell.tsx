@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { SessionUser } from "@modexsys/types";
+import type { SessionUser } from "@futora/types";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -22,7 +22,7 @@ function sanitizeBrandName(name?: string | null): string {
   if (!name) return "HORECA OS";
   const cleaned = name
     .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "HORECA OS")
-    .replace(/modexsys\s*horeca/gi, "HORECA OS")
+    .replace(/FUTORA group\s*horeca/gi, "HORECA OS")
     .replace(/nodedr/gi, "HORECA OS")
     .replace(/\s*\(demo\)/gi, "")
     .replace(/bistro/gi, "")

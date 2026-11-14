@@ -1,5 +1,5 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import type { SessionUser } from '@modexsys/types';
+﻿import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import type { SessionUser } from '@futora/types';
 import type { AuthenticatedRequest } from '../types/authenticated-request';
 
 export const CurrentUser = createParamDecorator(

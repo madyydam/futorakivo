@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -9,7 +9,7 @@ import type {
   SupplierDto,
   RecipeLineDto,
   MenuItemTrackingDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { round2 } from '../../common/money';
 import { StockService } from './stock.service';

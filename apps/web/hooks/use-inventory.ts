@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type {
   GoodsReceiptDto,
@@ -16,7 +16,7 @@ import type {
   SupplierQuotationDto,
   WasteLogDto,
   WasteReason,
-} from "@modexsys/types";
+} from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 

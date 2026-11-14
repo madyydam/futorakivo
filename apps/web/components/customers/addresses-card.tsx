@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { formatCustomerAddress } from "@modexsys/types";
+import { formatCustomerAddress } from "@futora/types";
 import { MapPin, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";

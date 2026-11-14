@@ -1,4 +1,4 @@
-// Server-authoritative pricing. Mirrors the hard-won lesson from
+﻿// Server-authoritative pricing. Mirrors the hard-won lesson from
 // nodedr-pos (see its project memory): the price entered against a menu
 // item is TAX-INCLUSIVE, not tax-exclusive — GST/VAT must be backed OUT of
 // it, never added on top. A flat/percent discount is computed against the
@@ -24,7 +24,7 @@
 // downstream consumer (OrderItem.lineTotal, receipts, refunds, KOTs) keeps
 // working exactly as it did before this file existed.
 
-import type { TaxMode } from '@modexsys/types';
+import type { TaxMode } from '@futora/types';
 
 export function toEffectiveInclusiveUnitPrice(
   rawUnitPrice: number,

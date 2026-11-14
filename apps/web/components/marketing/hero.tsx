@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ArrowRight, CheckCircle2, Play } from "lucide-react";
 import { motion } from "motion/react";
@@ -33,7 +33,7 @@ export function Hero() {
               className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary"
             >
               <span className="size-2 rounded-full bg-primary animate-pulse" />
-              Modexsys HORECA · Cloud SaaS Platform
+              KIVO - HORECA management simplified · Cloud SaaS Platform
             </motion.div>
 
             <h1 className="mt-4 flex flex-wrap justify-center gap-x-2.5 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:justify-start lg:text-5xl xl:text-6xl leading-[1.1]">

@@ -1,5 +1,5 @@
-import { SetMetadata } from '@nestjs/common';
-import type { IntegrationScope } from '@modexsys/types';
+﻿import { SetMetadata } from '@nestjs/common';
+import type { IntegrationScope } from '@futora/types';
 
 export const INTEGRATION_SCOPES_KEY = 'requiredIntegrationScopes';
 

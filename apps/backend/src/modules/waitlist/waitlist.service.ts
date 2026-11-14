@@ -1,9 +1,9 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { CreateWaitlistEntryDto } from '@modexsys/types';
+import type { CreateWaitlistEntryDto } from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 

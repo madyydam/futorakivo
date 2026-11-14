@@ -1,4 +1,4 @@
-import {
+﻿import {
   CallHandler,
   ExecutionContext,
   Injectable,
@@ -9,7 +9,7 @@ import {
   applyDecorators,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { SessionUser } from '@modexsys/types';
+import type { SessionUser } from '@futora/types';
 import type { Request } from 'express';
 import { Observable, tap } from 'rxjs';
 import { AuditService } from './audit.service';

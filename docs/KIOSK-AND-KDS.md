@@ -1,4 +1,4 @@
-# Customer kiosk and kitchen display (KDS) setup
+﻿# Customer kiosk and kitchen display (KDS) setup
 
 This covers the self-service customer kiosk (a 23.8" landscape Android touchscreen,
 RK3576 / Android 14 / 4 GB RAM) and the staff kitchen-display tablet (HONOR Pad X8a),
@@ -118,7 +118,7 @@ exercised in a desktop browser, not on the RK3576 / the real devices.**
 
 ## 7. Tests and how to run them
 ```bash
-pnpm install && pnpm --filter @nodedr-restaurant/types build
+pnpm install && pnpm --filter @kivo/types build
 (cd apps/backend && npx tsc --noEmit && npx jest)                        # unit incl. kiosk service
 (cd apps/web && npx tsc --noEmit && npx eslint . && npm test)            # node:test: basket, flow reducer, scan, ticket
 # API integration against a real, migrated + seeded Postgres:

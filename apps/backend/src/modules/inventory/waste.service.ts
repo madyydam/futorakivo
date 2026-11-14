@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { WasteLogDto } from '@modexsys/types';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import type { WasteLogDto } from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StockService } from './stock.service';
 

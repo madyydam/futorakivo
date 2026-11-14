@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { KotStatusDto } from "@modexsys/types";
+import type { KotStatusDto } from "@futora/types";
 import { ChefHat, RefreshCw } from "lucide-react";
 import { useKdsProgress } from "@/hooks/use-kds";
 import { cn } from "@/lib/utils";

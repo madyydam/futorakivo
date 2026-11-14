@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { DocList, DocPage, DocSection } from "@/components/marketing/doc-page";
 
 export const metadata: Metadata = {
-  title: "India compliance notes — Modexsys HORECA",
-  description: "How Modexsys HORECA's architecture relates to Indian data-protection, IT, and consumer-protection law.",
+  title: "India compliance notes — KIVO - HORECA management simplified",
+  description: "How KIVO - HORECA management simplified's architecture relates to Indian data-protection, IT, and consumer-protection law.",
 };
 
 export default function ComplianceIndiaPage() {
@@ -11,7 +11,7 @@ export default function ComplianceIndiaPage() {
     <DocPage title="India compliance notes" updated="15 August 2026">
       <DocSection heading="This is not legal advice">
         <p>
-          This page explains how Modexsys HORECA is built with reference to
+          This page explains how KIVO - HORECA management simplified is built with reference to
           Indian law, so a restaurant operator deploying it can have an
           informed conversation with their own advisor — it is not a legal
           opinion, a certification, or a substitute for review by a
@@ -24,7 +24,7 @@ export default function ComplianceIndiaPage() {
 
       <DocSection heading="Data Protection & Privacy (DPDP Act, 2023)">
         <p>
-          Modexsys HORECA is a cloud-based SaaS platform designed with strict data protection and privacy controls. Under the Digital Personal Data Protection Act, 2023 (DPDP Act), restaurants collecting customer and staff data act as Data Fiduciaries. Modexsys provides the secure infrastructure and compliance tools necessary for restaurants to fulfill their regulatory obligations, including customer consent verification, data correction, and strict role-based access.
+          KIVO - HORECA management simplified is a cloud-based SaaS platform designed with strict data protection and privacy controls. Under the Digital Personal Data Protection Act, 2023 (DPDP Act), restaurants collecting customer and staff data act as Data Fiduciaries. FUTORA group provides the secure infrastructure and compliance tools necessary for restaurants to fulfill their regulatory obligations, including customer consent verification, data correction, and strict role-based access.
 
 All cloud data is encrypted in transit and at rest with isolated tenant boundaries, ensuring complete separation between restaurants. Local offline data cached on terminal devices is protected and automatically synced to the cloud upon reconnection.</p>
       </DocSection>
@@ -35,7 +35,7 @@ All cloud data is encrypted in transit and at rest with isolated tenant boundari
           rights to access, correct, and erase their personal data, and
           requires Data Fiduciaries to collect only what&rsquo;s needed for
           a stated purpose, retain it no longer than necessary, and provide
-          a grievance-redressal channel. Modexsys HORECA&rsquo;s data model and
+          a grievance-redressal channel. KIVO - HORECA management simplified&rsquo;s data model and
           controls that a deploying restaurant can use to meet these:
         </p>
         <DocList
@@ -43,11 +43,11 @@ All cloud data is encrypted in transit and at rest with isolated tenant boundari
             "Customer records (name, phone, order/visit history, loyalty points) are editable and deletable by any staff member with the customers.manage permission — supporting correction and erasure requests.",
             "Only the data fields actually used by POS/CRM/loyalty features are collected — no speculative profile fields.",
             "Role-based access control restricts who on staff can view customer contact details and order history, supporting a purpose-limitation and least-privilege posture.",
-            "Every table/order/session is scoped to the restaurant that created it — verified during a security audit that one restaurant's staff cannot query another restaurant's customer data, relevant if you run Modexsys HORECA for multiple outlets on shared infrastructure.",
+            "Every table/order/session is scoped to the restaurant that created it — verified during a security audit that one restaurant's staff cannot query another restaurant's customer data, relevant if you run KIVO - HORECA management simplified for multiple outlets on shared infrastructure.",
           ]}
         />
         <p>
-          What Modexsys HORECA does <em>not</em> provide out of the box: a
+          What KIVO - HORECA management simplified does <em>not</em> provide out of the box: a
           built-in consent-capture flow, an automated data-retention/deletion
           schedule, or a hosted grievance-officer contact form — these are
           organizational obligations the deploying restaurant (as Data
@@ -84,14 +84,14 @@ All cloud data is encrypted in transit and at rest with isolated tenant boundari
 
       <DocSection heading="GST invoicing (CGST Rules, Rule 46)">
         <p>
-          Receipts generated by Modexsys HORECA display the branch&rsquo;s
+          Receipts generated by KIVO - HORECA management simplified display the branch&rsquo;s
           GSTIN (when configured in Settings), an itemized CGST/SGST
           breakup, and a per-order invoice/order number. Whether your
           specific invoice numbering and layout fully satisfies Rule 46 of
           the CGST Rules, 2017 for your registration and turnover bracket
           (e.g. sequential numbering per financial year, HSN/SAC code
           requirements at your turnover level) is something to confirm with
-          your chartered accountant before relying on Modexsys HORECA receipts
+          your chartered accountant before relying on KIVO - HORECA management simplified receipts
           as your sole tax-invoice record — this software generates a
           receipt in the right shape, it does not itself certify GST
           compliance for your specific registration.
@@ -119,7 +119,7 @@ All cloud data is encrypted in transit and at rest with isolated tenant boundari
             href="#contact"
             className="text-primary underline underline-offset-4"
           >
-            Modexsys Support
+            FUTORA group Support
           </a>
           . For questions about your own restaurant&rsquo;s legal
           obligations as a Data Fiduciary or GST-registered business, please

@@ -1,9 +1,9 @@
-// Route-level permission gate for the dashboard shell. Hiding a nav link is not
+﻿// Route-level permission gate for the dashboard shell. Hiding a nav link is not
 // an authorization boundary, so the layout also checks the URL the user opened.
 // (The API enforces the same permissions; this keeps the UI from rendering
 // pages that would only show errors.) Pure and dependency-free so it can be
 // unit-tested with `node --test`.
-import { permissionSatisfied } from "@modexsys/types";
+import { permissionSatisfied } from "@futora/types";
 
 export interface GatedRoute {
   href: string;

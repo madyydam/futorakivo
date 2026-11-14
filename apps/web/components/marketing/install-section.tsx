@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ArrowRight, Cloud, Layers, RefreshCw, Sparkles, WifiOff } from "lucide-react";
 import Link from "next/link";
@@ -44,7 +44,7 @@ export function InstallSection() {
           Start Managing Your Restaurant in Minutes
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Modexsys HORECA unites modern cloud SaaS flexibility with rugged offline reliability.
+          KIVO - HORECA management simplified unites modern cloud SaaS flexibility with rugged offline reliability.
           Sign up online and start serving customers immediately.
         </p>
       </Reveal>

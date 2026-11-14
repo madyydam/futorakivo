@@ -1,4 +1,4 @@
-import {
+﻿import {
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -10,7 +10,7 @@ import type {
   CreateIntegrationOrderDto,
   CreateIntegrationReservationDto,
   IntegrationRewardsLookupDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { adjustOnlinePrice, onlinePriceAdjustOf } from '../common/online-price';
 import { PrismaService } from '../prisma/prisma.service';
 import { DeliveryService } from '../modules/delivery/delivery.service';

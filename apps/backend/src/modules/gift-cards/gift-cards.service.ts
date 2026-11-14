@@ -1,11 +1,11 @@
-import { randomBytes } from 'node:crypto';
+﻿import { randomBytes } from 'node:crypto';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { IssueGiftCardDto } from '@modexsys/types';
+import type { IssueGiftCardDto } from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { round2 } from '../orders/pricing';
 

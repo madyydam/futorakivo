@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { PERMISSIONS } from "@modexsys/types";
+import { PERMISSIONS } from "@futora/types";
 import { ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";

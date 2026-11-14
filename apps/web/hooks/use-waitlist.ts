@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { CreateWaitlistEntryDto } from "@modexsys/types";
+import type { CreateWaitlistEntryDto } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 

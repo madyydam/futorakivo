@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Controller,
   ForbiddenException,
@@ -13,7 +13,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { SessionUser } from '@modexsys/types';
+import type { SessionUser } from '@futora/types';
 import type { Response } from 'express';
 import { memoryStorage } from 'multer';
 import { Auth } from '../../common/decorators/auth.decorator';

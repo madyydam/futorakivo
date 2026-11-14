@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useMemo, useState } from "react";
@@ -24,11 +24,11 @@ interface BranchContextValue {
 
 const BranchContext = createContext<BranchContextValue | null>(null);
 
-const STORAGE_KEY = "modexsys_branch_id";
+const STORAGE_KEY = "FUTORA group_branch_id";
 
 function getDefaultBranch(): Branch {
   const custom =
-    typeof window !== "undefined" ? localStorage.getItem("modexsys_branch_name") : null;
+    typeof window !== "undefined" ? localStorage.getItem("FUTORA group_branch_name") : null;
   return { id: "main-branch", name: custom || "Main Branch" };
 }
 

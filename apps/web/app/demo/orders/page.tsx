@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import {
@@ -779,7 +779,7 @@ export default function DemoOrdersPage() {
             <div className="space-y-4 py-2 text-xs">
               {/* Restaurant info */}
               <div className="rounded-2xl border border-border/60 bg-muted/30 p-3.5 space-y-1">
-                <div className="font-bold text-sm text-foreground">Modexsys HORECA Pvt Ltd</div>
+                <div className="font-bold text-sm text-foreground">KIVO - HORECA management simplified Pvt Ltd</div>
                 <div className="text-muted-foreground text-[11px]">
                   Connaught Place, New Delhi - 110001
                 </div>

@@ -1,11 +1,11 @@
-import {
+﻿import {
   ArgumentMetadata,
   BadRequestException,
   PipeTransform,
 } from '@nestjs/common';
 import type { ZodSchema } from 'zod';
 
-// Binds a shared Zod schema (from @modexsys/types) into Nest's
+// Binds a shared Zod schema (from @futora/types) into Nest's
 // pipe pipeline, so the same schema validates on the frontend and here —
 // one source of truth per DTO instead of hand-duplicated class-validator DTOs.
 //

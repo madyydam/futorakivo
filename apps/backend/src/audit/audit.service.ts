@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import type { AuditLogListQueryDto } from '@modexsys/types';
+﻿import { Injectable } from '@nestjs/common';
+import type { AuditLogListQueryDto } from '@futora/types';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 

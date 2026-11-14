@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { NotificationListQueryDto } from '@modexsys/types';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import type { NotificationListQueryDto } from '@futora/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';

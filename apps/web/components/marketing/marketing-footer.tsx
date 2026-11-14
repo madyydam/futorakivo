@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
 
 const columns = [
@@ -38,7 +38,7 @@ export function MarketingFooter() {
             <Link href="/" className="flex items-center gap-2.5">
               <Logo size={28} />
               <span className="text-sm font-bold text-foreground">
-                Modexsys <span className="text-primary font-semibold">HORECA</span>
+                FUTORA group <span className="text-primary font-semibold">HORECA</span>
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
@@ -68,9 +68,9 @@ export function MarketingFooter() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} Modexsys HORECA. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} KIVO - HORECA management simplified. All rights reserved.</p>
           <div className="flex gap-4">
-            <span className="text-muted-foreground">Modexsys HORECA Suite</span>
+            <span className="text-muted-foreground">KIVO - HORECA management simplified Suite</span>
             <a href="/docs/accessibility" className="hover:text-foreground">
               Accessibility
             </a>

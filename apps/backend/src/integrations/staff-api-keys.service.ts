@@ -1,4 +1,4 @@
-import { randomBytes, createHash } from 'node:crypto';
+﻿import { randomBytes, createHash } from 'node:crypto';
 import {
   BadRequestException,
   ForbiddenException,
@@ -8,7 +8,7 @@ import {
 import type {
   CreateStaffApiKeyDto,
   SessionUser,
-} from '@modexsys/types';
+} from '@futora/types';
 import { PrismaService } from '../prisma/prisma.service';
 
 const TOKEN_PREFIX = 'ordr_staff_';

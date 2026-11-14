@@ -1,6 +1,6 @@
-# Security audit report — 15 August 2026
+﻿# Security audit report — 15 August 2026
 
-Scope: full-repository security audit of Modexsys HORECA (auth/sessions,
+Scope: full-repository security audit of KIVO - HORECA management simplified (auth/sessions,
 RBAC/multi-tenant isolation, API input validation/uploads/CORS/secrets,
 money/POS logic, dependencies) plus Windows/MSIX packaging readiness,
 commissioned as a hardening pass ahead of Microsoft Store submission.

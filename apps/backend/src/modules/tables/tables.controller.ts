@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Delete,
@@ -19,7 +19,7 @@ import {
   tableLayoutUpdateSchema,
   type SessionUser,
   type TableLayoutUpdateDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { z } from 'zod';
 import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';

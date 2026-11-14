@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Modexsys HORECA — Cloud Restaurant Management Platform",
-  description: "Modexsys HORECA — Cloud-based SaaS restaurant management platform with offline resilience & automatic sync.",
+  title: "KIVO - HORECA management simplified — Cloud Restaurant Management Platform",
+  description: "KIVO - HORECA management simplified — Cloud-based SaaS restaurant management platform with offline resilience & automatic sync.",
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],

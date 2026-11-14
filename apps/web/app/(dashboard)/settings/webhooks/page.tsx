@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
@@ -81,7 +81,7 @@ export default function WebhooksPage() {
         )}
 
         <div className="flex flex-col gap-3">
-          <Input placeholder="https://example.com/modexsys-hook" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <Input placeholder="https://example.com/FUTORA group-hook" value={url} onChange={(e) => setUrl(e.target.value)} />
           <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
           <div className="flex flex-wrap gap-1.5">
             {allEvents?.map((e) => (
@@ -167,7 +167,7 @@ export default function WebhooksPage() {
       <Card className="max-w-3xl p-6 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">Verifying a request</p>
         <p className="mt-1">
-          Each request has an <code>X-Modexsys HORECA-Signature</code> header: <code>t=&lt;unix time&gt;,v1=&lt;hex&gt;</code>,
+          Each request has an <code>X-KIVO - HORECA management simplified-Signature</code> header: <code>t=&lt;unix time&gt;,v1=&lt;hex&gt;</code>,
           where <code>v1</code> is the HMAC-SHA256 of <code>{"{t}.{raw body}"}</code> with your signing secret. Reject
           anything older than five minutes. Failed deliveries are retried up to 6 times (1 min, 5 min, 30 min, 2 h,
           12 h). Respond with any 2xx to accept.

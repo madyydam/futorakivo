@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 // Lightweight client-side i18n (2026-09-27) — no routing/middleware
 // involved, since this dashboard is a client-rendered SPA-style app and
@@ -18,7 +18,7 @@ import hi from "./dictionaries/hi.json";
 import mr from "./dictionaries/mr.json";
 
 const DICTIONARIES: Record<Locale, Record<string, string>> = { en, hi, mr };
-const STORAGE_KEY = "modexsys-locale";
+const STORAGE_KEY = "FUTORA group-locale";
 
 function detectBrowserLocale(): Locale {
   if (typeof navigator === "undefined") return DEFAULT_LOCALE;

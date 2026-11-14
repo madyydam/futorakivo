@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { formatCustomerAddress } from "@modexsys/types";
+import { formatCustomerAddress } from "@futora/types";
 import { useEffect, useState } from "react";
 import { useCustomerAddresses, useCustomers } from "@/hooks/use-customers";
 

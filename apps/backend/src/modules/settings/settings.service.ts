@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+﻿import { randomBytes } from 'crypto';
 import {
   BadRequestException,
   Injectable,
@@ -8,7 +8,7 @@ import {
   TAX_REGIME_PRESETS,
   type BranchSettingsDto,
   type RestaurantSettingsDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { AuditService } from '../../audit/audit.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -60,11 +60,11 @@ export class SettingsService {
     }
     if (restaurant.name) {
       restaurant.name = restaurant.name
-        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'Modexsys HORECA')
-        .replace(/nodedr/gi, 'Modexsys')
+        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'KIVO - HORECA management simplified')
+        .replace(/nodedr/gi, 'FUTORA group')
         .replace(/\s*\(demo\)/gi, '')
         .replace(/bistro/gi, '')
-        .trim() || 'Modexsys HORECA';
+        .trim() || 'KIVO - HORECA management simplified';
     }
     return { restaurant, branch };
   }
@@ -81,11 +81,11 @@ export class SettingsService {
     }
     if (restaurant.name) {
       restaurant.name = restaurant.name
-        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'Modexsys HORECA')
-        .replace(/nodedr/gi, 'Modexsys')
+        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'KIVO - HORECA management simplified')
+        .replace(/nodedr/gi, 'FUTORA group')
         .replace(/\s*\(demo\)/gi, '')
         .replace(/bistro/gi, '')
-        .trim() || 'Modexsys HORECA';
+        .trim() || 'KIVO - HORECA management simplified';
     }
     return { restaurant, branch };
   }

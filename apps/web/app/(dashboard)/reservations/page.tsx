@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { ReservationStatusDto } from "@modexsys/types";
+import type { ReservationStatusDto } from "@futora/types";
 import { Check, X, Users } from "lucide-react";
 import { useState } from "react";
 import { AddReservationDialog } from "@/components/reservations/add-reservation-dialog";

@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   Logger,
@@ -7,7 +7,7 @@ import {
 import type {
   CreateReservationDto,
   ReservationStatusDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';

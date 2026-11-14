@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -9,7 +9,7 @@ import type {
   DepartmentDto,
   SetPermissionOverridesDto,
   UpdateStaffDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { AuditService } from '../../audit/audit.service';

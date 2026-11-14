@@ -1,4 +1,4 @@
-name: Publish Docker images
+﻿name: Publish Docker images
 
 # Builds and publishes the backend/web images that the CasaOS/ZimaOS app
 # store manifest (casaos/docker-compose.yml) pulls as pre-built,
@@ -6,7 +6,7 @@ name: Publish Docker images
 # file with no build step and no access to this repo's source, so `build:`
 # (used in the repo-root docker-compose.yml for a `git clone` + build flow)
 # is not an option there — the CasaOS manifest instead references
-# `ghcr.io/modexsys/horeca-{backend,web}:<version>`, and
+# `ghcr.io/futora/kivo-{backend,web}:<version>`, and
 # those tags only exist because this workflow pushed them.
 #
 # Each architecture is built on a NATIVE runner (ubuntu-24.04-arm for arm64)
@@ -19,7 +19,7 @@ name: Publish Docker images
 # are ARM SBCs, and declaring `architectures: [amd64, arm64]` in the
 # x-casaos manifest without actually publishing an arm64 image would install
 # a broken app on that hardware. Pushed to GHCR (same registry as sibling
-# project modexsys-pos) using the automatic `secrets.GITHUB_TOKEN` — no
+# project FUTORA group-pos) using the automatic `secrets.GITHUB_TOKEN` — no
 # manually-created registry credential needed.
 
 # A push to master publishes only :edge and :sha-<commit>, so unreleased code can never replace the image a
@@ -90,12 +90,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [modexsys-restaurant-pos-backend, modexsys-restaurant-pos-web]
+        image: [FUTORA group-restaurant-pos-backend, FUTORA group-restaurant-pos-web]
         platform: [linux/amd64, linux/arm64]
         include:
-          - image: modexsys-restaurant-pos-backend
+          - image: FUTORA group-restaurant-pos-backend
             dockerfile: apps/backend/Dockerfile
-          - image: modexsys-restaurant-pos-web
+          - image: FUTORA group-restaurant-pos-web
             dockerfile: apps/web/Dockerfile
           - platform: linux/amd64
             runner: ubuntu-latest
@@ -145,7 +145,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        image: [modexsys-restaurant-pos-backend, modexsys-restaurant-pos-web]
+        image: [FUTORA group-restaurant-pos-backend, FUTORA group-restaurant-pos-web]
     steps:
       - uses: actions/download-artifact@v4
         with:

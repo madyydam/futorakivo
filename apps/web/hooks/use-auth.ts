@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { clearOfflineCache } from "@/lib/offline-cache";
 import {
@@ -7,7 +7,7 @@ import {
   type LoginDto,
   type RegisterDto,
   type SessionUser,
-} from "@modexsys/types";
+} from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { savedPushToken, savePushToken } from "@/lib/native";
 import { api } from "@/lib/api";
@@ -25,7 +25,7 @@ function getSavedUser(): SessionUser | null {
   if (typeof window !== "undefined") {
     try {
       const stored =
-        localStorage.getItem("modexsys_demo_user") || localStorage.getItem("nodedr_demo_user");
+        localStorage.getItem("FUTORA group_demo_user") || localStorage.getItem("nodedr_demo_user");
       if (stored) {
         return JSON.parse(stored);
       }
@@ -39,7 +39,7 @@ function getSavedUser(): SessionUser | null {
 function saveUser(user: SessionUser) {
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem("modexsys_demo_user", JSON.stringify(user));
+      localStorage.setItem("FUTORA group_demo_user", JSON.stringify(user));
       localStorage.removeItem("nodedr_demo_user");
     } catch {
       // ignore
@@ -109,8 +109,8 @@ export function useRegister() {
   return useMutation({
     mutationFn: async (dto: RegisterDto) => {
       if (typeof window !== "undefined") {
-        if (dto.restaurantName) localStorage.setItem("modexsys_restaurant_name", dto.restaurantName);
-        if (dto.branchName) localStorage.setItem("modexsys_branch_name", dto.branchName);
+        if (dto.restaurantName) localStorage.setItem("FUTORA group_restaurant_name", dto.restaurantName);
+        if (dto.branchName) localStorage.setItem("FUTORA group_branch_name", dto.branchName);
       }
 
       try {
@@ -147,10 +147,10 @@ export function useLogout() {
     mutationFn: async () => {
       if (typeof window !== "undefined") {
         try {
-          localStorage.removeItem("modexsys_demo_user");
+          localStorage.removeItem("FUTORA group_demo_user");
           localStorage.removeItem("nodedr_demo_user");
-          localStorage.removeItem("modexsys_restaurant_name");
-          localStorage.removeItem("modexsys_branch_name");
+          localStorage.removeItem("FUTORA group_restaurant_name");
+          localStorage.removeItem("FUTORA group_branch_name");
         } catch {
           // ignore
         }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Smartphone } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -10,7 +10,7 @@ const origin = () => window.location.origin;
 
 /**
  * Settings > Mobile app. The QR holds this server's address: staff and riders
- * open the Modexsys HORECA app, tap Scan QR code, then sign in as usual.
+ * open the KIVO - HORECA management simplified app, tap Scan QR code, then sign in as usual.
  */
 export function MobileAppCard() {
   const url = useSyncExternalStore(noop, origin, () => "");
@@ -22,7 +22,7 @@ export function MobileAppCard() {
         <h2 className="text-[18px] font-medium text-foreground">Mobile app</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Staff and delivery riders can use Modexsys HORECA on Android and iPhone. Install the app, tap Scan QR code and
+        Staff and delivery riders can use KIVO - HORECA management simplified on Android and iPhone. Install the app, tap Scan QR code and
         sign in with the same login as here. Riders sign in with their phone number.
       </p>
       {url && (

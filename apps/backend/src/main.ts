@@ -1,4 +1,4 @@
-import { NestExpressApplication } from '@nestjs/platform-express';
+﻿import { NestExpressApplication } from '@nestjs/platform-express';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
@@ -162,8 +162,8 @@ async function bootstrap() {
     process.env.ENABLE_SWAGGER === 'true'
   ) {
     const config = new DocumentBuilder()
-      .setTitle('Modexsys HORECA API')
-      .setDescription('REST API for the Modexsys HORECA management system')
+      .setTitle('KIVO - HORECA management simplified API')
+      .setDescription('REST API for the KIVO - HORECA management simplified management system')
       .setVersion('1.0')
       .addCookieAuth('nodedr_session')
       .addBearerAuth({ type: 'http', scheme: 'bearer' }, 'integration-key')
@@ -175,7 +175,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
   console.log(
-    `Modexsys HORECA API listening on :${port} (docs at /api/docs)`,
+    `KIVO - HORECA management simplified API listening on :${port} (docs at /api/docs)`,
   );
 }
 void bootstrap();

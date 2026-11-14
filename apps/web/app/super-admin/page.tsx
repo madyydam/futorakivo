@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -184,8 +184,8 @@ export default function SuperAdminPage() {
 
   const handleImpersonate = (admin: RestaurantAdmin) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("modexsys_restaurant_name", admin.restaurantName);
-      localStorage.setItem("modexsys_branch_name", "Main Branch");
+      localStorage.setItem("FUTORA group_restaurant_name", admin.restaurantName);
+      localStorage.setItem("FUTORA group_branch_name", "Main Branch");
       const impersonatedUser = {
         id: "owner-" + admin.id,
         restaurantId: admin.id,
@@ -194,7 +194,7 @@ export default function SuperAdminPage() {
         roleName: "OWNER",
         permissions: ["all"],
       };
-      localStorage.setItem("modexsys_demo_user", JSON.stringify(impersonatedUser));
+      localStorage.setItem("FUTORA group_demo_user", JSON.stringify(impersonatedUser));
     }
     router.push("/dashboard");
   };
@@ -218,7 +218,7 @@ export default function SuperAdminPage() {
             <Link href="/" className="flex items-center gap-2">
               <Logo size={32} />
               <span className="font-bold tracking-tight text-foreground text-sm sm:text-base">
-                Modexsys HORECA
+                KIVO - HORECA management simplified
               </span>
             </Link>
             <span className="text-muted-foreground">/</span>

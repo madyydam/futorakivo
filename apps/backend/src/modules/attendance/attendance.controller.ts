@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Get,
@@ -8,7 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { SessionUser } from '@modexsys/types';
+import type { SessionUser } from '@futora/types';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { Auth } from '../../common/decorators/auth.decorator';

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -51,7 +51,7 @@
 }
 
 :root {
-  /* Modexsys HORECA — light palette. See DESIGN_SYSTEM.md for rationale
+  /* KIVO - HORECA management simplified — light palette. See DESIGN_SYSTEM.md for rationale
      (wine/burgundy primary is the one deliberate accent choice). */
   --background: #FBF9F8;
   --foreground: #111827;

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -144,7 +144,7 @@ export function LiveSystemDemo() {
           Interactive System Walkthrough · Cloud SaaS &amp; Offline Sync
         </div>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Watch Modexsys HORECA in Live Action
+          Watch KIVO - HORECA management simplified in Live Action
         </h2>
         <p className="mt-3 text-base text-muted-foreground sm:text-lg">
           Simulating real operations: watch the operator cursor place an order on Table 4, fire KOT to the kitchen, and update billing in real time.
@@ -196,7 +196,7 @@ export function LiveSystemDemo() {
             <span className="size-2.5 rounded-full bg-warning/60" />
             <span className="size-2.5 rounded-full bg-success/60" />
             <span className="ml-2 font-mono text-xs text-muted-foreground hidden sm:inline-block">
-              https://horeca.modexsys.com/dashboard
+              https://kivo.futora.com/dashboard
             </span>
           </div>
 
@@ -219,7 +219,7 @@ export function LiveSystemDemo() {
               <div className="flex items-center gap-2 px-1 py-0.5">
                 <Logo size={22} />
                 <span className="text-xs font-bold tracking-tight text-foreground">
-                  Modexsys <span className="text-primary font-semibold">HORECA</span>
+                  FUTORA group <span className="text-primary font-semibold">HORECA</span>
                 </span>
               </div>
 

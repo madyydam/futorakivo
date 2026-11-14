@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
@@ -163,7 +163,7 @@ function IntegrationApiKeysCard() {
         <div>
           <h2 className="text-[18px] font-medium text-foreground">Integration API keys</h2>
           <p className="text-sm text-muted-foreground">
-            Credentials for an external website or system to use Modexsys HORECA as a backend — browse the menu, place
+            Credentials for an external website or system to use KIVO - HORECA management simplified as a backend — browse the menu, place
             orders, and book tables for a location. Not tied to any staff account.
           </p>
         </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -143,7 +143,7 @@ export default function DemoPosPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold tracking-tight sm:text-2xl text-slate-900 dark:text-white">POS Billing Register</h1>
-            <p className="text-xs text-muted-foreground">Quick-tap touch terminal · Modexsys HORECA POS</p>
+            <p className="text-xs text-muted-foreground">Quick-tap touch terminal · KIVO - HORECA management simplified POS</p>
           </div>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -424,7 +424,7 @@ export default function DemoPosPage() {
                 <div className="mt-3">
                   <p className="text-xs font-semibold text-foreground">Scan with any UPI App</p>
                   <p className="text-[11px] text-muted-foreground">Google Pay · PhonePe · Paytm · BHIM</p>
-                  <p className="mt-1 font-mono text-[10px] text-primary">modexsys.horeca@icici · Amount ₹{total}</p>
+                  <p className="mt-1 font-mono text-[10px] text-primary">FUTORA group.horeca@icici · Amount ₹{total}</p>
                 </div>
               </div>
             )}
@@ -476,7 +476,7 @@ export default function DemoPosPage() {
           {/* Thermal Receipt Paper Card */}
           <div className="mx-auto my-2 w-full max-w-xs rounded-lg border border-neutral-300 bg-white p-5 font-mono text-[11px] text-neutral-800 shadow-inner">
             <div className="text-center space-y-0.5 border-b border-dashed border-neutral-300 pb-3">
-              <h4 className="font-bold text-sm tracking-tight">MODEXSYS HORECA</h4>
+              <h4 className="font-bold text-sm tracking-tight">KIVO - HORECA management simplified</h4>
               <p className="text-[10px] text-neutral-600">Connaught Place, New Delhi - 110001</p>
               <p className="text-[10px] text-neutral-600">GSTIN: 07AAAAA0000A1Z5</p>
               <p className="text-[10px] text-neutral-600">Ph: +91 98765 43210</p>

@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
-import type { WasteReason } from "@modexsys/types";
+import type { WasteReason } from "@futora/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

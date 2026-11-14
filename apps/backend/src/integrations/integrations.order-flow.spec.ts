@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/require-await, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument -- in-memory Prisma fake and jest mock calls are untyped by design */
+﻿/* eslint-disable @typescript-eslint/require-await, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument -- in-memory Prisma fake and jest mock calls are untyped by design */
 // Runs the real IntegrationsService + OrdersService against an in-memory
 // Prisma fake, so what is asserted is what actually gets written to / read
 // from the order row — not what a mocked OrdersService was told.
@@ -8,7 +8,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { createIntegrationOrderSchema } from '@modexsys/types';
+import { createIntegrationOrderSchema } from '@futora/types';
 import { OrdersService } from '../modules/orders/orders.service';
 import {
   IntegrationKeyContext,

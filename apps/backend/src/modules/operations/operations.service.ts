@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -7,7 +7,7 @@ import type {
   DocumentDto,
   EquipmentDto,
   ServiceLogDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { addDaysToDate, localDate } from '../../common/time';
 import { BranchTimeService } from '../../common/services/branch-time.service';
 import { PrismaService } from '../../prisma/prisma.service';

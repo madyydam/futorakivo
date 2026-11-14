@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import type { SessionUser } from '@modexsys/types';
+﻿import { Injectable, Logger } from '@nestjs/common';
+import type { SessionUser } from '@futora/types';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   computeOrderTotals,

@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import type {
   BranchSettingsDto,
   RestaurantSettingsDto,
   TaxMode,
   TaxRegime,
-} from "@modexsys/types";
+} from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
@@ -84,7 +84,7 @@ function cleanBrandName(n?: string | null): string {
   if (!n) return "HORECA OS";
   return n
     .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, "HORECA OS")
-    .replace(/modexsys\s*horeca/gi, "HORECA OS")
+    .replace(/FUTORA group\s*horeca/gi, "HORECA OS")
     .replace(/nodedr/gi, "HORECA OS")
     .replace(/\s*\(demo\)/gi, "")
     .replace(/bistro/gi, "")
@@ -109,9 +109,9 @@ export function useDisplaySettings(branchId: string | null) {
         // Fallback to default branding
       }
       const customRestName =
-        typeof window !== "undefined" ? localStorage.getItem("modexsys_restaurant_name") : null;
+        typeof window !== "undefined" ? localStorage.getItem("FUTORA group_restaurant_name") : null;
       const customBranchName =
-        typeof window !== "undefined" ? localStorage.getItem("modexsys_branch_name") : null;
+        typeof window !== "undefined" ? localStorage.getItem("FUTORA group_branch_name") : null;
 
       return {
         restaurant: {

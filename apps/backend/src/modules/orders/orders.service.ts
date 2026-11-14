@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -19,7 +19,7 @@ import {
   type SessionUser,
   type UpdateOrderDto,
   type UpdateOrderItemDto,
-} from '@modexsys/types';
+} from '@futora/types';
 import { AuditService } from '../../audit/audit.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { GiftCardsService } from '../gift-cards/gift-cards.service';
@@ -43,7 +43,7 @@ import {
   settlePayments,
   type Bill,
 } from './settlement';
-import type { TaxMode } from '@modexsys/types';
+import type { TaxMode } from '@futora/types';
 import {
   adjustOnlinePrice,
   type OnlinePriceAdjust,

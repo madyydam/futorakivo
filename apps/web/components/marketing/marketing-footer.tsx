@@ -38,11 +38,11 @@ export function MarketingFooter() {
             <Link href="/" className="flex items-center gap-2.5">
               <Logo size={28} />
               <span className="text-sm font-bold text-foreground">
-                FUTORA group <span className="text-primary font-semibold">HORECA</span>
+                KIVO <span className="text-primary font-semibold">by FUTORA group</span>
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Cloud-based SaaS restaurant management platform with offline-first speed. Centralized operations for restaurants and cafés, online and offline.
+              Self-hosted restaurant management software. Runs on your own machine, works fully offline. Your data never leaves your server. By FUTORA group.
             </p>
           </div>
 

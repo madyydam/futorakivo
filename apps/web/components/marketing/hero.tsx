@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PosMockup } from "@/components/marketing/pos-mockup";
 import { useCurrentUser } from "@/hooks/use-auth";
 
-const words = ["All-in-one", "cloud", "platform", "for", "restaurants."];
+const words = ["Self-hosted", "HORECA", "software,", "simplified."];
 
 export function Hero() {
   const { data: userData } = useCurrentUser();
@@ -33,7 +33,7 @@ export function Hero() {
               className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary"
             >
               <span className="size-2 rounded-full bg-primary animate-pulse" />
-              KIVO - HORECA management simplified · Cloud SaaS Platform
+              KIVO · HORECA management simplified · by FUTORA group
             </motion.div>
 
             <h1 className="mt-4 flex flex-wrap justify-center gap-x-2.5 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:justify-start lg:text-5xl xl:text-6xl leading-[1.1]">
@@ -57,8 +57,8 @@ export function Hero() {
               transition={{ duration: 0.35, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
             >
-              Cloud POS, kitchen display, and billing for restaurants and cafés.
-              Works offline, syncs automatically.
+              Self-hosted POS, kitchen display, and billing — runs on your own machine.
+              Works fully offline. Your data stays on your server. No subscription.
             </motion.p>
 
             <motion.div
@@ -74,7 +74,7 @@ export function Hero() {
                 </Button>
               ) : (
                 <Button size="lg" className="h-11 px-6 text-[15px]" render={<Link href="/onboarding" />}>
-                  Get started free
+                  Install KIVO — It's Free
                   <ArrowRight className="size-4 ml-1.5" data-icon="inline-end" />
                 </Button>
               )}
@@ -98,13 +98,13 @@ export function Hero() {
               className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground lg:justify-start"
             >
               <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5 text-emerald-500" /> Cloud SaaS Platform
+                <CheckCircle2 className="size-3.5 text-emerald-500" /> Self-Hosted · Your Data
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5 text-emerald-500" /> Offline Mode &amp; Auto-Sync
+                <CheckCircle2 className="size-3.5 text-emerald-500" /> Fully Offline · No Internet Needed
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5 text-emerald-500" /> Unified POS &amp; KDS
+                <CheckCircle2 className="size-3.5 text-emerald-500" /> No Subscription · Free Forever
               </span>
             </motion.div>
           </div>

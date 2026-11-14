@@ -46,7 +46,7 @@ const features = [
     icon: WifiOff,
     title: "Offline-ready resilience",
     description:
-      "Never miss a sale when internet cuts out. POS billing, KDS tickets, and kitchen printing work seamlessly offline, then auto-sync to the cloud the moment you reconnect.",
+      "Never miss a sale when internet cuts out. POS billing, KDS tickets, and kitchen printing work seamlessly offline — all data stored locally on your own server.",
   },
   {
     icon: ShieldCheck,
@@ -56,9 +56,9 @@ const features = [
   },
   {
     icon: Cloud,
-    title: "Centralized cloud SaaS",
+    title: "Self-hosted · Your server",
     description:
-      "Manage all your menus, pricing, customer CRM, multi-branch operations, staff permissions, and financial reports from a single centralized cloud platform accessible from anywhere.",
+      "Install on any laptop or mini-PC with one Docker command. All menus, orders, CRM, payroll, and reports live on your machine — no cloud dependency, no vendor lock-in.",
   },
   {
     icon: Plug,

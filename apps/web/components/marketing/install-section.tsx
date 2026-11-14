@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ArrowRight, HardDrive, Server, WifiOff, Layers, Sparkles } from "lucide-react";
 import Link from "next/link";

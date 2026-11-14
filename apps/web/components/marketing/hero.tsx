@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ArrowRight, CheckCircle2, Play } from "lucide-react";
 import { motion } from "motion/react";

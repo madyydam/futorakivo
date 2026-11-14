@@ -70,7 +70,17 @@ export function MarketingFooter() {
         </div>
 
         <div className="mt-12 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} KIVO - FUTORA GROUP OF COMPANIES</p>
+          <p>
+            © {new Date().getFullYear()} KIVO -{" "}
+            <a
+              href="https://www.futoragroup.in/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 no-underline font-medium"
+            >
+              FUTORA GROUP OF COMPANIES
+            </a>
+          </p>
         </div>
       </div>
     </footer>

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # One-click installer for KIVO - Restaurant Management Simplified (kivo-restaurant).
 #
 # Run this from the repo root after cloning:

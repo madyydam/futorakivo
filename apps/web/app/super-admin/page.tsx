@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,6 +42,7 @@ import {
   Wallet,
   Wifi,
   XCircle,
+  Menu,
 } from "lucide-react";
 import { PERMISSIONS } from "@futora/types";
 import { Logo } from "@/components/layout/logo";
@@ -57,8 +58,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface BranchInfo {
   id: string;
@@ -262,6 +265,8 @@ export default function SuperAdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [planFilter, setPlanFilter] = useState<string>("ALL");
   const [selectedAdmin, setSelectedAdmin] = useState<RestaurantAdmin | null>(null);
+  const [activeTab, setActiveTab] = useState<"tenants" | "subscriptions" | "hardware" | "broadcasts" | "security">("tenants");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Modals state
   const [openNewOutletModal, setOpenNewOutletModal] = useState(false);
@@ -461,170 +466,241 @@ export default function SuperAdminPage() {
     return acc + 599;
   }, 0);
 
-  return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Super Admin Top Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur-md px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <Logo size={32} />
-              <div className="flex flex-col">
-                <span className="font-bold tracking-tight text-foreground text-sm sm:text-base leading-tight">
-                  KIVO
-                </span>
-                <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
-                  by FUTORA group
-                </span>
+  const SuperAdminSidebar = () => (
+    <div className="flex flex-col h-full bg-white dark:bg-card">
+      {/* Top Brand Block */}
+      <div className="flex h-16 shrink-0 items-center justify-between px-4 bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] border-b border-[#780c29]/60 shadow-[0_4px_12px_rgba(159,18,57,0.18)]">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Logo size={28} />
+          <div className="flex flex-col">
+            <span className="font-bold tracking-tight text-white text-sm leading-tight">
+              KIVO
+            </span>
+            <span className="text-[10px] text-white/80 uppercase font-semibold tracking-wider">
+              by FUTORA group
+            </span>
+          </div>
+        </Link>
+        <Badge variant="outline" className="border-white/30 bg-white/10 text-white font-mono text-[9px] px-1.5 py-0.5">
+          SUPER ADMIN
+        </Badge>
+      </div>
+
+      {/* Navigation List */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
+        <div className="text-[10px] font-bold text-muted-foreground uppercase px-2 mb-2 tracking-wider">
+          Platform SaaS Matrix
+        </div>
+
+        {[
+          { id: "tenants", label: "Outlets & Tenants", icon: Store, count: filteredAdmins.length },
+          { id: "subscriptions", label: "Plans & Pricing", icon: CreditCard },
+          { id: "hardware", label: "Hardware Network", icon: Printer },
+          { id: "broadcasts", label: "Broadcast Alerts", icon: Megaphone, count: broadcasts.length },
+          { id: "security", label: "Audit Logs & Security", icon: ShieldCheck },
+        ].map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id as any);
+                setMobileSidebarOpen(false);
+              }}
+              className={cn(
+                "group relative flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 select-none cursor-pointer",
+                isActive
+                  ? "bg-gradient-to-r from-[#9f1239] via-[#8e1032] to-[#780c29] text-white shadow-md font-bold"
+                  : "bg-white dark:bg-card text-slate-700 dark:text-slate-300 hover:bg-muted/70 hover:text-[#9f1239] dark:hover:text-rose-400"
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                <Icon className={cn("size-4 shrink-0", isActive ? "text-white" : "text-muted-foreground group-hover:text-primary")} />
+                <span>{item.label}</span>
               </div>
-            </Link>
-            <span className="text-muted-foreground">/</span>
-            <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-mono text-xs">
-              <ShieldCheck className="mr-1 size-3.5 inline text-emerald-500" />
-              Super Admin SaaS Console
-            </Badge>
+              {item.count !== undefined && (
+                <Badge
+                  variant={isActive ? "secondary" : "outline"}
+                  className={cn("text-[10px] px-1.5 py-0 font-mono", isActive ? "bg-white/20 text-white border-0" : "")}
+                >
+                  {item.count}
+                </Badge>
+              )}
+            </button>
+          );
+        })}
+
+        <div className="pt-4 px-1">
+          <Button
+            onClick={() => {
+              setOpenNewOutletModal(true);
+              setMobileSidebarOpen(false);
+            }}
+            className="w-full text-xs font-semibold gap-1.5 bg-primary text-primary-foreground shadow-xs h-9 cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            Onboard Restaurant
+          </Button>
+        </div>
+      </div>
+
+      {/* Bottom Status & Exit */}
+      <div className="p-3 border-t border-border/60 bg-muted/20 space-y-2.5">
+        <div className="rounded-xl border border-border/60 bg-card p-2.5 text-[11px] space-y-1">
+          <div className="flex items-center gap-2 font-medium text-foreground">
+            <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>PostgreSQL Cloud (99.99%)</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+            <Wifi className="size-3 text-blue-500" />
+            <span>Offline Sync Engine Active</span>
+          </div>
+        </div>
+
+        <Link href="/dashboard" className="block w-full">
+          <Button variant="outline" className="w-full text-xs h-8 gap-1.5 cursor-pointer">
+            <LogIn className="size-3 text-primary" />
+            Exit to Restaurant POS
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="relative flex h-screen w-full overflow-hidden bg-[#FAF8F8] dark:bg-[#0C0D10] text-foreground">
+      {/* Desktop Floating Island Sidebar */}
+      <aside className="hidden lg:flex w-64 shrink-0 my-3 ml-3 rounded-[24px] border border-slate-200/80 dark:border-border bg-white dark:bg-card shadow-sm flex-col h-[calc(100vh-24px)] select-none overflow-hidden z-20">
+        <SuperAdminSidebar />
+      </aside>
+
+      {/* Mobile Drawer (Sheet) */}
+      <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="w-72 bg-white dark:bg-card p-0 flex flex-col h-full overflow-hidden border-r border-slate-200/80 dark:border-border">
+          <SheetTitle className="sr-only">Super Admin Navigation</SheetTitle>
+          <SuperAdminSidebar />
+        </SheetContent>
+      </Sheet>
+
+      {/* Right Main Content Pane */}
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col h-full overflow-hidden">
+        {/* Floating Top Header */}
+        <header className="mt-3 mr-3 ml-3 mb-2 flex h-12 shrink-0 items-center justify-between rounded-[20px] border border-slate-200/80 dark:border-border bg-white dark:bg-card px-3.5 sm:px-5 shadow-xs z-20">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-muted/40 lg:hidden text-foreground hover:bg-muted cursor-pointer"
+              aria-label="Open navigation"
+            >
+              <Menu className="size-4" />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-foreground">
+                {activeTab === "tenants" && "🏢 Outlets & Tenants Directory"}
+                {activeTab === "subscriptions" && "💳 SaaS Plans & Pricing"}
+                {activeTab === "hardware" && "🖨️ Hardware & Terminal Network"}
+                {activeTab === "broadcasts" && "📢 Global Platform Broadcasts"}
+                {activeTab === "security" && "🛡️ Audit Logs & Security Stream"}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setOpenBroadcastModal(true)}
-              className="h-8 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5 cursor-pointer"
             >
               <Megaphone className="size-3.5 text-primary" />
-              Broadcast
+              <span className="hidden sm:inline">Broadcast</span>
             </Button>
             <Button
               size="sm"
               onClick={() => setOpenNewOutletModal(true)}
-              className="h-8 text-xs font-semibold gap-1.5 bg-primary text-primary-foreground shadow-xs"
+              className="h-8 text-xs font-semibold gap-1.5 bg-primary text-primary-foreground shadow-xs cursor-pointer"
             >
               <Plus className="size-3.5" />
-              Onboard Restaurant
+              <span>Onboard</span>
             </Button>
             <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground">
-                Exit to POS
+              <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground hidden sm:inline-flex cursor-pointer">
+                Exit
               </Button>
             </Link>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content Area */}
-      <main className="mx-auto flex-1 w-full max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Title & Platform Health Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-5">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Platform Command Center</h1>
-            <p className="text-xs text-muted-foreground sm:text-sm mt-0.5">
-              Centralized Cloud SaaS control: Monitor restaurant tenants, subscription licensing, hardware, and platform revenue
-            </p>
+        {/* Scrollable View */}
+        <main className="flex-1 overflow-y-auto px-3 sm:px-4 lg:px-4 py-2 pb-24 overscroll-contain space-y-5">
+          {/* Platform Level KPI Metrics */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <Card className="border-border/60 shadow-xs">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Active Restaurants
+                </CardTitle>
+                <Store className="size-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{admins.length} Brands</div>
+                <p className="mt-1 text-xs text-emerald-600 flex items-center">
+                  <TrendingUp className="mr-1 size-3" />
+                  {activeCount} Active · {trialCount} on 14-day trial
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 shadow-xs">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Total Live Outlets
+                </CardTitle>
+                <Building2 className="size-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalOutlets} Outlets</div>
+                <p className="mt-1 text-xs text-muted-foreground">Across Indian metro markets</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 shadow-xs">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Platform Monthly MRR
+                </CardTitle>
+                <CreditCard className="size-4 text-emerald-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold font-mono">₹{mrrEstimate.toLocaleString("en-IN")}</div>
+                <p className="mt-1 text-xs text-emerald-600 flex items-center">
+                  <ArrowUpRight className="mr-1 size-3" />
+                  Subscription SaaS revenue
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 shadow-xs">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Platform 30-Day GMV
+                </CardTitle>
+                <Wallet className="size-4 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">₹1.28 Cr</div>
+                <p className="mt-1 text-xs text-muted-foreground">Dine-in, KDS &amp; Takeaway orders</p>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-1.5 text-xs">
-              <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-medium text-foreground">PostgreSQL Cloud:</span>
-              <span className="font-semibold text-emerald-600">Connected (99.99%)</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-1.5 text-xs">
-              <Wifi className="size-3.5 text-blue-500" />
-              <span className="font-medium text-foreground">Offline Sync Engine:</span>
-              <span className="font-semibold text-blue-600">Active</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Platform Level KPI Metrics */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <Card className="border-border/60 shadow-xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Active Restaurants
-              </CardTitle>
-              <Store className="size-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{admins.length} Brands</div>
-              <p className="mt-1 text-xs text-emerald-600 flex items-center">
-                <TrendingUp className="mr-1 size-3" />
-                {activeCount} Active · {trialCount} on 14-day trial
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60 shadow-xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Total Live Outlets
-              </CardTitle>
-              <Building2 className="size-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalOutlets} Outlets</div>
-              <p className="mt-1 text-xs text-muted-foreground">Across Indian metro markets</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60 shadow-xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Platform Monthly MRR
-              </CardTitle>
-              <CreditCard className="size-4 text-emerald-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">₹{mrrEstimate.toLocaleString("en-IN")}</div>
-              <p className="mt-1 text-xs text-emerald-600 flex items-center">
-                <ArrowUpRight className="mr-1 size-3" />
-                Subscription SaaS revenue
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60 shadow-xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Platform 30-Day GMV
-              </CardTitle>
-              <Wallet className="size-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹1.28 Cr</div>
-              <p className="mt-1 text-xs text-muted-foreground">Dine-in, KDS &amp; Takeaway orders</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Comprehensive Tabs Navigation */}
-        <Tabs defaultValue="tenants" className="w-full space-y-6">
-          <TabsList className="bg-muted/60 p-1 rounded-xl border border-border/60 w-full sm:w-auto flex flex-wrap">
-            <TabsTrigger value="tenants" className="gap-2 text-xs">
-              <Store className="size-3.5" />
-              Outlets &amp; Tenants ({filteredAdmins.length})
-            </TabsTrigger>
-            <TabsTrigger value="subscriptions" className="gap-2 text-xs">
-              <CreditCard className="size-3.5" />
-              SaaS Plans &amp; Subscriptions
-            </TabsTrigger>
-            <TabsTrigger value="hardware" className="gap-2 text-xs">
-              <Printer className="size-3.5" />
-              Terminals &amp; Hardware
-            </TabsTrigger>
-            <TabsTrigger value="broadcasts" className="gap-2 text-xs">
-              <Megaphone className="size-3.5" />
-              Platform Announcements ({broadcasts.length})
-            </TabsTrigger>
-            <TabsTrigger value="security" className="gap-2 text-xs">
-              <ShieldCheck className="size-3.5" />
-              Audit Logs &amp; Security
-            </TabsTrigger>
-          </TabsList>
-
-          {/* TAB 1: TENANTS & OUTLETS DIRECTORY */}
-          <TabsContent value="tenants" className="space-y-4">
+          {/* Controlled Tabs Content (driven by activeTab from sidebar) */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full space-y-6">
+            {/* TAB 1: TENANTS & OUTLETS DIRECTORY */}
+            <TabsContent value="tenants" className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold tracking-tight text-foreground">
@@ -1174,6 +1250,7 @@ export default function SuperAdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+    </div>
 
       {/* MODAL 1: TENANT DEEP DETAILS & MANAGEMENT */}
       <Dialog open={Boolean(selectedAdmin)} onOpenChange={(open) => !open && setSelectedAdmin(null)}>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { clearOfflineCache } from "@/lib/offline-cache";
 import {

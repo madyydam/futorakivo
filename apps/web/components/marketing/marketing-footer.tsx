@@ -67,14 +67,8 @@ export function MarketingFooter() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} KIVO - HORECA management simplified. All rights reserved.</p>
-          <div className="flex gap-4">
-            <span className="text-muted-foreground">KIVO - HORECA management simplified Suite</span>
-            <a href="/docs/accessibility" className="hover:text-foreground">
-              Accessibility
-            </a>
-          </div>
+        <div className="mt-12 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} KIVO - FUTORA GROUP OF COMPANIES</p>
         </div>
       </div>
     </footer>

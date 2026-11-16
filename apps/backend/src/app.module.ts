@@ -49,6 +49,8 @@ import { McpModule } from './mcp/mcp.module';
 import { SystemModule } from './system/system.module';
 import { VerifactuModule } from './modules/verifactu/verifactu.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { SubscriptionModule } from './subscription/subscription.module';
+import { AggregatorModule } from './modules/aggregators/aggregator.module';
 
 @Module({
   imports: [
@@ -98,6 +100,8 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
     IntegrationsModule,
     McpModule,
     SystemModule,
+    SubscriptionModule,
+    AggregatorModule,
   ],
   controllers: [AppController],
   providers: [

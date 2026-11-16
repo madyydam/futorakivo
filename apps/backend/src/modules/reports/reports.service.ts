@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -656,5 +656,154 @@ export class ReportsService {
         );
       }
     }
+  }
+
+  async getConsolidatedReport(restaurantId: string, from?: string, to?: string) {
+    const branches = await this.prisma.branch.findMany({
+      where: { restaurantId, isActive: true },
+      select: { id: true, name: true, isCentralKitchen: true, address: true, phone: true },
+      orderBy: { name: 'asc' },
+    });
+
+    const branchIds = branches.map((b) => b.id);
+
+    const dateFilter: any = {};
+    if (from) dateFilter.gte = new Date(from);
+    if (to) {
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.lte = end;
+    }
+
+    const orderWhere: any = {
+      branchId: { in: branchIds },
+      status: { notIn: ['CANCELLED', 'REFUNDED'] },
+      ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+    };
+
+    const orders = await this.prisma.order.findMany({
+      where: orderWhere,
+      select: {
+        id: true,
+        branchId: true,
+        totalAmount: true,
+        createdAt: true,
+        items: {
+          select: {
+            nameSnapshot: true,
+            quantity: true,
+            unitPriceSnapshot: true,
+          },
+        },
+      },
+    });
+
+    const lowStockIngredients = await this.prisma.ingredient.findMany({
+      where: {
+        branchId: { in: branchIds },
+        reorderLevel: { gt: 0 },
+      },
+      select: {
+        id: true,
+        branchId: true,
+        name: true,
+        currentStock: true,
+        reorderLevel: true,
+        costPerUnit: true,
+        unit: true,
+      },
+    });
+
+    const indents = await this.prisma.stockIndent.findMany({
+      where: { restaurantId },
+      include: {
+        sourceBranch: { select: { id: true, name: true } },
+        targetBranch: { select: { id: true, name: true } },
+        items: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    const transfers = await this.prisma.stockTransfer.findMany({
+      where: { restaurantId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    let totalRevenue = 0;
+    const branchStats: Record<string, { revenue: number; orderCount: number }> = {};
+    for (const b of branches) {
+      branchStats[b.id] = { revenue: 0, orderCount: 0 };
+    }
+
+    const itemSalesMap: Record<string, { name: string; quantity: number; revenue: number }> = {};
+
+    for (const order of orders) {
+      const amt = Number(order.totalAmount);
+      totalRevenue += amt;
+      if (branchStats[order.branchId]) {
+        branchStats[order.branchId].revenue += amt;
+        branchStats[order.branchId].orderCount += 1;
+      }
+
+      for (const item of order.items) {
+        const itemName = item.nameSnapshot;
+        if (!itemSalesMap[itemName]) {
+          itemSalesMap[itemName] = { name: itemName, quantity: 0, revenue: 0 };
+        }
+        itemSalesMap[itemName].quantity += item.quantity;
+        itemSalesMap[itemName].revenue += item.quantity * Number(item.unitPriceSnapshot);
+      }
+    }
+
+    const topItems = Object.values(itemSalesMap)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    const lowStockByBranch: Record<string, number> = {};
+    for (const ing of lowStockIngredients) {
+      if (Number(ing.currentStock) <= Number(ing.reorderLevel)) {
+        lowStockByBranch[ing.branchId] = (lowStockByBranch[ing.branchId] || 0) + 1;
+      }
+    }
+
+    const branchSummaries = branches.map((b) => {
+      const stats = branchStats[b.id] || { revenue: 0, orderCount: 0 };
+      const avgTicket = stats.orderCount > 0 ? stats.revenue / stats.orderCount : 0;
+      return {
+        id: b.id,
+        name: b.name,
+        isCentralKitchen: b.isCentralKitchen,
+        address: b.address,
+        phone: b.phone,
+        revenue: Math.round(stats.revenue * 100) / 100,
+        orderCount: stats.orderCount,
+        avgTicket: Math.round(avgTicket * 100) / 100,
+        lowStockCount: lowStockByBranch[b.id] || 0,
+        pendingIndentsCount: indents.filter(
+          (i) => (i.sourceBranchId === b.id || i.targetBranchId === b.id) && i.status === 'PENDING',
+        ).length,
+      };
+    });
+
+    const pendingIndentsCount = indents.filter((i) => i.status === 'PENDING').length;
+    const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+    return {
+      overview: {
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        totalOrders: orders.length,
+        avgOrderValue: Math.round(avgOrderValue * 100) / 100,
+        activeOutlets: branches.length,
+        totalCentralKitchens: branches.filter((b) => b.isCentralKitchen).length,
+        pendingIndentsCount,
+        totalTransfersCount: transfers.length,
+      },
+      branches: branchSummaries,
+      topItems,
+      recentIndents: indents.slice(0, 10),
+      recentTransfers: transfers.slice(0, 10),
+    };
   }
 }

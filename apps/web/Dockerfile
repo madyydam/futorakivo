@@ -31,7 +31,7 @@ ENV BACKEND_URL=${BACKEND_URL}
 ENV DOCKER_BUILD=1
 COPY packages/types packages/types
 COPY apps/web apps/web
-RUN pnpm --filter @nodedr-restaurant/types build
+RUN pnpm --filter @futora/types build
 RUN pnpm --filter web build
 
 # --- runtime ---

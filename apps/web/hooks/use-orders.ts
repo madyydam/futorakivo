@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type {
   AddOrderItemsDto,
@@ -11,6 +11,8 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Customer } from "@/hooks/use-customers";
 import { api } from "@/lib/api";
+import { toast } from "@/lib/toast";
+import { queueOfflineCheckout, queueOfflineOrder } from "@/lib/offline-outbox";
 
 export interface CreatedOrder {
   id: string;
@@ -41,7 +43,33 @@ export interface CheckoutResult extends CreatedOrder {
 export function useCreateOrder(branchId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dto: CreateOrderDto) => api.post<CreatedOrder>(`/orders?branchId=${branchId}`, dto),
+    mutationFn: async (dto: CreateOrderDto) => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        const queued = queueOfflineOrder(branchId || "", dto);
+        toast.warning(
+          `⚡ Offline Mode: Order saved locally (${queued.tempOrder.orderNumber}). Will auto-sync when online.`
+        );
+        return queued.tempOrder;
+      }
+      try {
+        return await api.post<CreatedOrder>(`/orders?branchId=${branchId}`, dto);
+      } catch (err: any) {
+        const isNetworkFailure =
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          err?.message?.includes("fetch") ||
+          err?.message?.includes("NetworkError") ||
+          err?.message?.includes("Failed to fetch") ||
+          err?.status === 0;
+        if (isNetworkFailure) {
+          const queued = queueOfflineOrder(branchId || "", dto);
+          toast.warning(
+            `⚡ Network offline: Order queued locally (${queued.tempOrder.orderNumber}).`
+          );
+          return queued.tempOrder;
+        }
+        throw err;
+      }
+    },
     onSuccess: () => {
       // Without refreshing the per-table open-bill cache, going Table 1 -> 2 ->
       // 1 showed Table 1 as having no order and the next send opened a duplicate.
@@ -95,8 +123,32 @@ export function useBillPreview(branchId: string | null, orderId: string, adj: Bi
 export function useCheckoutOrder(branchId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, dto }: { orderId: string; dto: CheckoutDto }) =>
-      api.post<CheckoutResult>(`/orders/${orderId}/checkout?branchId=${branchId}`, dto),
+    mutationFn: async ({ orderId, dto }: { orderId: string; dto: CheckoutDto }) => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        const queued = queueOfflineCheckout(branchId || "", orderId, dto);
+        toast.warning(
+          `⚡ Offline Mode: Payment recorded locally. Will sync to cloud when connected.`
+        );
+        return queued.tempResult;
+      }
+      try {
+        return await api.post<CheckoutResult>(`/orders/${orderId}/checkout?branchId=${branchId}`, dto);
+      } catch (err: any) {
+        const isNetworkFailure =
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          err?.message?.includes("fetch") ||
+          err?.message?.includes("NetworkError") ||
+          err?.message?.includes("Failed to fetch") ||
+          err?.status === 0;
+        if (isNetworkFailure) {
+          const queued = queueOfflineCheckout(branchId || "", orderId, dto);
+          toast.warning(`⚡ Network offline: Payment saved to offline outbox.`);
+          return queued.tempResult;
+        }
+        throw err;
+      }
+    },
+
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["floors", branchId] });

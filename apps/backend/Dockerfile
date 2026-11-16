@@ -28,9 +28,9 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS builder
 COPY packages/types packages/types
 COPY apps/backend apps/backend
-RUN pnpm --filter @nodedr-restaurant/types build
-RUN pnpm --filter @nodedr-restaurant/backend exec prisma generate
-RUN pnpm --filter @nodedr-restaurant/backend build
+RUN pnpm --filter @futora/types build
+RUN pnpm --filter @futora/backend exec prisma generate
+RUN pnpm --filter @futora/backend build
 
 # Docker CLI (optional in-container "update & restart" against mounted
 # docker.sock — see src/system/update.service.ts). Pulled from the official

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { EntityDialogHost } from "@/components/layout/entity-dialog-host";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { OfflineSyncIndicator } from "@/components/pos/offline-sync-indicator";
 import { useBranch } from "@/hooks/use-branch";
 import { useDisplaySettings } from "@/hooks/use-settings";
 import { BrandFooter } from "./brand-footer";
@@ -184,9 +185,19 @@ export function AppShell({
                 Live · {todayString}
               </span>
             </div>
+
+            <Link
+              href="/settings/billing"
+              className="hidden md:flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors select-none"
+            >
+              <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span>SaaS License</span>
+              <span className="underline ml-0.5 font-semibold">Plans &rarr;</span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-2.5">
+            <OfflineSyncIndicator />
             <LanguageSwitcher compact />
             <NotificationBell />
             <UserMenu user={user} />

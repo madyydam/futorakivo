@@ -1,0 +1,144 @@
+# ==============================================================================
+# KIVO — Petpooja-Grade Multi-Tenant Cloud SaaS Production Architecture
+# Designed for high-concurrency cloud scaling (AWS EC2/ECS, Railway, Hetzner, GCP)
+# ==============================================================================
+
+services:
+  # Caddy Reverse Proxy & Automatic Let's Encrypt TLS/SSL Termination
+  caddy:
+    image: caddy:2-alpine
+    container_name: kivo-saas-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${SAAS_DOMAIN:-kivo.cloud}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - backend
+
+  # Next.js Multi-Tenant Web Application (Edge Optimized)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        BACKEND_URL: "http://backend:4000"
+    image: ghcr.io/futora/kivo-web:${APP_VERSION:-latest}
+    container_name: kivo-saas-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_APP_DOMAIN: ${SAAS_DOMAIN:-kivo.cloud}
+      NEXT_PUBLIC_API_URL: "https://${SAAS_DOMAIN:-kivo.cloud}/api/v1"
+    expose:
+      - "3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # NestJS Central Multi-Tenant API & WebSocket Relay
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+      args:
+        APP_VERSION: "${APP_VERSION:-1.0.0}"
+    image: ghcr.io/futora/kivo-backend:${APP_VERSION:-latest}
+    container_name: kivo-saas-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-kivoadmin}:${POSTGRES_PASSWORD}@pgbouncer:6432/${POSTGRES_DB:-kivo_cloud_db}?sslmode=disable"
+      DIRECT_URL: "postgresql://${POSTGRES_USER:-kivoadmin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kivo_cloud_db}"
+      REDIS_URL: "redis://redis:6379"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: "7d"
+      CORS_ORIGIN: "https://${SAAS_DOMAIN:-kivo.cloud}"
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "1"
+      ALLOW_PUBLIC_SIGNUP: "true"
+      UPLOADS_DIR: "/data/uploads"
+    expose:
+      - "4000"
+    volumes:
+      - saas_uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # PgBouncer High-Concurrency Connection Pooler (Petpooja Scale: 10,000+ Terminals)
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: kivo-saas-pgbouncer
+    restart: unless-stopped
+    environment:
+      DB_USER: ${POSTGRES_USER:-kivoadmin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-kivo_cloud_db}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 5000
+      DEFAULT_POOL_SIZE: 50
+      RESERVE_POOL_SIZE: 10
+      AUTH_TYPE: scram-sha-256
+    expose:
+      - "6432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Central Cloud PostgreSQL 16
+  postgres:
+    image: postgres:16-alpine
+    container_name: kivo-saas-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kivoadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-kivo_cloud_db}
+    volumes:
+      - saas_pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kivoadmin}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Redis In-Memory Cache & WebSocket Relay
+  redis:
+    image: redis:7-alpine
+    container_name: kivo-saas-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - saas_redisdata:/data
+    expose:
+      - "6379"
+
+volumes:
+  saas_pgdata:
+  saas_redisdata:
+  saas_uploads:
+  caddy_data:
+  caddy_config:

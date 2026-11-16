@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   Controller,
   Get,
@@ -29,6 +29,16 @@ export class ReportsController {
   @Get()
   catalog(@CurrentUser() u: SessionUser) {
     return this.reports.catalog(u.permissions);
+  }
+
+  @Auth('reports.access')
+  @Get('consolidated')
+  async consolidated(
+    @CurrentUser() u: SessionUser,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.reports.getConsolidatedReport(u.restaurantId, from, to);
   }
 
   @Auth('reports.access')

@@ -101,6 +101,8 @@ model Restaurant {
   branches               Branch[]
   roles                  Role[]
   users                  User[]
+  subscriptions          Subscription[]
+  subscriptionInvoices   SubscriptionInvoice[]
   integrationApiKeys     IntegrationApiKey[]
   webhookEndpoints       WebhookEndpoint[]
   integrationConnections IntegrationConnection[]
@@ -176,6 +178,8 @@ model Branch {
   printerHost         String?
   printerPort         Int     @default(9100)
 
+  isCentralKitchen Boolean @default(false)
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -205,6 +209,9 @@ model Branch {
   supplierPayments   SupplierPayment[]
   notifications      Notification[]
   integrationApiKeys IntegrationApiKey[]
+
+  indentsRequested StockIndent[] @relation("IndentSource")
+  indentsReceived  StockIndent[] @relation("IndentTarget")
 
   @@index([restaurantId])
   @@map("branches")
@@ -2288,6 +2295,67 @@ model StockTransfer {
   @@map("stock_transfers")
 }
 
+enum StockIndentStatus {
+  PENDING
+  APPROVED
+  DISPATCHED
+  RECEIVED
+  REJECTED
+  CANCELLED
+}
+
+// Multi-Branch Central Kitchen & Supply Chain Indent (Petpooja Model).
+// Satellite branches requisition stock items from the Central Kitchen or hub warehouse.
+model StockIndent {
+  id              String            @id @default(cuid())
+  restaurantId    String
+  indentNumber    String
+  sourceBranchId  String
+  sourceBranch    Branch            @relation("IndentSource", fields: [sourceBranchId], references: [id], onDelete: Cascade)
+  targetBranchId  String
+  targetBranch    Branch            @relation("IndentTarget", fields: [targetBranchId], references: [id], onDelete: Cascade)
+  status          StockIndentStatus @default(PENDING)
+  urgency         String            @default("NORMAL") // LOW, NORMAL, HIGH, CRITICAL
+  requestedById   String
+  requestedByName String?
+  requestedAt     DateTime          @default(now())
+  approvedById    String?
+  approvedAt      DateTime?
+  dispatchedById  String?
+  dispatchedAt    DateTime?
+  receivedById    String?
+  receivedAt      DateTime?
+  dispatchVehicle String?
+  dispatchNotes   String?
+  rejectionReason String?
+  notes           String?
+  items           StockIndentItem[]
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([restaurantId, status])
+  @@index([sourceBranchId])
+  @@index([targetBranchId])
+  @@map("stock_indents")
+}
+
+model StockIndentItem {
+  id             String      @id @default(cuid())
+  indentId       String
+  indent         StockIndent @relation(fields: [indentId], references: [id], onDelete: Cascade)
+  ingredientName String
+  unit           String
+  requestedQty   Decimal     @db.Decimal(12, 3)
+  dispatchedQty  Decimal?    @db.Decimal(12, 3)
+  receivedQty    Decimal?    @db.Decimal(12, 3)
+  unitCost       Decimal?    @db.Decimal(12, 4)
+  notes          String?
+
+  @@index([indentId])
+  @@map("stock_indent_items")
+}
+
 // An uploaded file (PDF, image, doc) attached to a Document. Stored in the
 // database so backups and restores carry attachments with everything else.
 model DocumentFile {
@@ -2575,4 +2643,51 @@ model DeviceToken {
 
   @@index([userId])
   @@map("device_tokens")
+}
+
+// SaaS Subscription Plans & Licensing Engine (Petpooja Cloud Architecture)
+model Subscription {
+  id                     String                @id @default(cuid())
+  restaurantId           String
+  restaurant             Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  plan                   String                // Starter, Growth, Enterprise
+  billingCycle           String                @default("MONTHLY") // MONTHLY, ANNUAL
+  amount                 Decimal               @db.Decimal(10, 2)
+  currency               String                @default("INR")
+  status                 String                @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED, EXPIRED
+  currentPeriodStart     DateTime              @default(now())
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean               @default(false)
+  razorpaySubscriptionId String?
+  razorpayCustomerId     String?
+  invoices               SubscriptionInvoice[]
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  @@index([restaurantId])
+  @@map("subscriptions")
+}
+
+model SubscriptionInvoice {
+  id                String        @id @default(cuid())
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  restaurantId      String
+  restaurant        Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  invoiceNumber     String        @unique
+  plan              String
+  billingCycle      String
+  amount            Decimal       @db.Decimal(10, 2)
+  taxAmount         Decimal       @db.Decimal(10, 2) // 18% GST
+  totalAmount       Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  status            String        @default("PAID") // PAID, PENDING, FAILED
+  paidAt            DateTime?
+  razorpayPaymentId String?
+  razorpayOrderId   String?
+  pdfUrl            String?
+  createdAt         DateTime      @default(now())
+
+  @@index([restaurantId])
+  @@map("subscription_invoices")
 }

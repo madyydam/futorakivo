@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { AlertTriangle, CheckCircle2, CircleDashed, Copy, KeyRound, Link2, PauseCircle, ShieldAlert, Webhook } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDashed, Copy, ExternalLink, KeyRound, Link2, PauseCircle, ShieldAlert, Webhook } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { SettingsTabs } from "@/components/settings/settings-tabs";
@@ -319,6 +319,29 @@ export default function IntegrationsPage() {
         <p className="text-sm text-muted-foreground">Connect KIVO - HORECA management simplified to the platforms you use</p>
       </div>
       <SettingsTabs />
+
+      <div className="rounded-2xl border border-primary/30 bg-gradient-to-r from-[#9f1239]/10 via-[#9f1239]/5 to-transparent p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-start gap-3.5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold shadow-sm">
+            🛵
+          </div>
+          <div>
+            <div className="text-base font-bold text-foreground flex items-center gap-2">
+              <span>Zomato, Swiggy &amp; ONDC Aggregator Hub</span>
+              <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0">LIVE 2-WAY RELAY</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Live inbound online delivery stream, automatic kitchen ticket printing, rider tracking, and Item 86 (Out-of-Stock) instantaneous sync.
+            </p>
+          </div>
+        </div>
+        <Link href="/integrations/aggregators">
+          <Button size="sm" className="shrink-0 text-xs font-semibold gap-1.5 bg-primary text-primary-foreground shadow-xs cursor-pointer">
+            <span>Open Aggregator Hub</span>
+            <ExternalLink className="size-3.5" />
+          </Button>
+        </Link>
+      </div>
 
       <section aria-labelledby="int-delivery" className="flex flex-col gap-3">
         <h2 id="int-delivery" className="text-[20px] font-medium text-foreground">Food delivery platforms</h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Download, Printer } from "lucide-react";
+import { Building2, Download, Printer } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -53,9 +53,17 @@ export default function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="print:hidden">
-        <h1 className="text-[32px] font-semibold tracking-tight text-foreground">Reports</h1>
-        <p className="text-sm text-muted-foreground">Filter by date, print, export to Excel, PDF or CSV, or email on a schedule</p>
+      <div className="flex flex-col justify-between gap-4 print:hidden sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-[32px] font-semibold tracking-tight text-foreground">Reports</h1>
+          <p className="text-sm text-muted-foreground">Filter by date, print, export to Excel, PDF or CSV, or email on a schedule</p>
+        </div>
+        <a
+          href="/reports/consolidated"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3.5 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+        >
+          <Building2 className="h-4 w-4" /> Multi-Outlet Brand Analytics →
+        </a>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">

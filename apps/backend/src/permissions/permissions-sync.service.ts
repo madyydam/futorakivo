@@ -1,5 +1,10 @@
 ﻿import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PERMISSIONS } from '@futora/types';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSIONS,
+  STAFF_ROLES,
+  type StaffRole,
+} from '@futora/types';
 import { PrismaService } from '../prisma/prisma.service';
 
 // Roles this deep are meant to always hold every permission that exists —
@@ -12,12 +17,21 @@ import { PrismaService } from '../prisma/prisma.service';
 // report this fixes: "Kitchen tab broken, but a new account worked".
 const ALWAYS_FULL_ACCESS_ROLES = ['OWNER', 'ADMINISTRATOR'] as const;
 
-// A permission that is new in a release can also be granted to the role that
-// should have it by default, but only at the moment it is first created - so an
-// admin who later removes it is not overruled on the next restart.
-const GRANT_WHEN_CREATED: Record<string, string[]> = {
-  'delivery.rider': ['DELIVERY_STAFF'],
-};
+// Roles that should receive a permission when it is first introduced into the system.
+// Built dynamically from DEFAULT_ROLE_PERMISSIONS so any role intended to have a
+// new capability gets it on release without overriding future admin modifications.
+const GRANT_WHEN_CREATED: Record<string, string[]> = {};
+for (const [role, perms] of Object.entries(DEFAULT_ROLE_PERMISSIONS)) {
+  if (ALWAYS_FULL_ACCESS_ROLES.includes(role as any)) continue;
+  for (const perm of perms) {
+    if (!GRANT_WHEN_CREATED[perm]) {
+      GRANT_WHEN_CREATED[perm] = [];
+    }
+    if (!GRANT_WHEN_CREATED[perm].includes(role)) {
+      GRANT_WHEN_CREATED[perm].push(role);
+    }
+  }
+}
 
 @Injectable()
 export class PermissionsSyncService implements OnModuleInit {
@@ -57,6 +71,53 @@ export class PermissionsSyncService implements OnModuleInit {
       }
     }
     const allPermissions = await this.prisma.permission.findMany();
+
+    // Ensure all restaurants have all standard STAFF_ROLES (e.g. newly introduced CAPTAIN role)
+    const allRoles = await this.prisma.role.findMany({
+      select: { restaurantId: true, name: true },
+    });
+    const rolesByRestaurant = new Map<string, Set<string>>();
+    for (const r of allRoles) {
+      if (!rolesByRestaurant.has(r.restaurantId)) {
+        rolesByRestaurant.set(r.restaurantId, new Set());
+      }
+      rolesByRestaurant.get(r.restaurantId)!.add(r.name);
+    }
+
+    const allRestaurants = await this.prisma.restaurant.findMany({
+      select: { id: true },
+    });
+
+    for (const restaurant of allRestaurants) {
+      const existingNames = rolesByRestaurant.get(restaurant.id) ?? new Set();
+      for (const roleName of STAFF_ROLES) {
+        if (!existingNames.has(roleName)) {
+          const newRole = await this.prisma.role.create({
+            data: {
+              restaurantId: restaurant.id,
+              name: roleName,
+              label: roleName.replace(/_/g, ' '),
+            },
+          });
+          const defaultPermKeys = new Set(DEFAULT_ROLE_PERMISSIONS[roleName]);
+          const matchingPerms = allPermissions.filter((p) =>
+            defaultPermKeys.has(p.key as any),
+          );
+          if (matchingPerms.length > 0) {
+            await this.prisma.rolePermission.createMany({
+              data: matchingPerms.map((p) => ({
+                roleId: newRole.id,
+                permissionId: p.id,
+              })),
+              skipDuplicates: true,
+            });
+          }
+          this.logger.log(
+            `Provisioned missing role ${roleName} for restaurant ${restaurant.id}`,
+          );
+        }
+      }
+    }
 
     const roles = await this.prisma.role.findMany({
       where: { name: { in: [...ALWAYS_FULL_ACCESS_ROLES] } },

@@ -43,16 +43,16 @@ enum TaxMode {
 
 model Restaurant {
   departments Department[]
-  id        String  @id @default(cuid())
-  name      String
-  legalName String?
+  id          String       @id @default(cuid())
+  name        String
+  legalName   String?
   // The restaurant's own branding, shown in the app shell (sidebar header,
   // login screen) in place of the Nodedr OrderRestro product mark — this is
   // white-label self-hosted software, so the operator's brand should lead;
   // the product name stays as a small credit line instead (see BrandFooter).
-  logoUrl   String?
-  currency  String  @default("INR")
-  timezone  String  @default("Asia/Kolkata")
+  logoUrl     String?
+  currency    String       @default("INR")
+  timezone    String       @default("Asia/Kolkata")
 
   // UPI payee for the dynamic QR shown at checkout and on the customer
   // display (NPCI deep link, see apps/web/lib/upi.ts). Optional: when unset
@@ -88,12 +88,12 @@ model Restaurant {
   requireDiscountReason    Boolean @default(false)
 
   // SaaS Tenant Management & Subscription (Petpooja-style Cloud Architecture)
-  status       String    @default("TRIAL") // TRIAL, ACTIVE, SUSPENDED, EXPIRED
-  plan         String    @default("Starter") // Starter, Growth, Enterprise
-  trialEndsAt  DateTime?
-  maxBranches  Int       @default(1)
-  ownerPhone   String?
-  city         String?
+  status      String    @default("TRIAL") // TRIAL, ACTIVE, SUSPENDED, EXPIRED
+  plan        String    @default("Starter") // Starter, Growth, Enterprise
+  trialEndsAt DateTime?
+  maxBranches Int       @default(1)
+  ownerPhone  String?
+  city        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -106,6 +106,26 @@ model Restaurant {
   integrationApiKeys     IntegrationApiKey[]
   webhookEndpoints       WebhookEndpoint[]
   integrationConnections IntegrationConnection[]
+
+  deviceRegistrations  DeviceRegistration[]
+  devicePairingCodes   DevicePairingCode[]
+  pinAttempts          PinAttempt[]
+  approvalTokens       ApprovalToken[]
+  approvalLogs         ApprovalLog[]
+  tableAssignments     TableAssignment[]
+  tableSessions        TableSession[]
+  bills                Bill[]
+  orderEvents          OrderEvent[]
+  qrSettings           QrSettings[]
+  qrCodes              QrCode[]
+  guestBlocks          GuestBlock[]
+  qrOrders             QrOrder[]
+  callWaiterRequests   CallWaiterRequest[]
+  outletPaymentConfigs OutletPaymentConfig[]
+  paymentRecords       PaymentRecord[]
+  onboardingProgress   OnboardingProgress?
+  printJobs            PrintJob[]
+  alertLogs            AlertLog[]
 
   @@map("restaurants")
 }
@@ -213,6 +233,22 @@ model Branch {
   indentsRequested StockIndent[] @relation("IndentSource")
   indentsReceived  StockIndent[] @relation("IndentTarget")
 
+  deviceRegistrations DeviceRegistration[]
+  devicePairingCodes  DevicePairingCode[]
+  tableAssignments    TableAssignment[]
+  tableSessions       TableSession[]
+  bills               Bill[]
+  orderEvents         OrderEvent[]
+  qrSettings          QrSettings?
+  qrCodes             QrCode[]
+  guestBlocks         GuestBlock[]
+  qrOrders            QrOrder[]
+  callWaiterRequests  CallWaiterRequest[]
+  outletPaymentConfig OutletPaymentConfig?
+  paymentRecords      PaymentRecord[]
+  printJobs           PrintJob[]
+  alertLogs           AlertLog[]
+
   @@index([restaurantId])
   @@map("branches")
 }
@@ -233,7 +269,7 @@ model Permission {
   label    String
   category String // grouping for the settings UI, e.g. "Orders", "Inventory"
 
-  roles RolePermission[]
+  roles         RolePermission[]
   userOverrides UserPermissionOverride[]
 
   @@map("permissions")
@@ -264,13 +300,13 @@ model Department {
 // temporary access (cover shift, audit week) self-revoking.
 model UserPermissionOverride {
   userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   permissionId String
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  permission   Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade)
   effect       PermissionEffect
   reason       String?
   expiresAt    DateTime?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime         @default(now())
 
   @@id([userId, permissionId])
   @@map("user_permission_overrides")
@@ -320,6 +356,10 @@ model User {
   phone                   String?
   passwordHash            String
   pinHash                 String? // quick-switch PIN login on a shared terminal
+  pinLookup               String? // HMAC-SHA256(SERVER_PEPPER, restaurantId + ':' + pin)
+  pepperKeyId             String?  @default("v1")
+  permissionsVersion      Int      @default(1)
+  mustChangePin           Boolean  @default(false)
   isActive                Boolean  @default(true)
   // Personal dashboard layout (widget order/visibility, reporting window).
   dashboardPrefs          Json?
@@ -369,8 +409,13 @@ model User {
   staffApiKeys              StaffApiKey[]
   integrationApiKeysCreated IntegrationApiKey[] @relation("IntegrationApiKeyCreatedBy")
 
+  tableAssignments TableAssignment[]
+  approvalRequests ApprovalLog[]     @relation("ApprovalRequester")
+  approvalsGranted ApprovalLog[]     @relation("ApprovalGranter")
+
   @@unique([restaurantId, email])
   @@index([restaurantId])
+  @@index([restaurantId, pinLookup])
   @@map("users")
 }
 
@@ -612,6 +657,9 @@ model Table {
   orders          Order[]
   reservations    Reservation[]
   waitlistEntries WaitlistEntry[]
+  assignments     TableAssignment[]
+  sessions        TableSession[]
+  qrCodes         QrCode[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -633,6 +681,8 @@ model MenuCategory {
   branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   name          String
+  nameHi        String?
+  descriptionHi String?
   sortOrder     Int     @default(0)
   isActive      Boolean @default(true)
   // false = still on the POS, but hidden from the QR/online ordering page and
@@ -1141,10 +1191,12 @@ model MenuItem {
   stationId  String?
   station    KitchenStation? @relation(fields: [stationId], references: [id], onDelete: SetNull)
 
-  name        String
-  sku         String?
-  description String?
-  imageUrl    String?
+  name          String
+  nameHi        String?
+  sku           String?
+  description   String?
+  descriptionHi String?
+  imageUrl      String?
 
   price          Decimal  @db.Decimal(12, 2) // tax-inclusive selling price (see nodedr-pos GST lesson in ARCHITECTURE.md)
   taxRatePercent Decimal  @default(0) @db.Decimal(5, 2)
@@ -1158,6 +1210,9 @@ model MenuItem {
   isHalal         Boolean    @default(false)
   isGlutenFree    Boolean    @default(false)
   spiceLevel      SpiceLevel @default(NONE)
+  isBestseller    Boolean    @default(false)
+  isSpicy         Boolean    @default(false)
+  hideFromQr      Boolean    @default(false)
   allergens       String[]   @default([])
 
   availableFrom String? // "HH:mm" — availability window
@@ -1184,6 +1239,7 @@ model MenuItem {
 
   modifierGroups  MenuItemModifierGroup[]
   orderItems      OrderItem[]
+  qrOrderItems    QrOrderItem[]
   comboComponents ComboComponent[]        @relation("ComboParent")
   usedInCombos    ComboComponent[]        @relation("ComboChild")
   recipeLines     RecipeIngredient[]
@@ -1374,6 +1430,7 @@ enum OrderStatus {
 enum OrderChannel {
   STAFF
   ONLINE
+  QR_GUEST
 }
 
 // Accept/reject gate for online orders. NOT_REQUIRED = staff-entered or
@@ -1428,6 +1485,12 @@ model Order {
   // Name typed in by the guest on the QR self-order flow — no account, so
   // this is the only identity captured for that order.
   guestName  String?
+
+  billId  String?
+  bill    Bill?    @relation(fields: [billId], references: [id], onDelete: SetNull)
+  version Int      @default(1)
+  isTest  Boolean  @default(false)
+  qrOrder QrOrder?
 
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -2331,8 +2394,8 @@ model StockIndent {
   notes           String?
   items           StockIndentItem[]
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([restaurantId, status])
   @@index([sourceBranchId])
@@ -2650,7 +2713,7 @@ model Subscription {
   id                     String                @id @default(cuid())
   restaurantId           String
   restaurant             Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  plan                   String                // Starter, Growth, Enterprise
+  plan                   String // Starter, Growth, Enterprise
   billingCycle           String                @default("MONTHLY") // MONTHLY, ANNUAL
   amount                 Decimal               @db.Decimal(10, 2)
   currency               String                @default("INR")
@@ -2690,4 +2753,574 @@ model SubscriptionInvoice {
 
   @@index([restaurantId])
   @@map("subscription_invoices")
+}
+
+// ---------------------------------------------------------------------------
+// KIVO POS Final Build Brief v1.0 — RBAC, Devices, Approvals, QR & Payments
+// ---------------------------------------------------------------------------
+
+enum DeviceStatus {
+  PENDING
+  APPROVED
+  REVOKED
+}
+
+model DeviceRegistration {
+  id             String       @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId       String
+  outlet         Branch       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  label          String // e.g. "Counter Terminal 1"
+  status         DeviceStatus @default(PENDING)
+  tokenHash      String?      @unique // SHA-256 of raw 256-bit cookie token
+  userAgent      String?
+  lastSeenAt     DateTime?
+  lastIp         String?
+  approvedBy     String?
+  approvedAt     DateTime?
+  revokedBy      String?
+  revokedAt      DateTime?
+  failedAttempts Int          @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  pinAttempts  PinAttempt[]
+  approvalLogs ApprovalLog[]
+
+  @@index([restaurantId, outletId, status])
+  @@map("device_registrations")
+}
+
+model DevicePairingCode {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId     String
+  outlet       Branch     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  code         String     @unique // 6-character alphanumeric slug
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdBy    String
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, code])
+  @@map("device_pairing_codes")
+}
+
+model PinAttempt {
+  id           String             @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  deviceId     String
+  device       DeviceRegistration @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  ip           String
+  success      Boolean
+  attemptedAt  DateTime           @default(now())
+
+  @@index([deviceId, attemptedAt])
+  @@index([restaurantId, attemptedAt])
+  @@map("pin_attempts")
+}
+
+enum ApprovalOutcome {
+  APPROVED
+  USED
+  EXPIRED
+  DENIED
+}
+
+model ApprovalToken {
+  id            String     @id @default(cuid())
+  tokenHash     String     @unique // SHA-256 of single-use bearer token
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  permissionKey String
+  targetEntity  String
+  targetId      String
+  changeHash    String // SHA-256 of request payload
+  requesterId   String
+  approverId    String
+  deviceId      String
+  expiresAt     DateTime // 2 minutes from issue
+  consumedAt    DateTime?
+  createdAt     DateTime   @default(now())
+
+  @@index([tokenHash])
+  @@map("approval_tokens")
+}
+
+model ApprovalLog {
+  id            String             @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  requesterId   String
+  requester     User               @relation("ApprovalRequester", fields: [requesterId], references: [id])
+  approverId    String
+  approver      User               @relation("ApprovalGranter", fields: [approverId], references: [id])
+  permissionKey String
+  targetEntity  String
+  targetId      String
+  reason        String // mandatory reason (min 5 chars)
+  deviceId      String
+  device        DeviceRegistration @relation(fields: [deviceId], references: [id])
+  outcome       ApprovalOutcome    @default(APPROVED)
+  createdAt     DateTime           @default(now())
+
+  @@index([restaurantId, createdAt])
+  @@map("approval_logs")
+}
+
+model TableAssignment {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId     String
+  outlet       Branch     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  tableId      String
+  table        Table      @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  staffUserId  String
+  staffUser    User       @relation(fields: [staffUserId], references: [id], onDelete: Cascade)
+  assignedBy   String
+  assignedAt   DateTime   @default(now())
+  releasedAt   DateTime?
+
+  @@index([outletId, tableId, releasedAt])
+  @@index([staffUserId, releasedAt])
+  @@map("table_assignments")
+}
+
+enum TableSessionStatus {
+  ACTIVE
+  CLOSED
+}
+
+model TableSession {
+  id           String             @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId     String
+  outlet       Branch             @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  tableId      String
+  table        Table              @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  status       TableSessionStatus @default(ACTIVE)
+  openedAt     DateTime           @default(now())
+  expiresAt    DateTime // now + idle hours
+  closedAt     DateTime?
+  closedBy     String?
+  closedReason String?
+
+  guests   GuestSession[]
+  bills    Bill[]
+  qrOrders QrOrder[]
+
+  @@index([outletId, tableId, status])
+  @@map("table_sessions")
+}
+
+enum BillPaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+}
+
+model Bill {
+  id             String            @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId       String
+  outlet         Branch            @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  tableSessionId String?
+  tableSession   TableSession?     @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
+  guestSessionId String?           @unique
+  guestSession   GuestSession?     @relation(fields: [guestSessionId], references: [id], onDelete: SetNull)
+  billNumber     String // sequentially minted on invoice generation
+  status         BillPaymentStatus @default(UNPAID)
+  subtotalPaise  Int               @default(0)
+  discountPaise  Int               @default(0)
+  taxPaise       Int               @default(0)
+  totalPaise     Int               @default(0)
+  paidPaise      Int               @default(0)
+  version        Int               @default(1) // Optimistic concurrency locking
+  invoiceDate    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  orders   Order[]
+  payments PaymentRecord[]
+
+  @@unique([outletId, billNumber])
+  @@index([restaurantId, outletId, status])
+  @@map("bills")
+}
+
+model OrderEvent {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId     String
+  outlet       Branch     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  entity       String // Order, Bill, QrOrder, PaymentRecord
+  entityId     String
+  eventType    String // PLACED, ACCEPTED, KOT_SENT, ITEM_CANCELLED, VOIDED, etc.
+  actorType    String // STAFF | GUEST | SYSTEM
+  actorId      String?
+  deviceId     String?
+  reason       String?
+  approvalId   String?
+  beforeState  Json? // Redacted JSON snapshot
+  afterState   Json? // Redacted JSON snapshot
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, outletId, entityId])
+  @@index([createdAt])
+  @@map("order_events")
+}
+
+enum QrMode {
+  MENU_ONLY
+  MENU_AND_ORDER
+}
+
+enum QrApprovalMode {
+  STAFF_ACCEPT
+  AUTO_ACCEPT
+}
+
+enum PaymentTiming {
+  PAY_FIRST
+  PAY_LATER
+}
+
+enum OutOfStockDisplay {
+  HIDE
+  GREY_OUT
+}
+
+model QrSettings {
+  id                    String            @id @default(cuid())
+  restaurantId          String
+  restaurant            Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId              String            @unique
+  outlet                Branch            @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  enabled               Boolean           @default(false) // Ship dark flag
+  mode                  QrMode            @default(MENU_ONLY)
+  approvalMode          QrApprovalMode    @default(STAFF_ACCEPT)
+  paymentTiming         PaymentTiming     @default(PAY_LATER)
+  allowedPaymentMethods String[]          @default(["ONLINE_QR", "WAITER_AT_TABLE", "COUNTER"])
+  showImages            Boolean           @default(true)
+  showPrices            Boolean           @default(true)
+  outOfStock            OutOfStockDisplay @default(GREY_OUT)
+  languages             String[]          @default(["en", "hi"])
+  logoUrl               String?
+  themeColor            String            @default("#FF6B35")
+  welcomeMessage        String?
+  serviceStartTime      String? // "HH:mm"
+  serviceEndTime        String?
+  orderingPaused        Boolean           @default(false)
+  callWaiterEnabled     Boolean           @default(true)
+  requestBillEnabled    Boolean           @default(true)
+  guestCancelWindow     Int               @default(60) // seconds
+  maxItemsPerOrder      Int               @default(30)
+  maxQtyPerLine         Int               @default(20)
+  maxOrderValuePaise    Int               @default(5000000) // ₹50,000 max
+  orderCooldownSec      Int               @default(15)
+  maxOpenUnaccepted     Int               @default(2)
+  unpaidExpiryMinutes   Int               @default(15)
+  tableSessionIdleHours Int               @default(4)
+  consentText           String            @default("I agree to share my name and number for order and billing service.")
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@map("qr_settings")
+}
+
+enum QrCodeStatus {
+  ACTIVE
+  ROTATED
+}
+
+enum QrCodeType {
+  TABLE
+  COUNTER
+}
+
+model QrCode {
+  id           String       @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId     String
+  outlet       Branch       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  type         QrCodeType
+  tableId      String?
+  table        Table?       @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  tokenHash    String       @unique // SHA-256 of 128-bit random base62 token
+  status       QrCodeStatus @default(ACTIVE)
+  rotatedAt    DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@index([restaurantId, outletId])
+  @@index([tokenHash])
+  @@map("qr_codes")
+}
+
+model GuestSession {
+  id                 String       @id @default(cuid())
+  tableSessionId     String
+  tableSession       TableSession @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  name               String // 2 to 40 chars
+  phone              String // normalized E.164 (+91)
+  cookieSecretHash   String       @unique
+  trackingTokenHash  String       @unique
+  consentAt          DateTime     @default(now())
+  consentTextVersion String       @default("v1.0")
+  blocked            Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+
+  bill           Bill?
+  qrOrders       QrOrder[]
+  waiterRequests CallWaiterRequest[]
+
+  @@index([tableSessionId])
+  @@index([trackingTokenHash])
+  @@map("guest_sessions")
+}
+
+model GuestBlock {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId     String
+  outlet       Branch     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  phoneHash    String // SHA-256 of normalized phone
+  reason       String
+  blockedBy    String
+  blockedUntil DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([outletId, phoneHash])
+  @@map("guest_blocks")
+}
+
+enum QrOrderStatus {
+  PLACED
+  AWAITING_PAYMENT
+  ACCEPTED
+  PREPARING
+  READY
+  SERVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+model QrOrder {
+  id             String        @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId       String
+  outlet         Branch        @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  tableSessionId String
+  tableSession   TableSession  @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  guestSessionId String
+  guestSession   GuestSession  @relation(fields: [guestSessionId], references: [id], onDelete: Cascade)
+  status         QrOrderStatus @default(PLACED)
+  tokenNumber    String? // Daily sequence for counter/takeaway orders
+  subtotalPaise  Int           @default(0)
+  taxPaise       Int           @default(0)
+  totalPaise     Int           @default(0)
+  idempotencyKey String        @unique
+  notes          String? // Max 200 chars
+  paymentTiming  PaymentTiming @default(PAY_LATER)
+  orderId        String?       @unique // Links to Order on acceptance
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  version        Int           @default(1)
+  rejectedReason String?
+  rejectedBy     String?
+  rejectedAt     DateTime?
+  acceptedBy     String?
+  acceptedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items QrOrderItem[]
+
+  @@index([outletId, status])
+  @@index([guestSessionId])
+  @@map("qr_orders")
+}
+
+model QrOrderItem {
+  id                 String   @id @default(cuid())
+  qrOrderId          String
+  qrOrder            QrOrder  @relation(fields: [qrOrderId], references: [id], onDelete: Cascade)
+  menuItemId         String
+  menuItem           MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity           Int
+  unitPricePaise     Int
+  portionType        String?
+  kitchenNote        String?
+  modifierSelections Json? // snapshot of modifier IDs, names, and adjustments
+  createdAt          DateTime @default(now())
+
+  @@map("qr_order_items")
+}
+
+model CallWaiterRequest {
+  id             String       @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId       String
+  outlet         Branch       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  guestSessionId String
+  guestSession   GuestSession @relation(fields: [guestSessionId], references: [id], onDelete: Cascade)
+  type           String // CALL_WAITER | REQUEST_BILL
+  status         String       @default("PENDING") // PENDING | RESOLVED
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  createdAt      DateTime     @default(now())
+
+  @@index([outletId, status])
+  @@map("call_waiter_requests")
+}
+
+model OutletPaymentConfig {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId     String     @unique
+  outlet       Branch     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  qrImageKey   String // S3/R2 object key
+  qrImageHash  String // SHA-256 of image bytes
+  upiId        String // e.g. "restaurant@oksbi"
+  payeeName    String // Legal/Trade display name
+  changedBy    String
+  changedAt    DateTime   @default(now())
+
+  @@map("outlet_payment_configs")
+}
+
+enum PaymentRecordState {
+  CLAIMED
+  COLLECTED
+  VERIFIED
+  REJECTED
+  VOIDED
+}
+
+model PaymentRecord {
+  id             String             @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId       String
+  outlet         Branch             @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  billId         String
+  bill           Bill               @relation(fields: [billId], references: [id], onDelete: Cascade)
+  mode           String // UPI, CASH, CARD
+  amountPaise    Int
+  state          PaymentRecordState @default(CLAIMED)
+  referenceCode  String // 6-char daily unique reference for guest UPI note
+  claimedAt      DateTime?
+  collectedBy    String?
+  verifiedBy     String?
+  verifiedAt     DateTime?
+  rejectedReason String?
+  rejectedBy     String?
+  rejectedAt     DateTime?
+  voidReason     String?
+  voidBy         String?
+  voidAt         DateTime?
+  approvalId     String? // Reference to ApprovalLog if voided/overpaid
+  selfVerified   Boolean            @default(false)
+  deviceId       String?
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([outletId, state])
+  @@index([billId])
+  @@map("payment_records")
+}
+
+model OnboardingProgress {
+  id             String     @id @default(cuid())
+  restaurantId   String     @unique
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  currentStep    Int        @default(1)
+  completedSteps Int[]      @default([])
+  draftJson      Json       @default("{}")
+  updatedAt      DateTime   @updatedAt
+
+  @@map("onboarding_progress")
+}
+
+model FeatureFlag {
+  id        String   @id @default(cuid())
+  key       String // qr_ordering, qr_payments, device_pairing_required, etc.
+  scope     String // GLOBAL | RESTAURANT | OUTLET
+  targetId  String // "global" or restaurantId or outletId
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, scope, targetId])
+  @@map("feature_flags")
+}
+
+enum PrintJobStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+model PrintJob {
+  id             String         @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId       String
+  outlet         Branch         @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  entityType     String // KOT | BILL
+  entityId       String
+  printerId      String
+  idempotencyKey String         @unique
+  status         PrintJobStatus @default(QUEUED)
+  attempts       Int            @default(0)
+  lastError      String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([outletId, status])
+  @@map("print_jobs")
+}
+
+model IdempotencyKey {
+  id           String   @id @default(cuid())
+  scope        String // e.g. "qr_order", "payment_claim", "kot_print"
+  key          String // client UUID
+  requestHash  String // SHA-256 of request payload
+  responseBody Json?
+  statusCode   Int?
+  expiresAt    DateTime // now + 24 hours
+  createdAt    DateTime @default(now())
+
+  @@unique([scope, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+model AlertLog {
+  id                String     @id @default(cuid())
+  restaurantId      String
+  restaurant        Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  outletId          String?
+  outlet            Branch?    @relation(fields: [outletId], references: [id], onDelete: SetNull)
+  type              String // PAYMENT_QR_CHANGED, DEVICE_REVOKED, EXCESSIVE_LOCKOUTS, etc.
+  title             String
+  message           String
+  severity          String // INFO | WARN | CRITICAL
+  deliveredChannels String[] // IN_APP, EMAIL, SMS
+  createdAt         DateTime   @default(now())
+
+  @@index([restaurantId, createdAt])
+  @@map("alert_logs")
 }

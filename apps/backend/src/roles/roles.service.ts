@@ -3,10 +3,12 @@
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type { CreateRoleDto, UpdateRoleDto } from '@futora/types';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PermissionsCacheService } from '../permissions/permissions-cache.service';
 
 const SELECT = {
   id: true,
@@ -32,6 +34,7 @@ export class RolesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    @Optional() private readonly cache?: PermissionsCacheService,
   ) {}
 
   list(restaurantId: string) {
@@ -109,6 +112,10 @@ export class RolesService {
             skipDuplicates: true,
           });
         }
+        await tx.user.updateMany({
+          where: { roleId: id },
+          data: { permissionsVersion: { increment: 1 } },
+        });
       }
 
       return tx.role.update({
@@ -117,6 +124,10 @@ export class RolesService {
         select: SELECT,
       });
     });
+
+    if (nextPermissions && this.cache) {
+      this.cache.clear();
+    }
 
     await this.audit.record({
       userId: actorId,

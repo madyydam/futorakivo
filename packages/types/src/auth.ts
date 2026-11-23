@@ -31,6 +31,7 @@ export const sessionUserSchema = z.object({
   roleId: z.string(),
   roleName: z.string(),
   permissions: z.array(z.string()),
+  permissionsVersion: z.number().int().optional(),
 });
 export type SessionUser = z.infer<typeof sessionUserSchema>;
 

@@ -182,7 +182,8 @@ export function CheckoutPanel({
     }
   };
 
-  const balance = bill?.balanceDue ?? 0;
+  const fallbackTotal = Number(order.totalAmount) || 0;
+  const balance = bill?.balanceDue ?? fallbackTotal;
   const giftCardApplied = giftCardBalance !== null ? round2(Math.min(giftCardBalance, balance)) : 0;
   const remainingDue = round2(balance - giftCardApplied);
   const entered = parseMoney(amountText);

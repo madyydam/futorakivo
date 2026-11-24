@@ -27,6 +27,8 @@ import {
   getLastSyncTime,
   getOutboxItems,
   isDeviceOnline,
+  removeItemFromOutbox,
+  retryOutboxItem,
   subscribeOutbox,
   type OutboxAction,
 } from "@/lib/offline-outbox";
@@ -175,7 +177,7 @@ export function OfflineSyncIndicator() {
                 {items.length > 0 ? (
                   items.map((it) => (
                     <div key={it.id} className="p-2.5 flex items-center justify-between hover:bg-muted/30">
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 max-w-[280px]">
                         <div className="font-semibold text-foreground flex items-center gap-1.5">
                           <span>{it.orderSummary.orderNumber}</span>
                           <span className="text-muted-foreground font-normal">· {it.orderSummary.tableName}</span>
@@ -183,9 +185,32 @@ export function OfflineSyncIndicator() {
                         <div className="text-[10px] text-muted-foreground">
                           {it.type === "CREATE_ORDER" ? "New Order" : "Checkout Settle"} · {it.orderSummary.itemsCount} item(s) · ₹{it.orderSummary.totalAmount}
                         </div>
+                        {it.error && (
+                          <div className="text-[10px] text-rose-500 font-medium truncate">
+                            Error: {it.error} {it.retries > 0 ? `(${it.retries} retries)` : ""}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {it.status === "FAILED" && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => retryOutboxItem(it.id)}
+                              className="text-[10px] font-semibold text-blue-600 hover:underline px-1 cursor-pointer"
+                            >
+                              Retry
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeItemFromOutbox(it.id)}
+                              className="text-[10px] font-semibold text-rose-600 hover:underline px-1 cursor-pointer"
+                            >
+                              Discard
+                            </button>
+                          </div>
+                        )}
                         <Badge
                           variant="outline"
                           className={`text-[9px] font-mono ${

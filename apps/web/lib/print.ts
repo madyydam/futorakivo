@@ -7,15 +7,42 @@ import { canPrintOnDevice, printHtmlOnDevice } from "@/lib/device-print";
 import { getOutboxItems } from "@/lib/offline-outbox";
 import { toast } from "@/lib/toast";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function generateOfflineReceiptHtml(orderId: string): string {
   const items = getOutboxItems();
   const item = items.find((i) => i.tempOrderId === orderId || i.id === orderId);
-  const orderNum = item?.orderSummary?.orderNumber || orderId;
-  const table = item?.orderSummary?.tableName || "Takeaway";
-  const total = item?.orderSummary?.totalAmount || "0.00";
-  const dateStr = item?.createdAt
-    ? new Date(item.createdAt).toLocaleString("en-IN")
-    : new Date().toLocaleString("en-IN");
+  const orderNum = escapeHtml(item?.orderSummary?.orderNumber || orderId);
+  const table = escapeHtml(item?.orderSummary?.tableName || "Takeaway");
+  const total = escapeHtml(item?.orderSummary?.totalAmount || "0.00");
+  const dateStr = escapeHtml(
+    item?.createdAt
+      ? new Date(item.createdAt).toLocaleString("en-IN")
+      : new Date().toLocaleString("en-IN")
+  );
+
+  const itemRows = item?.orderSummary?.items?.length
+    ? item.orderSummary.items
+        .map(
+          (it) => `
+    <div class="row">
+      <span>${escapeHtml(it.name)} x${Number(it.quantity) || 1}</span>
+      <span>₹${escapeHtml(it.price)}</span>
+    </div>`
+        )
+        .join("")
+    : `
+    <div class="row">
+      <span>Bill Summary (${Number(item?.orderSummary?.itemsCount) || 1} items)</span>
+      <span>₹${total}</span>
+    </div>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -44,7 +71,7 @@ function generateOfflineReceiptHtml(orderId: string): string {
   </div>
   <div class="divider"></div>
   <div class="row" style="font-weight: bold;"><span>ITEMS</span><span>TOTAL</span></div>
-  <div class="row"><span>Bill Summary (${item?.orderSummary?.itemsCount || 1} items)</span><span>₹${total}</span></div>
+  ${itemRows}
   <div class="divider"></div>
   <div class="row total-row"><span>NET TOTAL:</span><span>₹${total}</span></div>
   <div class="divider"></div>
@@ -61,11 +88,29 @@ function generateOfflineReceiptHtml(orderId: string): string {
 function generateOfflineKotHtml(orderId: string): string {
   const items = getOutboxItems();
   const item = items.find((i) => i.tempOrderId === orderId || i.id === orderId);
-  const orderNum = item?.orderSummary?.orderNumber || orderId;
-  const table = item?.orderSummary?.tableName || "Takeaway";
-  const dateStr = item?.createdAt
-    ? new Date(item.createdAt).toLocaleTimeString("en-IN")
-    : new Date().toLocaleTimeString("en-IN");
+  const orderNum = escapeHtml(item?.orderSummary?.orderNumber || orderId);
+  const table = escapeHtml(item?.orderSummary?.tableName || "Takeaway");
+  const dateStr = escapeHtml(
+    item?.createdAt
+      ? new Date(item.createdAt).toLocaleTimeString("en-IN")
+      : new Date().toLocaleTimeString("en-IN")
+  );
+
+  const itemRows = item?.orderSummary?.items?.length
+    ? item.orderSummary.items
+        .map(
+          (it) => `
+    <div class="row" style="font-size: 15px; font-weight: bold; margin-bottom: 2px;">
+      <span>${escapeHtml(it.name)}</span>
+      <span>x${Number(it.quantity) || 1}</span>
+    </div>`
+        )
+        .join("")
+    : `
+    <div class="row">
+      <span>Order Items</span>
+      <span>${Number(item?.orderSummary?.itemsCount) || 1}</span>
+    </div>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -91,7 +136,7 @@ function generateOfflineKotHtml(orderId: string): string {
   </div>
   <div class="divider"></div>
   <div class="row" style="font-weight: bold;"><span>ITEMS</span><span>QTY</span></div>
-  <div class="row"><span>Order Items</span><span>${item?.orderSummary?.itemsCount || 1}</span></div>
+  ${itemRows}
   <div class="divider"></div>
   <div style="text-align: center; font-size: 11px; margin-top: 8px;">
     Sent from Offline Counter POS

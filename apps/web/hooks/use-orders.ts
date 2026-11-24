@@ -12,7 +12,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Customer } from "@/hooks/use-customers";
 import { api } from "@/lib/api";
 import { toast } from "@/lib/toast";
-import { queueOfflineCheckout, queueOfflineOrder } from "@/lib/offline-outbox";
+import {
+  queueOfflineCheckout,
+  queueOfflineOrder,
+  type OfflineOrderMetadata,
+} from "@/lib/offline-outbox";
 
 export interface CreatedOrder {
   id: string;
@@ -43,9 +47,10 @@ export interface CheckoutResult extends CreatedOrder {
 export function useCreateOrder(branchId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (dto: CreateOrderDto) => {
+    mutationFn: async (payload: CreateOrderDto & { offlineMetadata?: OfflineOrderMetadata }) => {
+      const { offlineMetadata, ...dto } = payload;
       if (typeof navigator !== "undefined" && !navigator.onLine) {
-        const queued = queueOfflineOrder(branchId || "", dto);
+        const queued = queueOfflineOrder(branchId || "", dto, offlineMetadata);
         toast.warning(
           `⚡ Offline Mode: Order saved locally (${queued.tempOrder.orderNumber}). Will auto-sync when online.`
         );
@@ -61,7 +66,7 @@ export function useCreateOrder(branchId: string | null) {
           err?.message?.includes("Failed to fetch") ||
           err?.status === 0;
         if (isNetworkFailure) {
-          const queued = queueOfflineOrder(branchId || "", dto);
+          const queued = queueOfflineOrder(branchId || "", dto, offlineMetadata);
           toast.warning(
             `⚡ Network offline: Order queued locally (${queued.tempOrder.orderNumber}).`
           );
@@ -113,7 +118,7 @@ export function useBillPreview(branchId: string | null, orderId: string, adj: Bi
   return useQuery({
     queryKey: ["orders", "bill", branchId, orderId, priced],
     queryFn: () => api.post<BillPreview>(`/orders/${orderId}/bill-preview?branchId=${branchId}`, priced),
-    enabled: !!branchId && enabled,
+    enabled: !!branchId && enabled && !orderId.startsWith("off_"),
     retry: false,
     // Keep the last figures on screen while a changed discount is repriced.
     placeholderData: (previous) => previous,
@@ -124,7 +129,8 @@ export function useCheckoutOrder(branchId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ orderId, dto }: { orderId: string; dto: CheckoutDto }) => {
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
+      // If client is offline or order was created locally and not yet synced to backend, queue in local outbox
+      if ((typeof navigator !== "undefined" && !navigator.onLine) || orderId.startsWith("off_")) {
         const queued = queueOfflineCheckout(branchId || "", orderId, dto);
         toast.warning(
           `⚡ Offline Mode: Payment recorded locally. Will sync to cloud when connected.`
@@ -240,7 +246,7 @@ export function useOrder(branchId: string | null, orderId: string | null) {
   return useQuery({
     queryKey: ["orders", "detail", branchId, orderId],
     queryFn: () => api.get<OrderDetail>(`/orders/${orderId}?branchId=${branchId}`),
-    enabled: !!branchId && !!orderId,
+    enabled: !!branchId && !!orderId && !orderId.startsWith("off_"),
   });
 }
 

@@ -197,6 +197,13 @@ function PosPageInner() {
       return;
     }
 
+    const estimatedTotal = lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+    const itemsSummary = lines.map((l) => ({
+      name: l.name,
+      quantity: l.quantity,
+      price: (l.unitPrice * l.quantity).toFixed(2),
+    }));
+
     createOrder.mutate(
       {
         type: orderType,
@@ -206,6 +213,10 @@ function PosPageInner() {
           ? { scheduledFor: new Date(scheduledFor).toISOString() }
           : {}),
         items,
+        offlineMetadata: {
+          estimatedTotal,
+          itemsSummary,
+        },
       },
       {
         onSuccess: (order) => {

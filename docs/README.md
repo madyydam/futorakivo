@@ -25,7 +25,8 @@ docs/
 ├── 06-SECURITY-AND-COMPLIANCE.md                 ← Volume 06: Security, 38-Key RBAC & Indian GST Compliance
 ├── 07-DEPLOYMENT-AND-HARDWARE.md                 ← Volume 07: Hardware Setup, Mobile Apps & ESC/POS Printers
 ├── 08-SECURITY-AUDIT-AND-PENETRATION-REPORT.md   ← Volume 08: Penetration Testing & Vulnerability Fix Report
-├── 09-INDIAN-REGULATIONS-AND-DPDP-ACT.md         ← Volume 09: Indian Regulations & DPDP Act 2023 Compliance
+├── 09-INDIAN-REGULATIONS-AND-DPDP-ACT.md         ← Volume 09-A: Indian Regulations & DPDP Act 2023 Compliance
+├── 09-DPDP-ACT-2023-IMPLEMENTATION-SPEC.md       ← Volume 09-B: DPDP Act & CRM Technical Implementation Spec
 ├── 10-PRODUCTION-CLOUD-SAAS-DEPLOYMENT.md        ← Volume 10: Production Single-VPS Cloud SaaS Deployment
 └── examples/                                     ← Sample CSV imports (ingredients.csv, menu-items.csv)
 ```
@@ -45,7 +46,8 @@ docs/
 | **06** | [**Security, RBAC & Access Control**](./06-SECURITY-AND-COMPLIANCE.md) | Compliance Officers, Security Auditors | Canonical 38-key RBAC, dual-token device/staff authentication, in-place manager approvals, privilege escalation prevention, bcrypt PIN hashing. |
 | **07** | [**Hardware & Deployment**](./07-DEPLOYMENT-AND-HARDWARE.md) | DevOps, System Admins, Field Technicians | ESC/POS thermal printers (USB/Bluetooth/LAN 9100), Android/iOS PWA, self-service kiosks, Docker/Vercel deployment runbooks. |
 | **08** | [**Security Audit & Penetration Report**](./08-SECURITY-AUDIT-AND-PENETRATION-REPORT.md) | Security Engineers, Auditors | Penetration test findings, 15+ resolved logic vulnerabilities (pairing races, rate limiters, loyalty clawbacks, billed order safeguards). |
-| **09** | [**Indian Regulations & DPDP Act 2023**](./09-INDIAN-REGULATIONS-AND-DPDP-ACT.md) | Legal, Compliance, DPO | DPDP Act 2023 consent capture, phone number masking, mandatory data retention limits, right to erasure, GST tax calculation engine. |
+| **09-A** | [**Indian Regulations & DPDP Act 2023**](./09-INDIAN-REGULATIONS-AND-DPDP-ACT.md) | Legal, Compliance, DPO | DPDP Act 2023 statutory mandates, Section 6 unbundled consent, phone masking, mandatory data retention limits, right to erasure, GST tax calculation engine. |
+| **09-B** | [**DPDP Act & CRM Implementation Spec**](./09-DPDP-ACT-2023-IMPLEMENTATION-SPEC.md) | Fullstack Engineers, Product Managers | Exact live implementation: `CustomerConsent` model, phone-based deduplication, Table QR unchecked checkbox, 3-hour TTL privacy shield, and Owner/Manager `/crm` verification modals (`👁️` & `#`). |
 | **10** | [**Production Cloud SaaS Deployment**](./10-PRODUCTION-CLOUD-SAAS-DEPLOYMENT.md) | DevOps, Cloud Engineers | Single-VPS (Hostinger KVM 2) architecture, Docker Compose, Caddy reverse-proxy SSL/TLS, PgBouncer pooling, Redis Pub/Sub, zero-downtime deploy. |
 
 ---

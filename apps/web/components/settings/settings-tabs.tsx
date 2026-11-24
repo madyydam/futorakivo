@@ -22,6 +22,7 @@ const TABS: SettingsTab[] = [
   { label: "General", href: "/settings" },
   { label: "Billing & Plans", href: "/settings/billing" },
   { label: "Hardware & Printers", href: "/settings/hardware" },
+  { label: "POS Devices", href: "/settings/devices", permission: "settings.manage" },
   { label: "Staff", href: "/settings/staff", permission: "users.manage" },
   { label: "Roles", href: "/settings/roles", permission: "roles.manage" },
   { label: "Audit Log", href: "/settings/audit-log", permission: "audit_log.view" },

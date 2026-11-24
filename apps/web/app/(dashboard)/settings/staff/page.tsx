@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { DepartmentsCard } from "@/components/settings/departments-card";
 import { StaffAccessDialog } from "@/components/settings/staff-access-dialog";
+import { StaffPinDialog } from "@/components/settings/staff-pin-dialog";
 import { AddStaffDialog } from "@/components/settings/add-staff-dialog";
 import { SettingsTabs } from "@/components/settings/settings-tabs";
 import { Badge } from "@/components/ui/badge";
@@ -139,6 +140,7 @@ export default function StaffPage() {
                   <TableCell>
                     {member.id !== currentUser?.user.id && (
                       <div className="flex items-center justify-end gap-1">
+                        <StaffPinDialog member={member} />
                         {canEditAccess && <StaffAccessDialog member={member} />}
                         <Button
                           variant="ghost"

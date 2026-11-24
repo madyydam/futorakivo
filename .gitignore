@@ -14,6 +14,8 @@ data/
 coverage/
 .pnpm-store/
 docker-compose.override.yml
+bin/
+
 
 # .NET (windows/msix/Launcher) — build-windows-msix.ps1 publishes to its
 # own ./out directory; these are only produced by a local `dotnet build`.

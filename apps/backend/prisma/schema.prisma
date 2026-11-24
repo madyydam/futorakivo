@@ -88,12 +88,19 @@ model Restaurant {
   requireDiscountReason    Boolean @default(false)
 
   // SaaS Tenant Management & Subscription (Petpooja-style Cloud Architecture)
-  status      String    @default("TRIAL") // TRIAL, ACTIVE, SUSPENDED, EXPIRED
-  plan        String    @default("Starter") // Starter, Growth, Enterprise
-  trialEndsAt DateTime?
-  maxBranches Int       @default(1)
-  ownerPhone  String?
-  city        String?
+  status                String    @default("TRIAL") // TRIAL, ACTIVE, SUSPENDED, EXPIRED, PENDING_APPROVAL, APPROVED
+  plan                  String    @default("Starter") // Starter, Growth, Enterprise
+  trialEndsAt           DateTime?
+  maxBranches           Int       @default(1)
+  ownerPhone            String?
+  city                  String?
+  activationCode        String?   // 12-digit activation code (format: XXXX-XXXX-XXXX)
+  isActivated           Boolean   @default(false)
+  activatedAt           DateTime? // Subscription timer begins strictly when activated!
+  subscriptionExpiresAt DateTime? // Computed strictly from activatedAt + plan duration
+  billingCycle          String    @default("MONTHLY") // MONTHLY, YEARLY
+  utrNumber             String?   // Bank / UPI transaction reference for payment verification
+  paymentProofUrl       String?   // Optional URL/reference for uploaded payment screenshot or invoice
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -5,8 +5,24 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { createHash, randomInt, timingSafeEqual } from 'node:crypto';
+import * as bcrypt from 'bcrypt';
+import { DEFAULT_ROLE_PERMISSIONS, STAFF_ROLES } from '@futora/types';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+
+function safeCompare(a: string, b: string): boolean {
+  const hashA = createHash('sha256').update(a).digest();
+  const hashB = createHash('sha256').update(b).digest();
+  return timingSafeEqual(hashA, hashB);
+}
+
+export function generate12DigitActivationCode(): string {
+  const c1 = randomInt(1000, 10000).toString();
+  const c2 = randomInt(1000, 10000).toString();
+  const c3 = randomInt(1000, 10000).toString();
+  return `${c1}-${c2}-${c3}`;
+}
 
 export interface PlatformBroadcast {
   id: string;
@@ -15,6 +31,18 @@ export interface PlatformBroadcast {
   level: 'INFO' | 'WARNING' | 'CRITICAL';
   createdAt: string;
   active: boolean;
+}
+
+export class CreateTenantDto {
+  restaurantName!: string;
+  ownerName!: string;
+  email!: string;
+  phone?: string;
+  city?: string;
+  plan?: 'Starter' | 'Growth' | 'Enterprise';
+  billingCycle?: 'MONTHLY' | 'YEARLY';
+  utrNumber?: string;
+  autoApprove?: boolean;
 }
 
 @Injectable()
@@ -47,7 +75,7 @@ export class SuperAdminService {
   ) {}
 
   /**
-   * Super Admin authentication with master credentials.
+   * Super Admin authentication with constant-time password comparison and audit trail.
    */
   async login(email: string, password: string, totpCode?: string) {
     const expectedEmail =
@@ -55,19 +83,28 @@ export class SuperAdminService {
     const expectedPassword =
       process.env.SUPER_ADMIN_PASSWORD || 'KivokoRoot@2026!';
 
-    if (
-      email.trim().toLowerCase() !== expectedEmail.toLowerCase() ||
-      password !== expectedPassword
-    ) {
+    const isEmailValid = safeCompare(
+      email.trim().toLowerCase(),
+      expectedEmail.toLowerCase(),
+    );
+    const isPasswordValid = safeCompare(password || '', expectedPassword);
+
+    if (!isEmailValid || !isPasswordValid) {
+      await this.audit.record({
+        action: 'SUPER_ADMIN_LOGIN_FAILED',
+        entity: 'SuperAdmin',
+        metadata: {
+          attemptedEmail: email,
+          timestamp: new Date().toISOString(),
+        },
+      });
       throw new UnauthorizedException('Invalid Super Admin credentials');
     }
 
-    // If TOTP secret is configured in production, require and verify the code
     if (process.env.SUPER_ADMIN_TOTP_SECRET) {
       if (!totpCode || totpCode.trim().length !== 6) {
         throw new BadRequestException('6-Digit TOTP Authenticator code required');
       }
-      // Note: optional strict TOTP check if configured
     }
 
     const payload = {
@@ -81,6 +118,15 @@ export class SuperAdminService {
       secret: process.env.JWT_SECRET,
     });
 
+    await this.audit.record({
+      action: 'SUPER_ADMIN_LOGIN_SUCCESS',
+      entity: 'SuperAdmin',
+      metadata: {
+        email: expectedEmail,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
     return {
       accessToken: token,
       expiresIn: 86400,
@@ -89,6 +135,21 @@ export class SuperAdminService {
         role: 'SUPER_ADMIN',
       },
     };
+  }
+
+  /**
+   * Super Admin Logout audit logging.
+   */
+  async logout(superAdminEmail: string) {
+    await this.audit.record({
+      action: 'SUPER_ADMIN_LOGOUT',
+      entity: 'SuperAdmin',
+      metadata: {
+        email: superAdminEmail,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    return { success: true };
   }
 
   /**
@@ -115,7 +176,6 @@ export class SuperAdminService {
       throw new BadRequestException('No Owner account attached to this restaurant');
     }
 
-    // Mint short-lived support token (15 minutes)
     const token = this.jwtService.sign(
       {
         sub: owner.id,
@@ -131,7 +191,6 @@ export class SuperAdminService {
       },
     );
 
-    // Audit log this action
     await this.audit.record({
       userId: owner.id,
       action: 'SUPER_ADMIN_IMPERSONATE',
@@ -150,6 +209,147 @@ export class SuperAdminService {
       redirectUrl: '/dashboard',
       restaurantName: restaurant.name,
       ownerEmail: owner.email,
+    };
+  }
+
+  /**
+   * Directly provisions a new tenant from Super Admin.
+   */
+  async createTenant(dto: CreateTenantDto, superAdminEmail: string) {
+    if (!dto.restaurantName?.trim() || !dto.email?.trim()) {
+      throw new BadRequestException('Restaurant Name and Owner Email are required');
+    }
+
+    const branchLimits: Record<string, number> = {
+      Starter: 1,
+      Growth: 3,
+      Enterprise: 100,
+    };
+
+    const plan = dto.plan || 'Growth';
+    const initialStatus = dto.autoApprove ? 'APPROVED' : 'PENDING_APPROVAL';
+    const activationCode = dto.autoApprove ? generate12DigitActivationCode() : null;
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: dto.email.trim().toLowerCase() },
+    });
+    if (existingUser) {
+      throw new BadRequestException('A user with this email already exists');
+    }
+
+    const permissions = await this.prisma.permission.findMany();
+    const permissionByKey = new Map(permissions.map((p) => [p.key, p]));
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const restaurant = await tx.restaurant.create({
+        data: {
+          name: dto.restaurantName.trim(),
+          ownerPhone: dto.phone?.trim() || null,
+          city: dto.city?.trim() || 'India',
+          status: initialStatus,
+          plan,
+          maxBranches: branchLimits[plan] || 3,
+          trialEndsAt: null,
+          activationCode,
+          isActivated: false,
+          activatedAt: null,
+          subscriptionExpiresAt: null,
+          billingCycle: dto.billingCycle || 'MONTHLY',
+          utrNumber: dto.utrNumber?.trim() || null,
+        },
+      });
+
+      const branch = await tx.branch.create({
+        data: {
+          restaurantId: restaurant.id,
+          name: `${dto.restaurantName.trim()} Main Outlet`,
+          phone: dto.phone?.trim() || null,
+          address: dto.city?.trim() || null,
+        },
+      });
+
+      let ownerRoleId = '';
+      for (const roleName of STAFF_ROLES) {
+        const role = await tx.role.create({
+          data: {
+            restaurantId: restaurant.id,
+            name: roleName,
+            label: roleName.replace(/_/g, ' '),
+          },
+        });
+        if (roleName === 'OWNER') ownerRoleId = role.id;
+
+        const grantedKeys = DEFAULT_ROLE_PERMISSIONS[roleName] || [];
+        const rolePermData = grantedKeys
+          .map((key) => permissionByKey.get(key))
+          .filter((p): p is NonNullable<typeof p> => Boolean(p))
+          .map((permission) => ({
+            roleId: role.id,
+            permissionId: permission.id,
+          }));
+
+        if (rolePermData.length > 0) {
+          await tx.rolePermission.createMany({ data: rolePermData });
+        }
+      }
+
+      const tempPassword = `Kivoko@${randomInt(100000, 999999)}`;
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+      const user = await tx.user.create({
+        data: {
+          restaurantId: restaurant.id,
+          roleId: ownerRoleId,
+          email: dto.email.trim().toLowerCase(),
+          name: dto.ownerName?.trim() || 'Owner',
+          phone: dto.phone?.trim() || null,
+          passwordHash,
+        },
+      });
+
+      await tx.userBranch.create({
+        data: {
+          userId: user.id,
+          branchId: branch.id,
+        },
+      });
+
+      return { restaurant, branch, user };
+    });
+
+    await this.audit.record({
+      action: 'SUPER_ADMIN_CREATE_TENANT',
+      entity: 'Restaurant',
+      entityId: result.restaurant.id,
+      metadata: {
+        superAdminEmail,
+        restaurantName: result.restaurant.name,
+        plan,
+        ownerEmail: result.user.email,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    return {
+      id: result.restaurant.id,
+      restaurantName: result.restaurant.name,
+      ownerName: result.user.name,
+      email: result.user.email,
+      phone: result.restaurant.ownerPhone || '',
+      city: result.restaurant.city || 'India',
+      branchesCount: 1,
+      branches: [{ id: result.branch.id, name: result.branch.name, address: result.branch.address }],
+      monthlyGmv: '₹0',
+      monthlyOrders: 0,
+      plan: result.restaurant.plan,
+      status: result.restaurant.status,
+      activationCode: result.restaurant.activationCode,
+      isActivated: result.restaurant.isActivated,
+      activatedAt: result.restaurant.activatedAt,
+      subscriptionExpiresAt: result.restaurant.subscriptionExpiresAt,
+      billingCycle: result.restaurant.billingCycle,
+      utrNumber: result.restaurant.utrNumber,
+      joinedDate: 'Just now',
     };
   }
 
@@ -301,7 +501,13 @@ export class SuperAdminService {
           monthlyGmv: `₹${gmv.toLocaleString('en-IN')}`,
           monthlyOrders: ordersCount,
           plan: (r.plan as 'Starter' | 'Growth' | 'Enterprise') || 'Starter',
-          status: (r.status as 'ACTIVE' | 'TRIAL' | 'SUSPENDED') || 'TRIAL',
+          status: (r.status as 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'PENDING_APPROVAL' | 'APPROVED') || 'TRIAL',
+          activationCode: r.activationCode,
+          isActivated: r.isActivated,
+          activatedAt: r.activatedAt,
+          subscriptionExpiresAt: r.subscriptionExpiresAt,
+          billingCycle: r.billingCycle,
+          utrNumber: r.utrNumber,
           trialEndsAt: r.trialEndsAt,
           maxBranches: r.maxBranches,
           currency: r.currency || 'INR',
@@ -472,5 +678,201 @@ export class SuperAdminService {
     };
     this.broadcasts.unshift(item);
     return item;
+  }
+
+  /**
+   * Approves a restaurant tenant after payment confirmation and generates
+   * a cryptographically random 12-digit license activation code (4-4-4).
+   * Subscription timer DOES NOT start yet — it begins strictly upon owner activation!
+   */
+  async approveTenant(restaurantId: string, superAdminEmail: string) {
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+    });
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+
+    const activationCode = generate12DigitActivationCode();
+
+    const updated = await this.prisma.restaurant.update({
+      where: { id: restaurantId },
+      data: {
+        status: 'APPROVED',
+        activationCode,
+        isActivated: false,
+        activatedAt: null,
+        subscriptionExpiresAt: null,
+      },
+    });
+
+    await this.audit.record({
+      action: 'SUPER_ADMIN_APPROVE_TENANT',
+      entity: 'Restaurant',
+      entityId: restaurant.id,
+      metadata: {
+        superAdminEmail,
+        restaurantName: restaurant.name,
+        activationCode,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    return {
+      id: updated.id,
+      status: updated.status,
+      activationCode: updated.activationCode,
+      message: 'Restaurant approved. 12-digit activation code generated.',
+    };
+  }
+
+  /**
+   * Activates a restaurant license using the 12-digit code (4-4-4).
+   * Exact moment of activation STARTS the subscription period (30 days / 365 days).
+   */
+  async activateLicense(rawCode: string) {
+    if (!rawCode) {
+      throw new BadRequestException('12-digit activation code is required');
+    }
+
+    const clean = rawCode.replace(/[^0-9]/g, '');
+    if (clean.length !== 12) {
+      throw new BadRequestException('Invalid format: code must be exactly 12 digits');
+    }
+
+    const formatted = `${clean.slice(0, 4)}-${clean.slice(4, 8)}-${clean.slice(8, 12)}`;
+
+    // Find restaurant with matching code
+    const restaurant = await this.prisma.restaurant.findFirst({
+      where: {
+        OR: [
+          { activationCode: formatted },
+          { activationCode: clean },
+        ],
+      },
+      include: {
+        branches: { take: 1 },
+      },
+    });
+
+    if (!restaurant) {
+      throw new BadRequestException('Invalid or unapproved activation code. Please check or contact Super Admin.');
+    }
+
+    if (restaurant.isActivated) {
+      throw new BadRequestException(
+        `This activation code was already redeemed on ${restaurant.activatedAt?.toLocaleDateString('en-IN') || 'earlier'}.`,
+      );
+    }
+
+    if (restaurant.status === 'SUSPENDED') {
+      throw new BadRequestException('This restaurant account has been suspended by Super Admin.');
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now);
+    if (restaurant.billingCycle === 'YEARLY') {
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    } else {
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30-day billing cycle
+    }
+
+    const updated = await this.prisma.restaurant.update({
+      where: { id: restaurant.id },
+      data: {
+        status: 'ACTIVE',
+        isActivated: true,
+        activatedAt: now,
+        subscriptionExpiresAt: expiresAt,
+        trialEndsAt: null,
+      },
+    });
+
+    await this.audit.record({
+      action: 'RESTAURANT_LICENSE_ACTIVATED',
+      entity: 'Restaurant',
+      entityId: restaurant.id,
+      metadata: {
+        restaurantName: restaurant.name,
+        activatedAt: now.toISOString(),
+        subscriptionExpiresAt: expiresAt.toISOString(),
+        plan: restaurant.plan,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Restaurant license successfully activated!',
+      restaurantId: updated.id,
+      restaurantName: updated.name,
+      plan: updated.plan,
+      status: updated.status,
+      activatedAt: now.toISOString(),
+      subscriptionExpiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  /**
+   * Real-time system health metrics: DB query latency, memory RSS, heap, uptime, and active tenant counters.
+   */
+  async getSystemHealth() {
+    const dbStart = Date.now();
+    await this.prisma.$queryRaw`SELECT 1`;
+    const dbLatencyMs = Date.now() - dbStart;
+
+    const mem = process.memoryUsage();
+    const [totalRestaurants, activeRestaurants, approvedPendingActivation, suspendedRestaurants] = await Promise.all([
+      this.prisma.restaurant.count(),
+      this.prisma.restaurant.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.restaurant.count({ where: { status: 'APPROVED', isActivated: false } }),
+      this.prisma.restaurant.count({ where: { status: 'SUSPENDED' } }),
+    ]);
+
+    return {
+      status: 'HEALTHY',
+      timestamp: new Date().toISOString(),
+      database: {
+        status: 'CONNECTED',
+        latencyMs: dbLatencyMs,
+        provider: 'PostgreSQL',
+      },
+      process: {
+        uptimeSeconds: Math.floor(process.uptime()),
+        nodeVersion: process.version,
+        memoryHeapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+        memoryHeapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
+        memoryRssMb: Math.round(mem.rss / 1024 / 1024),
+      },
+      fleet: {
+        totalRestaurants,
+        activeRestaurants,
+        approvedPendingActivation,
+        suspendedRestaurants,
+      },
+    };
+  }
+
+  /**
+   * Live platform audit logs stream.
+   */
+  async getAuditLogs(limit: number = 50) {
+    const logs = await this.prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(limit, 100),
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    return logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      entity: log.entity,
+      entityId: log.entityId,
+      metadata: log.metadata,
+      createdAt: log.createdAt,
+      userName: log.user?.name || 'System / Super Admin',
+      userEmail: log.user?.email || null,
+    }));
   }
 }

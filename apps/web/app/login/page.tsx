@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginDto } from "@futora/types";
@@ -142,12 +142,20 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          New restaurant?{" "}
-          <Link href="/signup" className="font-medium text-foreground hover:underline">
-            Create an account
-          </Link>
-        </p>
+        <div className="mt-6 flex flex-col items-center gap-2 text-center text-xs text-muted-foreground">
+          <p>
+            New restaurant?{" "}
+            <Link href="/signup" className="font-medium text-foreground hover:underline">
+              Create an account
+            </Link>
+          </p>
+          <p>
+            Have a 12-digit license key?{" "}
+            <Link href="/activate" className="font-semibold text-primary hover:underline">
+              Activate restaurant OS →
+            </Link>
+          </p>
+        </div>
       </motion.div>
     </main>
   );

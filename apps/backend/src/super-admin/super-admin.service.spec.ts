@@ -14,12 +14,31 @@ describe('SuperAdminService & Guard', () => {
   const mockPrisma = {
     restaurant: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      create: jest.fn(),
       count: jest.fn(),
     },
     branch: {
       count: jest.fn(),
+      create: jest.fn(),
+    },
+    user: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+    },
+    role: {
+      create: jest.fn(),
+    },
+    rolePermission: {
+      createMany: jest.fn(),
+    },
+    userBranch: {
+      create: jest.fn(),
+    },
+    permission: {
+      findMany: jest.fn().mockResolvedValue([]),
     },
     order: {
       aggregate: jest.fn(),
@@ -29,6 +48,11 @@ describe('SuperAdminService & Guard', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    auditLog: {
+      findMany: jest.fn(),
+    },
+    $transaction: jest.fn((cb) => cb(mockPrisma)),
+    $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
   };
 
   const mockAudit = {
@@ -246,6 +270,166 @@ describe('SuperAdminService & Guard', () => {
       } as any;
 
       expect(() => guard.canActivate(mockContext)).toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('Tenant Lifecycle & Direct Provisioning', () => {
+    it('creates a new tenant in PENDING_APPROVAL status with role and owner', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockPrisma.restaurant.create.mockResolvedValue({
+        id: 'rest_new',
+        name: 'Mumbai Spices',
+        status: 'PENDING_APPROVAL',
+        plan: 'Growth',
+        ownerPhone: '9876543210',
+        city: 'Mumbai',
+        activationCode: null,
+        isActivated: false,
+        activatedAt: null,
+        subscriptionExpiresAt: null,
+        billingCycle: 'MONTHLY',
+        utrNumber: null,
+      });
+      mockPrisma.branch.create.mockResolvedValue({
+        id: 'br_main',
+        name: 'Mumbai Spices Main Outlet',
+        address: 'Mumbai',
+      });
+      mockPrisma.role.create.mockResolvedValue({ id: 'role_owner' });
+      mockPrisma.user.create.mockResolvedValue({
+        id: 'usr_owner',
+        name: 'Raj Owner',
+        email: 'raj@spices.com',
+      });
+      mockPrisma.userBranch.create.mockResolvedValue({});
+
+      const tenant = await service.createTenant(
+        {
+          restaurantName: 'Mumbai Spices',
+          ownerName: 'Raj Owner',
+          email: 'raj@spices.com',
+          phone: '9876543210',
+          city: 'Mumbai',
+          plan: 'Growth',
+        },
+        'admin@futoragroup.in',
+      );
+
+      expect(tenant.id).toBe('rest_new');
+      expect(tenant.restaurantName).toBe('Mumbai Spices');
+      expect(tenant.status).toBe('PENDING_APPROVAL');
+      expect(mockAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'SUPER_ADMIN_CREATE_TENANT',
+          entityId: 'rest_new',
+        }),
+      );
+    });
+
+    it('records audit log on logout', async () => {
+      const res = await service.logout('admin@futoragroup.in');
+      expect(res.success).toBe(true);
+      expect(mockAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'SUPER_ADMIN_LOGOUT',
+        }),
+      );
+    });
+  });
+
+  describe('12-Digit License Activation & Subscription Timing', () => {
+    it('approves tenant and generates 12-digit code in 4-4-4 format without starting timer', async () => {
+      mockPrisma.restaurant.findUnique.mockResolvedValue({
+        id: 'rest_pending',
+        name: 'Delhi Dhaba',
+        status: 'PENDING_APPROVAL',
+      });
+      mockPrisma.restaurant.update.mockImplementation(({ data }) => ({
+        id: 'rest_pending',
+        ...data,
+      }));
+
+      const res = await service.approveTenant('rest_pending', 'admin@futoragroup.in');
+      expect(res.status).toBe('APPROVED');
+      expect(res.activationCode).toMatch(/^\d{4}-\d{4}-\d{4}$/);
+      expect(mockPrisma.restaurant.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'APPROVED',
+            isActivated: false,
+            activatedAt: null,
+            subscriptionExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it('activates license and starts subscription timer at that exact moment', async () => {
+      const code = '4829-1093-8572';
+      mockPrisma.restaurant.findFirst.mockResolvedValue({
+        id: 'rest_approved',
+        name: 'Delhi Dhaba',
+        status: 'APPROVED',
+        activationCode: code,
+        isActivated: false,
+        billingCycle: 'MONTHLY',
+        plan: 'Growth',
+      });
+      mockPrisma.restaurant.update.mockImplementation(({ data }) => ({
+        id: 'rest_approved',
+        name: 'Delhi Dhaba',
+        plan: 'Growth',
+        ...data,
+      }));
+
+      const res = await service.activateLicense(code);
+      expect(res.success).toBe(true);
+      expect(res.status).toBe('ACTIVE');
+      expect(res.activatedAt).toBeDefined();
+      expect(res.subscriptionExpiresAt).toBeDefined();
+
+      const activatedDate = new Date(res.activatedAt);
+      const expiresDate = new Date(res.subscriptionExpiresAt);
+      const daysDiff = Math.round((expiresDate.getTime() - activatedDate.getTime()) / (1000 * 60 * 60 * 24));
+      expect(daysDiff).toBe(30);
+
+      expect(mockAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'RESTAURANT_LICENSE_ACTIVATED',
+          entityId: 'rest_approved',
+        }),
+      );
+    });
+  });
+
+  describe('System Health & Platform Metrics', () => {
+    it('returns system health with database latency and fleet stats', async () => {
+      mockPrisma.restaurant.count.mockResolvedValue(10);
+      const health = await service.getSystemHealth();
+      expect(health.status).toBe('HEALTHY');
+      expect(health.database.status).toBe('CONNECTED');
+      expect(health.database.latencyMs).toBeGreaterThanOrEqual(0);
+      expect(health.process.memoryHeapUsedMb).toBeGreaterThan(0);
+      expect(health.fleet.totalRestaurants).toBe(10);
+    });
+
+    it('returns platform audit logs', async () => {
+      mockPrisma.auditLog.findMany.mockResolvedValue([
+        {
+          id: 'log_1',
+          action: 'SUPER_ADMIN_LOGIN_SUCCESS',
+          entity: 'SuperAdmin',
+          entityId: null,
+          metadata: {},
+          createdAt: new Date(),
+          user: null,
+        },
+      ]);
+
+      const logs = await service.getAuditLogs(10);
+      expect(logs).toHaveLength(1);
+      expect(logs[0].action).toBe('SUPER_ADMIN_LOGIN_SUCCESS');
+      expect(logs[0].userName).toBe('System / Super Admin');
     });
   });
 });

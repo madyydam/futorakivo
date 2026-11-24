@@ -3,10 +3,11 @@
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma } from '@prisma/client';
+import { DeviceStatus, Prisma } from '@prisma/client';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSIONS,
@@ -15,10 +16,13 @@ import {
   type PinLoginDto,
   type RegisterDto,
   type SessionUser,
+  type UpdateStaffPinDto,
 } from '@futora/types';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { TwoFactorService } from './two-factor.service';
+import { PinHasherService } from './pin-hasher.service';
+import { DevicesService } from '../devices/devices.service';
 import {
   effectivePermissions,
   permissionInclude,
@@ -31,6 +35,8 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly twoFactor: TwoFactorService,
+    private readonly pinHasher: PinHasherService,
+    private readonly devices: DevicesService,
   ) {}
 
   private toSessionUser(user: {
@@ -40,6 +46,7 @@ export class AuthService {
     roleId: string;
     role: { name: string; permissions: { permission: { key: string } }[] };
     permissionOverrides?: PermissionSource['permissionOverrides'];
+    permissionsVersion?: number;
   }): SessionUser {
     return {
       id: user.id,
@@ -48,6 +55,7 @@ export class AuthService {
       roleId: user.roleId,
       roleName: user.role.name,
       permissions: effectivePermissions(user),
+      permissionsVersion: user.permissionsVersion ?? 1,
     };
   }
 
@@ -285,6 +293,174 @@ export class AuthService {
     }
 
     return this.issueSession(user);
+  }
+
+  /**
+   * High-concurrency POS terminal PIN login.
+   * Validates device approval, enforces 5-fail 15-minute lockout,
+   * performs indexed HMAC lookup + bcrypt verification, and issues JWT bound to device.
+   */
+  async devicePinLogin(
+    rawDeviceToken: string,
+    pin: string,
+    ip = '127.0.0.1',
+  ) {
+    if (!rawDeviceToken) {
+      throw new UnauthorizedException('Device token is required');
+    }
+
+    const device = await this.devices.verifyDeviceToken(rawDeviceToken);
+    if (!device || device.status !== DeviceStatus.APPROVED) {
+      throw new UnauthorizedException('Device is not registered or approved');
+    }
+
+    if (device.lockedUntil && device.lockedUntil > new Date()) {
+      const waitMinutes = Math.ceil(
+        (device.lockedUntil.getTime() - Date.now()) / (60 * 1000),
+      );
+      throw new UnauthorizedException(
+        `Device is temporarily locked due to repeated incorrect PIN attempts. Try again in ${waitMinutes} minute(s).`,
+      );
+    }
+
+    const pinLookup = this.pinHasher.computeLookup(device.restaurantId, pin);
+    const user = await this.prisma.user.findFirst({
+      where: {
+        restaurantId: device.restaurantId,
+        pinLookup,
+        isActive: true,
+      },
+      include: permissionInclude,
+    });
+
+    const isPinValid =
+      user && user.pinHash
+        ? await this.pinHasher.verifyPin(pin, user.pinHash)
+        : false;
+
+    if (!isPinValid || !user) {
+      // Record failed attempt
+      await this.prisma.pinAttempt.create({
+        data: {
+          restaurantId: device.restaurantId,
+          deviceId: device.id,
+          ip,
+          success: false,
+        },
+      });
+
+      const failedAttempts = (device.failedAttempts ?? 0) + 1;
+      let lockedUntil: Date | null = null;
+      if (failedAttempts >= 5) {
+        lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15-minute lockout
+      }
+
+      await this.prisma.deviceRegistration.update({
+        where: { id: device.id },
+        data: {
+          failedAttempts,
+          lockedUntil,
+          lastIp: ip,
+          lastSeenAt: new Date(),
+        },
+      });
+
+      if (failedAttempts >= 5) {
+        throw new UnauthorizedException(
+          'Too many failed attempts. Device locked for 15 minutes.',
+        );
+      }
+      throw new UnauthorizedException('Incorrect PIN');
+    }
+
+    if (user.twoFactorEnabled) {
+      throw new UnauthorizedException(
+        'PIN login is disabled for accounts with two-factor authentication — please sign in with your password',
+      );
+    }
+
+    // Record success
+    await this.prisma.pinAttempt.create({
+      data: {
+        restaurantId: device.restaurantId,
+        deviceId: device.id,
+        ip,
+        success: true,
+      },
+    });
+
+    // Reset failed counter and refresh last seen
+    await this.prisma.deviceRegistration.update({
+      where: { id: device.id },
+      data: {
+        failedAttempts: 0,
+        lockedUntil: null,
+        lastSeenAt: new Date(),
+        lastIp: ip,
+      },
+    });
+
+    const sessionUser = this.toSessionUser(user);
+    const token = await this.jwt.signAsync({
+      sub: user.id,
+      restaurantId: user.restaurantId,
+      deviceId: device.id,
+      outletId: device.outletId,
+      pv: user.permissionsVersion ?? 1,
+    });
+
+    return {
+      token,
+      user: sessionUser,
+      mustChangePin: Boolean(user.mustChangePin),
+    };
+  }
+
+  /**
+   * Sets or updates staff PIN with uniqueness verification within the restaurant.
+   */
+  async updateStaffPin(
+    restaurantId: string,
+    actorId: string,
+    dto: UpdateStaffPinDto,
+  ) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: dto.staffUserId, restaurantId },
+    });
+    if (!user) {
+      throw new NotFoundException('Staff member not found');
+    }
+
+    const pinLookup = this.pinHasher.computeLookup(restaurantId, dto.newPin);
+
+    // Prevent duplicate PIN collisions within the same restaurant
+    const conflict = await this.prisma.user.findFirst({
+      where: {
+        restaurantId,
+        pinLookup,
+        id: { not: dto.staffUserId },
+        isActive: true,
+      },
+    });
+    if (conflict) {
+      throw new ConflictException(
+        'This PIN is already assigned to another staff member at this restaurant',
+      );
+    }
+
+    const pinHash = await this.pinHasher.hashPin(dto.newPin);
+
+    await this.prisma.user.update({
+      where: { id: dto.staffUserId },
+      data: {
+        pinLookup,
+        pinHash,
+        pepperKeyId: 'v1',
+        mustChangePin: false,
+      },
+    });
+
+    return { success: true, message: 'PIN updated successfully' };
   }
 
   private async issueSession(

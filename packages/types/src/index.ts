@@ -1,5 +1,6 @@
 export * from "./permissions";
 export * from "./auth";
+export * from "./devices";
 export * from "./menu";
 export * from "./tables";
 export * from "./orders";

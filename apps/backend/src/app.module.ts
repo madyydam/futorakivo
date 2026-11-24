@@ -51,6 +51,7 @@ import { VerifactuModule } from './modules/verifactu/verifactu.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { AggregatorModule } from './modules/aggregators/aggregator.module';
+import { DevicesModule } from './devices/devices.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { AggregatorModule } from './modules/aggregators/aggregator.module';
     SystemModule,
     SubscriptionModule,
     AggregatorModule,
+    DevicesModule,
   ],
   controllers: [AppController],
   providers: [

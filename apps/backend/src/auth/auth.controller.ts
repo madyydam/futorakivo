@@ -3,20 +3,27 @@
   Controller,
   Delete,
   Get,
+  Headers,
+  Ip,
   Param,
   Post,
+  Put,
   Res,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
+  devicePinLoginSchema,
   loginSchema,
   pinLoginSchema,
   registerSchema,
   twoFactorCodeSchema,
   twoFactorDisableSchema,
+  updateStaffPinSchema,
+  type DevicePinLoginDto,
   type SessionUser,
+  type UpdateStaffPinDto,
 } from '@futora/types';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -94,6 +101,32 @@ export class AuthController {
     const { token, user } = await this.authService.pinLogin(body as never);
     this.setSessionCookie(res, token);
     return { user };
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('device-pin-login')
+  @UsePipes(new ZodValidationPipe(devicePinLoginSchema))
+  async devicePinLogin(
+    @Headers('x-device-token') headerToken: string | undefined,
+    @Body() body: DevicePinLoginDto,
+    @Ip() ip: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const rawToken = headerToken || body.deviceToken || '';
+    const { token, user, mustChangePin } =
+      await this.authService.devicePinLogin(rawToken, body.pin, ip);
+    this.setSessionCookie(res, token);
+    return { token, user, mustChangePin };
+  }
+
+  @Put('staff-pin')
+  @Auth('staff.manage')
+  @UsePipes(new ZodValidationPipe(updateStaffPinSchema))
+  async updateStaffPin(
+    @CurrentUser() user: SessionUser,
+    @Body() body: UpdateStaffPinDto,
+  ) {
+    return this.authService.updateStaffPin(user.restaurantId, user.id, body);
   }
 
   // Delete my own account; asks for the password again.

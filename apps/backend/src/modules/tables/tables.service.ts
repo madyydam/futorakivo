@@ -49,7 +49,18 @@ export class TablesService {
 
   async createTable(branchId: string, dto: TableDto) {
     await this.assertFloorInBranch(branchId, dto.floorId);
-    const table = await this.prisma.table.create({ data: dto });
+    const tableNumber = dto.number.trim();
+    const existing = await this.prisma.table.findFirst({
+      where: { floorId: dto.floorId, number: tableNumber },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        `Table number "${tableNumber}" already exists on this floor.`,
+      );
+    }
+    const table = await this.prisma.table.create({
+      data: { ...dto, number: tableNumber },
+    });
     this.realtime.emitToBranch(branchId, 'table.updated', table);
     return table;
   }
@@ -138,12 +149,12 @@ export class TablesService {
     // tile. Pay or cancel the bill first (both release the table themselves).
     if (status !== 'OCCUPIED') {
       const open = await this.prisma.order.findFirst({
-        where: { tableId: id, status: 'OPEN' },
-        select: { orderNumber: true },
+        where: { tableId: id, status: { in: ['OPEN', 'BILLED'] } },
+        select: { orderNumber: true, status: true },
       });
       if (open) {
         throw new ConflictException(
-          `This table has an open bill (#${open.orderNumber}) - pay or cancel it first`,
+          `This table has an active bill (#${open.orderNumber}, status ${open.status}) - settle or cancel it first`,
         );
       }
     }
@@ -161,6 +172,15 @@ export class TablesService {
 
   async deleteTable(branchId: string, id: string) {
     await this.assertTableInBranch(branchId, id);
+    const activeOrder = await this.prisma.order.findFirst({
+      where: { tableId: id, status: { in: ['OPEN', 'BILLED'] } },
+      select: { orderNumber: true },
+    });
+    if (activeOrder) {
+      throw new ConflictException(
+        `Cannot delete table with active order #${activeOrder.orderNumber} - settle or cancel it first`,
+      );
+    }
     await this.prisma.table.delete({ where: { id } });
     this.realtime.emitToBranch(branchId, 'table.deleted', { id });
     return { ok: true };

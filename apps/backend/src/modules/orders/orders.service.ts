@@ -902,7 +902,7 @@ export class OrdersService {
   ) {
     if (!tableId) return;
     const stillOpen = await tx.order.count({
-      where: { tableId, status: 'OPEN', id: { not: exceptOrderId } },
+      where: { tableId, status: { in: ['OPEN', 'BILLED'] }, id: { not: exceptOrderId } },
     });
     if (stillOpen === 0) {
       await tx.table.update({
@@ -1313,9 +1313,10 @@ export class OrdersService {
     }
     if (dto.quantity === item.quantity) return this.getOrder(branchId, orderId);
 
+    const unit = Number(item.lineTotal) / item.quantity;
+
     await this.prisma.$transaction(async (tx) => {
       await this.assertLineNotStarted(tx, itemId);
-      const unit = Number(item.lineTotal) / item.quantity;
       await tx.orderItem.update({
         where: { id: itemId },
         data: {
@@ -1328,6 +1329,37 @@ export class OrdersService {
 
     this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
     this.realtime.emitToBranch(branchId, 'kot.updated', { orderId });
+    if (this.orderEvents) {
+      void this.prisma.branch
+        .findUnique({
+          where: { id: branchId },
+          select: { restaurantId: true },
+        })
+        .then((b) => {
+          if (b && this.orderEvents) {
+            void this.orderEvents.record({
+              restaurantId: b.restaurantId,
+              outletId: branchId,
+              entity: 'Order',
+              entityId: orderId,
+              eventType: 'ITEM_VOIDED',
+              actorType: 'STAFF',
+              actorId: userId,
+              reason: dto.reason,
+              beforeState: {
+                orderNumber: order.orderNumber,
+                item: item.nameSnapshot,
+                quantity: item.quantity,
+                lineTotal: item.lineTotal.toString(),
+              },
+              afterState: {
+                quantity: dto.quantity,
+                lineTotal: round2(unit * dto.quantity).toString(),
+              },
+            });
+          }
+        });
+    }
     await this.audit.record({
       userId,
       action: 'order.item_changed',
@@ -1379,6 +1411,34 @@ export class OrdersService {
 
     this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
     this.realtime.emitToBranch(branchId, 'kot.updated', { orderId });
+    if (this.orderEvents) {
+      void this.prisma.branch
+        .findUnique({
+          where: { id: branchId },
+          select: { restaurantId: true },
+        })
+        .then((b) => {
+          if (b && this.orderEvents) {
+            void this.orderEvents.record({
+              restaurantId: b.restaurantId,
+              outletId: branchId,
+              entity: 'Order',
+              entityId: orderId,
+              eventType: 'ITEM_CANCELLED',
+              actorType: 'STAFF',
+              actorId: userId,
+              reason,
+              beforeState: {
+                orderNumber: order.orderNumber,
+                item: item.nameSnapshot,
+                quantity: item.quantity,
+                lineTotal: item.lineTotal.toString(),
+              },
+              afterState: { removed: true },
+            });
+          }
+        });
+    }
     await this.audit.record({
       userId,
       action: 'order.item_removed',
@@ -1649,7 +1709,7 @@ export class OrdersService {
       );
       if (replay) return this.checkoutResult(branchId, orderId);
     }
-    if (order.status !== 'OPEN') {
+    if (order.status !== 'OPEN' && order.status !== 'BILLED') {
       throw new BadRequestException('Order is not open for checkout');
     }
     // Accepting is a separate decision from paying: an incoming order nobody
@@ -1657,6 +1717,11 @@ export class OrdersService {
     if (order.acceptance === 'PENDING') {
       throw new ConflictException(
         'This order has not been accepted yet - accept it before taking payment',
+      );
+    }
+    if (order.acceptance === 'REJECTED') {
+      throw new BadRequestException(
+        'This order was rejected and cannot be settled',
       );
     }
 
@@ -1834,7 +1899,7 @@ export class OrdersService {
 
         if (!settlement.fullyPaid) {
           await tx.order.update({
-            where: { id: orderId, status: 'OPEN' },
+            where: { id: orderId, status: { in: ['OPEN', 'BILLED'] } },
             data: { ...lockedFigures, payments: { create: paymentRows } },
           });
           return;
@@ -1861,23 +1926,25 @@ export class OrdersService {
         // Loyalty earn on net spend (excluding tip), only once the sale is
         // actually paid — an atomic increment (race-free by construction, no
         // read-then-write window) rather than a computed `set`.
-        if (effectiveCustomerId) {
+        if (effectiveCustomerId && loyaltyEarnPerCurrency > 0) {
           const netSpend = round2(
             bill.subtotal - bill.discountAmount - loyaltyDiscountAmount,
           );
-          const pointsEarned = Math.floor(netSpend / loyaltyEarnPerCurrency);
-          if (pointsEarned > 0) {
-            await tx.customer.update({
-              where: { id: effectiveCustomerId },
-              data: { loyaltyPoints: { increment: pointsEarned } },
-            });
-            await this.referrals.recordOrderPoints(tx, {
-              branchId,
-              customerId: effectiveCustomerId,
-              orderId,
-              earned: pointsEarned,
-              redeemed: 0,
-            });
+          if (netSpend > 0) {
+            const pointsEarned = Math.floor(netSpend / loyaltyEarnPerCurrency);
+            if (pointsEarned > 0) {
+              await tx.customer.update({
+                where: { id: effectiveCustomerId },
+                data: { loyaltyPoints: { increment: pointsEarned } },
+              });
+              await this.referrals.recordOrderPoints(tx, {
+                branchId,
+                customerId: effectiveCustomerId,
+                orderId,
+                earned: pointsEarned,
+                redeemed: 0,
+              });
+            }
           }
           // First paid purchase of a referred customer: pays both sides, once.
           await this.referrals.onOrderPaid(tx, {
@@ -1889,17 +1956,17 @@ export class OrdersService {
           });
         }
 
-        // `status: 'OPEN'` in the where clause is the actual concurrency
+        // `status: { in: ['OPEN', 'BILLED'] }` in the where clause is the actual concurrency
         // guard: the initial status check above ran outside this
         // transaction, so two simultaneous checkout requests for the same
         // order could otherwise both pass it and both reach here, producing
         // two payment rows, a double inventory deduction and double loyalty
-        // points. This update only succeeds if the row is still OPEN at
+        // points. This update only succeeds if the row is still OPEN/BILLED at
         // commit time; Prisma throws P2025 (caught below) for the loser, and
         // the whole transaction — including the gift card debit and loyalty
         // changes already applied above — rolls back with it.
         await tx.order.update({
-          where: { id: orderId, status: 'OPEN' },
+          where: { id: orderId, status: { in: ['OPEN', 'BILLED'] } },
           data: {
             ...lockedFigures,
             status: 'PAID',
@@ -2202,8 +2269,11 @@ export class OrdersService {
       }),
     ]);
     if (!target || !source) throw new NotFoundException('Order not found');
-    if (target.status !== 'OPEN' || source.status !== 'OPEN') {
-      throw new BadRequestException('Both orders must be open to merge');
+    if (
+      !['OPEN', 'BILLED'].includes(target.status) ||
+      !['OPEN', 'BILLED'].includes(source.status)
+    ) {
+      throw new BadRequestException('Both orders must be open or billed to merge');
     }
     this.assertNoPayments(target);
     this.assertNoPayments(source);
@@ -2231,6 +2301,10 @@ export class OrdersService {
       // Discount is intentionally not recomputed here — it's re-entered at
       // checkout time for the merged bill, same as any other order.
       const totals = computeOrderTotals(lines);
+      const combinedGuests = Math.max(
+        1,
+        (target.guestCount ?? 0) + (source.guestCount ?? 0),
+      );
 
       const result = await tx.order.update({
         where: { id: targetOrderId },
@@ -2238,6 +2312,7 @@ export class OrdersService {
           subtotal: totals.subtotal,
           taxAmount: totals.taxAmount,
           totalAmount: totals.subtotal,
+          guestCount: combinedGuests,
         },
         include: { items: true },
       });

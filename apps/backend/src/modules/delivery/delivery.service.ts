@@ -94,8 +94,9 @@ export class DeliveryService {
 
   /** Public-safe quote: fee/ETA for a pincode, no zone internals. */
   async quote(branchId: string, pincode: string) {
+    const cleanPincode = (pincode || '').trim();
     const zone = await this.prisma.deliveryZone.findFirst({
-      where: { branchId, isActive: true, pincodes: { has: pincode } },
+      where: { branchId, isActive: true, pincodes: { has: cleanPincode } },
     });
     if (!zone) return { deliverable: false as const };
     return {

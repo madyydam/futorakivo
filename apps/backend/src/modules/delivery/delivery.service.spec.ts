@@ -102,4 +102,19 @@ describe('DeliveryService', () => {
       }),
     ).rejects.toThrow(/already covered/);
   });
+
+  it('trims whitespace when quoting delivery for a pincode', async () => {
+    const { svc, prisma } = setup(null);
+    prisma.deliveryZone.findFirst.mockResolvedValue({
+      name: 'South',
+      fee: 25,
+      minOrderAmount: 200,
+      etaMinutes: 45,
+    });
+    const quote = await svc.quote('b1', '  700001 \n');
+    expect(quote.deliverable).toBe(true);
+    expect(prisma.deliveryZone.findFirst).toHaveBeenCalledWith({
+      where: { branchId: 'b1', isActive: true, pincodes: { has: '700001' } },
+    });
+  });
 });

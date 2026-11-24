@@ -167,4 +167,44 @@ describe('TablesService - Assignments & Sessions', () => {
       );
     });
   });
+
+  describe('Table Lifecycle & Guards', () => {
+    it('throws BadRequestException if creating table with duplicate number on same floor', async () => {
+      prisma.floor = { findFirst: jest.fn().mockResolvedValue({ id: 'flr-1' }) };
+      prisma.table.findFirst.mockResolvedValue({ id: 'tbl-existing', number: 'T-10' });
+
+      await expect(
+        service.createTable('branch-1', {
+          floorId: 'flr-1',
+          number: '  T-10  ',
+          capacity: 4,
+          shape: 'RECTANGLE',
+          x: 0,
+          y: 0,
+        } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws ConflictException if setting status to AVAILABLE while order is BILLED', async () => {
+      prisma.table.findFirst.mockResolvedValue({ id: 'tbl-1', status: 'OCCUPIED' });
+      prisma.order = {
+        findFirst: jest.fn().mockResolvedValue({ orderNumber: '101', status: 'BILLED' }),
+      };
+
+      await expect(
+        service.updateTableStatus('branch-1', 'tbl-1', 'AVAILABLE' as any),
+      ).rejects.toThrow('This table has an active bill (#101, status BILLED) - settle or cancel it first');
+    });
+
+    it('throws ConflictException if deleting table with active OPEN or BILLED order', async () => {
+      prisma.table.findFirst.mockResolvedValue({ id: 'tbl-1' });
+      prisma.order = {
+        findFirst: jest.fn().mockResolvedValue({ orderNumber: '102' }),
+      };
+
+      await expect(service.deleteTable('branch-1', 'tbl-1')).rejects.toThrow(
+        'Cannot delete table with active order #102 - settle or cancel it first',
+      );
+    });
+  });
 });

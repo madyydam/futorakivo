@@ -141,5 +141,18 @@ describe('CustomersService - CRM History & DPDP Consent Audit', () => {
       expect(consents).toHaveLength(2);
       expect(consents[0]).toHaveProperty('termsVersion', 'v1.0-2026');
     });
+
+    it('retrieves DPDP consent records scoped to restaurantId when provided', async () => {
+      const { service, prisma } = buildMocks();
+      prisma.customer.findFirst.mockResolvedValue({ id: 'cust-1', branchId: 'branch-1' });
+      prisma.customerConsent.findMany.mockResolvedValue([]);
+
+      await service.getConsentAudit('branch-1', 'cust-1', 'rest-1');
+
+      expect(prisma.customerConsent.findMany).toHaveBeenCalledWith({
+        where: { customerId: 'cust-1', restaurantId: 'rest-1' },
+        orderBy: { consentedAt: 'desc' },
+      });
+    });
   });
 });

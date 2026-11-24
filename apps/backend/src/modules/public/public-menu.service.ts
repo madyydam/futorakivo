@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { createHash } from 'crypto';
 import type { CartItemDto } from '@futora/types';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -98,6 +104,46 @@ export class PublicMenuService {
 
     // Automatic CRM capture: create or link customer profile by phone number (master key)
     const cleanPhone = guestPhone.trim();
+
+    // 1. Anti-Abuse Shield: Check if phone number is blocked by outlet management
+    const phoneHash = createHash('sha256').update(cleanPhone).digest('hex');
+    const blockedGuest = await this.prisma.guestBlock.findFirst({
+      where: {
+        outletId: branchId,
+        phoneHash,
+        OR: [{ blockedUntil: null }, { blockedUntil: { gt: new Date() } }],
+      },
+    });
+    if (blockedGuest) {
+      throw new ForbiddenException(
+        'This mobile number has been restricted from placing online orders. Please speak with restaurant staff.',
+      );
+    }
+
+    // 2. Operational Controls: Check QR ordering settings (Emergency Pause & Item Limits)
+    const qrSettings = await this.prisma.qrSettings.findUnique({
+      where: { outletId: branchId },
+    });
+    if (qrSettings?.orderingPaused) {
+      throw new BadRequestException('QR ordering is temporarily paused by the restaurant.');
+    }
+    if (qrSettings?.maxItemsPerOrder) {
+      const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
+      if (totalCount > qrSettings.maxItemsPerOrder) {
+        throw new BadRequestException(
+          `Order exceeds the maximum limit of ${qrSettings.maxItemsPerOrder} items per order.`,
+        );
+      }
+    }
+    if (qrSettings?.maxQtyPerLine) {
+      const lineOver = items.find((item) => item.quantity > qrSettings.maxQtyPerLine);
+      if (lineOver) {
+        throw new BadRequestException(
+          `Maximum quantity per item line is ${qrSettings.maxQtyPerLine}.`,
+        );
+      }
+    }
+
     let customer = await this.prisma.customer.findFirst({
       where: { branchId, phone: cleanPhone },
     });
@@ -188,7 +234,7 @@ export class PublicMenuService {
         guestName,
         items,
       },
-      { channel: 'ONLINE' },
+      { channel: 'ONLINE', requireAcceptance: true },
     );
   }
 

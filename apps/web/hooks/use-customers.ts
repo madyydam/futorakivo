@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { CustomerAddressDto, CustomerDto } from "@futora/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

@@ -39,6 +39,12 @@ describe('PublicMenuService - DPDP Act & Privacy Shield', () => {
       userBranch: {
         findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }),
       },
+      guestBlock: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      qrSettings: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
     };
 
     const ordersService: any = {
@@ -122,9 +128,81 @@ describe('PublicMenuService - DPDP Act & Privacy Shield', () => {
           customerId: 'cust-new',
           guestName: 'Rahul Sharma',
         }),
-        { channel: 'ONLINE' },
+        { channel: 'ONLINE', requireAcceptance: true },
       );
       expect(result).toHaveProperty('orderNumber', '20261124-0001');
+    });
+
+    it('blocks order and throws ForbiddenException if phone is in guestBlock list', async () => {
+      const { service, prisma } = buildMocks();
+      prisma.guestBlock.findFirst.mockResolvedValue({
+        id: 'block-1',
+        phoneHash: 'blocked-hash',
+        reason: 'Abusive spam orders',
+      });
+
+      await expect(
+        service.createOrder(
+          'test-token',
+          [{ menuItemId: 'item-1', quantity: 1, modifierIds: [] }],
+          'Spammer',
+          '9876543210',
+          true,
+        ),
+      ).rejects.toThrow(
+        'This mobile number has been restricted from placing online orders.',
+      );
+    });
+
+    it('rejects order when QR ordering is emergency paused by outlet', async () => {
+      const { service, prisma } = buildMocks();
+      prisma.qrSettings.findUnique.mockResolvedValue({
+        orderingPaused: true,
+      });
+
+      await expect(
+        service.createOrder(
+          'test-token',
+          [{ menuItemId: 'item-1', quantity: 1, modifierIds: [] }],
+          'Guest',
+          '9876543210',
+          true,
+        ),
+      ).rejects.toThrow('QR ordering is temporarily paused by the restaurant.');
+    });
+
+    it('enforces maxItemsPerOrder and maxQtyPerLine limits from qrSettings', async () => {
+      const { service, prisma } = buildMocks();
+      prisma.qrSettings.findUnique.mockResolvedValue({
+        orderingPaused: false,
+        maxItemsPerOrder: 5,
+        maxQtyPerLine: 3,
+      });
+
+      // Total count 6 > 5
+      await expect(
+        service.createOrder(
+          'test-token',
+          [
+            { menuItemId: 'item-1', quantity: 3, modifierIds: [] },
+            { menuItemId: 'item-2', quantity: 3, modifierIds: [] },
+          ],
+          'Guest',
+          '9876543210',
+          true,
+        ),
+      ).rejects.toThrow('Order exceeds the maximum limit of 5 items per order.');
+
+      // Single line 4 > 3
+      await expect(
+        service.createOrder(
+          'test-token',
+          [{ menuItemId: 'item-1', quantity: 4, modifierIds: [] }],
+          'Guest',
+          '9876543210',
+          true,
+        ),
+      ).rejects.toThrow('Maximum quantity per item line is 3.');
     });
 
     it('deduplicates returning customer by phone and increments visitCount', async () => {

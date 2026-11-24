@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CustomerAddressDto,
   CustomerAddressUpdateDto,
@@ -75,10 +75,17 @@ export class CustomersService {
     });
   }
 
-  async getConsentAudit(branchId: string, customerId: string) {
+  async getConsentAudit(
+    branchId: string,
+    customerId: string,
+    restaurantId?: string,
+  ) {
     await this.assertInBranch(branchId, customerId);
     return this.prisma.customerConsent.findMany({
-      where: { customerId },
+      where: {
+        customerId,
+        ...(restaurantId ? { restaurantId } : {}),
+      },
       orderBy: { consentedAt: 'desc' },
     });
   }

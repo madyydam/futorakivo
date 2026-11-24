@@ -1,4 +1,4 @@
-﻿import {
+import {
   Body,
   Controller,
   Delete,
@@ -75,7 +75,11 @@ export class CustomersController {
     @Param('id') id: string,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
-    return this.customersService.getConsentAudit(branchId, id);
+    return this.customersService.getConsentAudit(
+      branchId,
+      id,
+      user.restaurantId,
+    );
   }
 
   @Auth('customers.manage')

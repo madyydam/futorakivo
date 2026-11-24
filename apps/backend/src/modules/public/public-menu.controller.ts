@@ -60,6 +60,7 @@ export class PublicMenuController {
     );
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Get('menu/:qrToken/status')
   getStatus(@Param('qrToken') qrToken: string) {
     return this.publicMenuService.getStatus(qrToken);

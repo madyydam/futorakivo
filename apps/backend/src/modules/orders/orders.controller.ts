@@ -125,7 +125,9 @@ function toEscposOrder(
       : null,
     customer: order.customer
       ? { name: order.customer.name ?? 'Guest', phone: order.customer.phone }
-      : null,
+      : order.guestName
+        ? { name: order.guestName, phone: null }
+        : null,
     subtotal: Number(order.subtotal),
     discountAmount: Number(order.discountAmount),
     taxAmount: Number(order.taxAmount),

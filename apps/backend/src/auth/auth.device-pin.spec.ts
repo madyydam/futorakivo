@@ -32,6 +32,9 @@ describe('AuthService - Device PIN Login & Staff PIN Management', () => {
       deviceRegistration: {
         update: jest.fn(),
       },
+      restaurant: {
+        findUnique: jest.fn().mockResolvedValue({ status: 'ACTIVE' }),
+      },
     };
 
     jwt = {
@@ -63,6 +66,21 @@ describe('AuthService - Device PIN Login & Staff PIN Management', () => {
   });
 
   describe('devicePinLogin', () => {
+    it('throws UnauthorizedException if restaurant is suspended by Super Admin', async () => {
+      devices.verifyDeviceToken.mockResolvedValue({
+        id: 'dev-1',
+        restaurantId: 'rest-1',
+        status: DeviceStatus.APPROVED,
+      });
+      prisma.restaurant.findUnique.mockResolvedValue({ status: 'SUSPENDED' });
+
+      await expect(
+        authService.devicePinLogin('valid-token', '123456', '127.0.0.1'),
+      ).rejects.toThrow(
+        'This restaurant account has been suspended by Super Admin.',
+      );
+    });
+
     it('throws UnauthorizedException if raw device token is missing', async () => {
       await expect(
         authService.devicePinLogin('', '123456', '127.0.0.1'),

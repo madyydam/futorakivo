@@ -23,9 +23,24 @@ export class PublicMenuService {
   private async resolveTable(qrToken: string) {
     const table = await this.prisma.table.findUnique({
       where: { qrToken },
-      include: { floor: { include: { branch: true } } },
+      include: {
+        floor: {
+          include: {
+            branch: {
+              include: {
+                restaurant: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!table) throw new NotFoundException('This QR code is not recognized');
+    if (table.floor?.branch?.restaurant?.status === 'SUSPENDED') {
+      throw new ForbiddenException(
+        'This restaurant account is temporarily suspended.',
+      );
+    }
     return table;
   }
 

@@ -11,7 +11,7 @@ const branch = {
   isActive: true,
   kioskDineInEnabled: true,
   kioskTakeawayEnabled: true,
-  restaurant: { currency: 'EUR' },
+  restaurant: { currency: 'EUR', status: 'ACTIVE' },
 };
 
 const dec = (v: string) => new Prisma.Decimal(v);
@@ -89,6 +89,13 @@ describe('PublicKioskService', () => {
       prisma.branch.findUnique.mockResolvedValueOnce({
         ...branch,
         isActive: false,
+      });
+      await expect(service.getMenu(TOKEN)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      prisma.branch.findUnique.mockResolvedValueOnce({
+        ...branch,
+        restaurant: { currency: 'EUR', status: 'SUSPENDED' },
       });
       await expect(service.getMenu(TOKEN)).rejects.toBeInstanceOf(
         NotFoundException,

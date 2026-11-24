@@ -144,6 +144,37 @@ export class AuthService {
       throw new UnauthorizedException('Invalid login ID or password');
     }
 
+    if (user.restaurantId) {
+      const restaurant = await this.prisma.restaurant?.findUnique?.({
+        where: { id: user.restaurantId },
+        select: { status: true, isActivated: true, subscriptionExpiresAt: true },
+      });
+      if (restaurant?.status === 'SUSPENDED') {
+        throw new UnauthorizedException(
+          'This restaurant account has been suspended by Super Admin.',
+        );
+      }
+      if (restaurant?.status === 'PENDING_APPROVAL') {
+        throw new UnauthorizedException(
+          'Your restaurant registration is currently pending Super Admin approval. Please wait for approval.',
+        );
+      }
+      if (restaurant?.status === 'APPROVED' && !restaurant.isActivated) {
+        throw new UnauthorizedException(
+          'Your restaurant has been approved! Please enter your 12-digit activation code on the activation page to start your subscription.',
+        );
+      }
+      if (
+        restaurant?.subscriptionExpiresAt &&
+        restaurant.subscriptionExpiresAt < new Date() &&
+        restaurant.status === 'ACTIVE'
+      ) {
+        throw new UnauthorizedException(
+          'Your subscription has expired. Please contact Super Admin to renew your license.',
+        );
+      }
+    }
+
     // Only asked for after the password is right, so the response never
     // reveals which emails exist or which accounts use two-factor.
     if (user.twoFactorEnabled) {
@@ -280,6 +311,19 @@ export class AuthService {
     if (!user || !user.isActive || !user.pinHash) {
       throw new UnauthorizedException('PIN login not available for this user');
     }
+
+    if (user.restaurantId) {
+      const restaurant = await this.prisma.restaurant?.findUnique?.({
+        where: { id: user.restaurantId },
+        select: { status: true },
+      });
+      if (restaurant?.status === 'SUSPENDED') {
+        throw new UnauthorizedException(
+          'This restaurant account has been suspended by Super Admin.',
+        );
+      }
+    }
+
     // A 4-8 digit PIN must not be a way around the second factor.
     if (user.twoFactorEnabled) {
       throw new UnauthorizedException(
@@ -312,6 +356,16 @@ export class AuthService {
     const device = await this.devices.verifyDeviceToken(rawDeviceToken);
     if (!device || device.status !== DeviceStatus.APPROVED) {
       throw new UnauthorizedException('Device is not registered or approved');
+    }
+
+    const deviceRestaurant = await this.prisma.restaurant?.findUnique?.({
+      where: { id: device.restaurantId },
+      select: { status: true },
+    });
+    if (deviceRestaurant?.status === 'SUSPENDED') {
+      throw new UnauthorizedException(
+        'This restaurant account has been suspended by Super Admin.',
+      );
     }
 
     if (device.lockedUntil && device.lockedUntil > new Date()) {

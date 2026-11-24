@@ -228,7 +228,9 @@ export class SuperAdminService {
 
     const plan = dto.plan || 'Growth';
     const initialStatus = dto.autoApprove ? 'APPROVED' : 'PENDING_APPROVAL';
-    const activationCode = dto.autoApprove ? generate12DigitActivationCode() : null;
+    const activationCode = dto.autoApprove
+      ? await this.generateUniqueActivationCode()
+      : null;
 
     const existingUser = await this.prisma.user.findFirst({
       where: { email: dto.email.trim().toLowerCase() },
@@ -681,6 +683,24 @@ export class SuperAdminService {
   }
 
   /**
+   * Helper to generate a unique 12-digit activation code without collision.
+   */
+  async generateUniqueActivationCode(): Promise<string> {
+    let code = generate12DigitActivationCode();
+    let attempts = 0;
+    while (attempts < 10) {
+      const existing = await this.prisma.restaurant.findFirst({
+        where: { activationCode: code },
+        select: { id: true },
+      });
+      if (!existing) return code;
+      code = generate12DigitActivationCode();
+      attempts++;
+    }
+    return code;
+  }
+
+  /**
    * Approves a restaurant tenant after payment confirmation and generates
    * a cryptographically random 12-digit license activation code (4-4-4).
    * Subscription timer DOES NOT start yet — it begins strictly upon owner activation!
@@ -691,7 +711,7 @@ export class SuperAdminService {
     });
     if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    const activationCode = generate12DigitActivationCode();
+    const activationCode = await this.generateUniqueActivationCode();
 
     const updated = await this.prisma.restaurant.update({
       where: { id: restaurantId },
@@ -775,8 +795,11 @@ export class SuperAdminService {
       expiresAt.setDate(expiresAt.getDate() + 30); // 30-day billing cycle
     }
 
-    const updated = await this.prisma.restaurant.update({
-      where: { id: restaurant.id },
+    const updateResult = await this.prisma.restaurant.updateMany({
+      where: {
+        id: restaurant.id,
+        isActivated: false,
+      },
       data: {
         status: 'ACTIVE',
         isActivated: true,
@@ -784,6 +807,16 @@ export class SuperAdminService {
         subscriptionExpiresAt: expiresAt,
         trialEndsAt: null,
       },
+    });
+
+    if (updateResult.count === 0) {
+      throw new BadRequestException(
+        'License activation race condition: this license has already been activated.',
+      );
+    }
+
+    const updated = await this.prisma.restaurant.findUniqueOrThrow({
+      where: { id: restaurant.id },
     });
 
     await this.audit.record({

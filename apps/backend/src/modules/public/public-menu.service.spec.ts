@@ -13,6 +13,10 @@ describe('PublicMenuService - DPDP Act & Privacy Shield', () => {
         id: 'branch-1',
         name: 'Main Outlet',
         restaurantId: 'rest-1',
+        restaurant: {
+          id: 'rest-1',
+          status: 'ACTIVE',
+        },
       },
     },
   };
@@ -305,6 +309,24 @@ describe('PublicMenuService - DPDP Act & Privacy Shield', () => {
         ),
       ).rejects.toThrow(
         'The bill for this table is already printed. Please ask your server to reopen the bill or settle your payment before ordering more.',
+      );
+    });
+
+    it('rejects access and throws ForbiddenException if restaurant is suspended by Super Admin', async () => {
+      const { service, prisma } = buildMocks();
+      prisma.table.findUnique.mockResolvedValue({
+        ...table,
+        floor: {
+          ...table.floor,
+          branch: {
+            ...table.floor.branch,
+            restaurant: { id: 'rest-1', status: 'SUSPENDED' },
+          },
+        },
+      });
+
+      await expect(service.getMenuByQrToken('test-token')).rejects.toThrow(
+        'This restaurant account is temporarily suspended.',
       );
     });
   });

@@ -14,9 +14,11 @@ describe('SuperAdminService & Guard', () => {
   const mockPrisma = {
     restaurant: {
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       create: jest.fn(),
       count: jest.fn(),
     },
@@ -375,12 +377,13 @@ describe('SuperAdminService & Guard', () => {
         billingCycle: 'MONTHLY',
         plan: 'Growth',
       });
-      mockPrisma.restaurant.update.mockImplementation(({ data }) => ({
+      mockPrisma.restaurant.updateMany.mockResolvedValue({ count: 1 });
+      mockPrisma.restaurant.findUniqueOrThrow.mockResolvedValue({
         id: 'rest_approved',
         name: 'Delhi Dhaba',
+        status: 'ACTIVE',
         plan: 'Growth',
-        ...data,
-      }));
+      });
 
       const res = await service.activateLicense(code);
       expect(res.success).toBe(true);
@@ -398,6 +401,24 @@ describe('SuperAdminService & Guard', () => {
           action: 'RESTAURANT_LICENSE_ACTIVATED',
           entityId: 'rest_approved',
         }),
+      );
+    });
+
+    it('throws BadRequestException if activation code was concurrently redeemed (updateMany returns count 0)', async () => {
+      const code = '4829-1093-8572';
+      mockPrisma.restaurant.findFirst.mockResolvedValue({
+        id: 'rest_approved',
+        name: 'Delhi Dhaba',
+        status: 'APPROVED',
+        activationCode: code,
+        isActivated: false,
+        billingCycle: 'MONTHLY',
+        plan: 'Growth',
+      });
+      mockPrisma.restaurant.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.activateLicense(code)).rejects.toThrow(
+        'License activation race condition: this license has already been activated.',
       );
     });
   });

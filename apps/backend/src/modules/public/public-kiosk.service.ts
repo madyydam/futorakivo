@@ -37,7 +37,11 @@ export class PublicKioskService {
       where: { kioskToken },
       include: { restaurant: true },
     });
-    if (!branch || !branch.isActive) {
+    if (
+      !branch ||
+      !branch.isActive ||
+      branch.restaurant?.status === 'SUSPENDED'
+    ) {
       throw new NotFoundException('This kiosk is not available');
     }
     return branch;

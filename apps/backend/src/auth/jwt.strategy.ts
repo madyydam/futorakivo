@@ -14,6 +14,7 @@ interface JwtPayload {
   deviceId?: string;
   restaurantId?: string;
   pv?: number;
+  isImpersonating?: boolean;
 }
 
 const cookieExtractor = (req: {
@@ -51,11 +52,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: permissionInclude,
+      include: {
+        ...permissionInclude,
+        restaurant: {
+          select: {
+            id: true,
+            status: true,
+            isActivated: true,
+            subscriptionExpiresAt: true,
+          },
+        },
+      },
     });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Session no longer valid');
+    }
+
+    if (user.restaurant?.status === 'SUSPENDED' && !payload.isImpersonating) {
+      throw new UnauthorizedException(
+        'This restaurant account has been suspended by Super Admin.',
+      );
     }
 
     return {

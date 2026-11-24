@@ -44,8 +44,11 @@ export default function LoginPage() {
           setNeedsCode(true);
           return;
         }
-        // Fallback directly to dashboard in demo mode
-        router.push("/dashboard");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Invalid credentials or account issue. Please try again."
+        );
       },
     });
   };

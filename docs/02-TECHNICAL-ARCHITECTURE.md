@@ -1,6 +1,6 @@
 # Volume 02: Technical Architecture & System Design Document
 
-> **KIVO — Software for Restaurant Management Simplified**  
+> **KIVOKO RESTAURANT OS — Enterprise Cloud & Offline-First POS System**  
 > Document Type: Technical Architecture & System Design Document  
 > Companion PRD: [`01-PRD-PRODUCT-REQUIREMENTS.md`](./01-PRD-PRODUCT-REQUIREMENTS.md)  
 > Version: 1.0.0  
@@ -10,18 +10,20 @@
 
 ## 1. System Topology & Monorepo Structure
 
-KIVO is built as a high-performance TypeScript monorepo managed with **pnpm workspaces**:
+KIVOKO is built as a high-performance, strictly-typed TypeScript monorepo managed with **pnpm workspaces**:
 
 ```
 futorakivo/
 ├── apps/
-│   ├── web/                    ← Next.js 16 App Router (POS, KDS, Admin, Landing)
-│   └── backend/                ← NestJS / Node.js API Service & WebSocket Gateway
+│   ├── web/                    ← Next.js 16 App Router (POS, KDS, Owner Dashboard, QR Menu)
+│   └── backend/                ← NestJS 11 API Service, WebSockets & Compliance Engine
 ├── packages/
-│   ├── types/                  ← Shared Zod schemas, TypeScript interfaces & DTOs
-│   └── ui/                     ← Core UI design primitives & Tailwind components
-├── docs/                       ← The 7 Master Documentation Volumes
-└── BRAIN.md                    ← Permanent System Knowledge Base & Invariants
+│   └── types/                  ← Shared Zod schemas, TypeScript types & 38-key PERMISSIONS catalog
+├── caddy/                      ← Production reverse proxy configuration with automated Let's Encrypt SSL
+├── updater/                    ← System update daemon & version synchronization
+├── scripts/                    ← Database seeders, deployment & verification utilities
+├── docs/                       ← Master Documentation Suite (Volumes 01–10 + Flow Maps)
+└── bin/                        ← Isolated archive for obsolete/scratch files (gitignored)
 ```
 
 ### Monorepo Technology Stack
@@ -30,11 +32,11 @@ futorakivo/
 | :--- | :--- | :--- |
 | **Package Manager** | `pnpm` (v11) | Strict dependency resolution, isolated symlinks, fast disk-deduplicated caching. |
 | **Frontend Framework** | **Next.js 16** (App Router, Turbopack) | Server Components for instant page loads, client components for rich POS interactivity. |
-| **Styling & Design System** | **Tailwind CSS 4** + CSS Custom Properties | Lightning-fast compiler, zero-runtime overhead, dynamic dark/light HORECA theme tokens. |
+| **Styling & Design System** | **Tailwind CSS 4** + CSS Custom Properties | Zero-runtime CSS compiler, dynamic dark/light HORECA theme tokens, high-contrast mode. |
 | **State Management** | **TanStack Query** (v5) + Local React State | Optimistic UI mutations, automatic background refetching, client-side cache invalidation. |
-| **Backend Framework** | **NestJS** (TypeScript) | Modular dependency injection, decorator-driven guards, enterprise-grade WebSocket gateways. |
-| **Database & ORM** | **Prisma** with **PostgreSQL** | Strict schema typing, connection pooling, complex JSON column queries for dish modifiers. |
-| **Realtime WebSockets** | **Socket.IO** (NestJS Gateway) | Sub-100ms bi-directional push for KDS ticket bumps, table occupancy, and rider tracking. |
+| **Backend Framework** | **NestJS 11** (TypeScript) | Modular dependency injection, decorator-driven guards, throttlers, and WebSocket gateways. |
+| **Database & ORM** | **Prisma 6** with **PostgreSQL** | Strict schema typing, connection pooling, complex JSON column queries for dish modifiers. |
+| **Realtime WebSockets & SSE**| **Socket.IO** (NestJS Gateway) + SSE | Sub-100ms bi-directional push for KDS ticket bumps, table occupancy, and order events. |
 | **Client Persistence** | **IndexedDB** | In-browser offline storage supporting full POS transactions during internet blackouts. |
 
 ---
@@ -46,29 +48,26 @@ The Next.js App Router cleanly separates application concerns through route grou
 
 ```
 apps/web/app/
-├── (dashboard)/                ← Authenticated Management Console
-│   ├── pos/                    ← Fullscreen Point-of-Sale Terminal
-│   ├── kds/                    ← Fullscreen Kitchen Display Stations
-│   ├── tables/                 ← Visual Floor Plan & Captain Order Hub
-│   ├── inventory/              ← Recipe Costing, Waste & Stock Management
-│   └── settings/               ← Staff Roles, Hardware & Integrations
+├── (dashboard)/                ← Authenticated Management & Operations Console
+│   ├── pos/                    ← Fullscreen Point-of-Sale Terminal (Sub-second checkout)
+│   ├── kds/                    ← Fullscreen Multi-Station Kitchen Display System
+│   ├── tables/                 ← Visual Floor Plan Canvas & Table Management
+│   ├── inventory/              ← Recipe Costing, Waste Logging & Stock Management
+│   └── settings/               ← Staff Roles, Hardware, Printers & QR Menu Controls
+├── menu/                       ← Guest Mobile QR Self-Ordering Web App (Modes A & B)
+│   └── [slug]/                 ← Table-bound dynamic menu with cart & allergy filters
 ├── demo/                       ← Standalone Interactive Demo Sandbox
-│   ├── pos/                    ← Hardcoded Mock POS (Zero Auth Required)
+│   ├── pos/                    ← Interactive Mock POS (Zero Auth Required)
 │   ├── kds/                    ← Interactive KDS Ticket Bump Demo
 │   └── tables/                 ← Interactive Visual Floor Plan Demo
-├── solutions/                  ← Commercial Vertical SEO Landing Pages
-│   ├── qsr/                    ← Quick Service Restaurant Landing
-│   ├── cloud-kitchen/          ← Multi-Brand Cloud Kitchen Landing
-│   └── fine-dining/            ← Fine Dining & Restobar Landing
-├── city/                       ← Regional Local SEO Landing Pages
-│   └── [slug]/                 ← Mumbai, Delhi NCR, Bangalore, Pune, Hyderabad
-└── layout.tsx                  ← Root Layout with JSON-LD Schema & AEO Metadata
+├── solutions/                  ← Commercial Vertical SEO Landing Pages (QSR, Fine Dining)
+├── city/                       ← Regional Local SEO Landing Pages (Mumbai, Delhi, Bangalore)
+└── layout.tsx                  ← Root Layout with Theme Provider & Global Modals
 ```
 
-### 2.2 Design System & Component Primitives
-- **Base UI Primitives**: Accessible, unstyled primitives wrapped into styled, owned components (`packages/ui/src/components`).
-- **Design Tokens**: Standardized CSS variables for palette (`--primary: #9f1239`, `--card`, `--border`, `--muted`).
-- **Accessibility & Motion**: Motion animations defer to `reducedMotion="user"`, respecting operating system accessibility settings.
+### 2.2 Client-Side Modals & In-Place Action Locks
+- **In-Place Manager Approvals**: Sensitive actions (voiding settled bills, large discounts, post-KOT cancellations) render a persistent red security banner modal requiring an authorized 6-digit manager PIN without logging out the cashier.
+- **PIN Pad Component**: Touch-friendly virtual numeric keypad with haptic feedback, automatic clearing on failure, and lockout timers.
 
 ---
 
@@ -78,43 +77,48 @@ apps/web/app/
 Every business domain is encapsulated in an independent NestJS module with its own controller, service, and DTOs:
 
 ```
-apps/backend/src/modules/
-├── auth/                       ← JWT session cookies, PIN quick-switch, 2FA
-├── orders/                     ← Order lifecycle, bill calculations, refunds
-├── menu/                       ← Categories, items, modifier groups, combos
-├── tables/                     ← Floor plans, table states, reservations
-├── kds/                        ← Multi-station kitchen routing, prep timers
-├── inventory/                  ← Raw materials, recipe BOM, FIFO waste logs
-├── printing/                   ← Raw binary ESC/POS thermal printer engine
-└── integrations/               ← REST API keys, webhooks, and MCP server
+apps/backend/src/
+├── approvals/                  ← In-place manager approvals, PIN verification, action locks, throttler
+├── devices/                    ← Atomic pairing code redemption, device session tokens, throttler
+├── auth/                       ← Dual-token sessions, bcrypt PIN hasher (10 rounds), staff login
+├── permissions/                ← 38-key RBAC catalog, permissions sync, cache & policy guards
+├── modules/
+│   ├── orders/                 ← Order lifecycle, split billing, refunds, loyalty clawback, KOT routing
+│   ├── public/                 ← Public QR menu, guest cart ordering, emergency pause, guest blocklist
+│   ├── tables/                 ← Floor plans, table state machines, billed order reservation locks
+│   ├── inventory/              ← Raw ingredients, recipe BOM, FIFO waste logs, supplier POs
+│   ├── printing/               ← Raw binary ESC/POS thermal printer network engine (port 9100)
+│   ├── verifactu/              ← Spain AEAT chained cryptographic invoicing (SHA-256)
+│   ├── customers/              ← CRM, loyalty point ledger, DPDP Act 2023 consent capture
+│   └── integrations/           ← External REST API keys, webhooks, and MCP AI assistant tools
 ```
 
-### 3.2 Real-Time WebSocket Gateways
-Three specialized Socket.IO rooms handle live events with zero polling overhead:
-1. `kds:branch:<id>`: Broadcasts new kitchen tickets, prep status shifts, and bumps.
-2. `tables:branch:<id>`: Broadcasts table occupancy changes (vacant, seated, running KOT, billed).
+### 3.2 Real-Time Event Topology
+Three specialized Socket.IO rooms and Server-Sent Events (SSE) deliver instant updates:
+1. `kds:branch:<id>`: Broadcasts new kitchen tickets, prep status shifts, and station bumps.
+2. `tables:branch:<id>`: Broadcasts table occupancy changes (`AVAILABLE`, `OCCUPIED`, `BILLED`).
 3. `orders:branch:<id>`: Broadcasts live payment confirmations and order state changes.
 
 ---
 
 ## 4. Offline Engine & Synchronization Protocol
 
-One of KIVO's non-negotiable invariants is **100% offline operational continuity**:
+KIVOKO guarantees **100% offline operational continuity** during internet outages:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        OFFLINE SYNC ARCHITECTURE                       │
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                        │
-│   [Cashier Tap] ──► [Optimistic UI] ──► [IndexedDB Local Storage]      │
+│   [Cashier Tap] ──► [Optimistic UI] ──► [IndexedDB Outbox Queue]       │
 │                            │                         │                 │
 │                     (Immediate UI)           (Monotonic Queue)         │
 │                                                      │                 │
-│                                       [Internet Status Check]          │
+│                                       [Connectivity Detector]          │
 │                                        │                   │           │
 │                                   (Online)             (Offline)       │
 │                                        ▼                   ▼           │
-│                            [POST /api/v1/sync]    [Queue Retained]     │
+│                            [POST /v1/sync]        [Retain in Outbox]   │
 │                                        │                               │
 │                            [Cloud Reconciliation]                     │
 │                                                                        │
@@ -122,16 +126,16 @@ One of KIVO's non-negotiable invariants is **100% offline operational continuity
 ```
 
 ### 4.1 Client-Side Queue Storage
-- When offline, every bill creation, payment tender, and KOT dispatch is serialized into a client-side **Monotonic Action Queue** in IndexedDB.
+- Every offline transaction (new order, payment tender, KOT dispatch) is serialized into an IndexedDB outbox queue.
 - Each action carries:
   - `actionId`: Client-generated UUIDv4.
   - `timestamp`: Monotonic client timestamp.
   - `payload`: Order data, items, modifiers, payments.
-  - `idempotencyKey`: Unique deduplication key.
+  - `idempotencyKey`: Unique deduplication key (`clientRequestId`).
 
 ### 4.2 Conflict Resolution Invariants
-1. **Server-Authoritative Money**: Pricing, taxes, and discounts are verified server-side on sync.
-2. **First-Write Floor State**: If two captains seat Table 4 concurrently while offline, the earlier timestamp wins; the second captain receives a graceful table-merge prompt.
+1. **Server-Authoritative Money**: Pricing, taxes, and discounts are strictly recomputed server-side during sync.
+2. **Table Status Protection**: A table with an active `BILLED` order cannot be marked `AVAILABLE` or overwritten until the bill is settled.
 3. **Additive Inventory Depletion**: Recipe ingredient deductions are computed cumulatively on reconciliation to prevent negative stock drift.
 
 ---
@@ -140,36 +144,41 @@ One of KIVO's non-negotiable invariants is **100% offline operational continuity
 
 ```
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│   Restaurant    │───────│     Branch      │───────│      Table      │
-│  (Tenant Root)  │       │(Physical Outlets│       │ (Floor Layouts) │
+│   Restaurant    │───────│     Branch      │───────│     Device      │
+│  (Tenant Root)  │       │(Physical Outlets│       │(Paired Hardware)│
 └─────────────────┘       └─────────────────┘       └─────────────────┘
          │                         │                         │
          ▼                         ▼                         ▼
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│      User       │       │    MenuItem     │───────│      Order      │
-│ (RBAC Staff/PIN)│       │ (Dishes/Combos) │       │ (Bills/Receipts)│
+│      User       │       │      Floor      │       │ApprovalRequest  │
+│(Staff/BcryptPIN)│       │  (Dining Zones) │       │ (Action Locks)  │
 └─────────────────┘       └─────────────────┘       └─────────────────┘
+         │                         │                         │
+         ▼                         ▼                         ▼
+┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+│ UserPermission  │       │      Table      │───────│      Order      │
+│ (38 Keys/Grant) │       │(Occupied/Billed)│       │ (State Machine) │
+└─────────────────┘       └─────────────────┘       └─────────────────┘
+                                                             │
+                                   ┌─────────────────────────┼─────────────────────────┐
+                                   ▼                         ▼                         ▼
+                          ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+                          │    OrderItem    │       │     Payment     │       │   OrderEvent    │
+                          │(Modifiers/Notes)│       │ (Cash/UPI/Card) │       │ (Audit Timeline)│
+                          └─────────────────┘       └─────────────────┘       └─────────────────┘
                                    │                         │
                                    ▼                         ▼
                           ┌─────────────────┐       ┌─────────────────┐
-                          │    RecipeBOM    │       │     Payment     │
-                          │(Gram Deductions)│       │ (Cash/UPI/Card) │
+                          │   RecipeItem    │       │  PointsLedger   │
+                          │(Gram Deductions)│       │(Loyalty Reversal│
                           └─────────────────┘       └─────────────────┘
-                                   │
-                                   ▼
-                          ┌─────────────────┐
-                          │  InventoryItem  │
-                          │ (Raw Materials) │
-                          └─────────────────┘
 ```
 
 ---
 
-## 6. Security & Infrastructure Standards
+## 6. Security, Rate Limiting & Verification Standards
 
-1. **Multi-Tenant Row-Level Security**:
-   - Every database query automatically filters by `restaurantId`. Cross-tenant data access is impossible at the database driver level.
-2. **Cryptographic Signatures**:
-   - Webhooks to external endpoints use `HMAC-SHA256` signatures with UNIX timestamps to prevent replay attacks.
-3. **Hardware Connectivity**:
-   - Raw binary socket drivers directly stream ESC/POS commands to thermal printers over TCP port `9100`, WebUSB, or WebBluetooth.
+1. **Atomic Pairing Protocol**: Device pairing codes are consumed via atomic `updateMany` queries, eliminating race conditions.
+2. **Brute-Force Rate Limiting**: Dedicated `@Throttle({ default: { limit: 10, ttl: 60_000 } })` decorators protect `/v1/devices/pair` and `/v1/approvals/request`.
+3. **Loyalty Reversal Guard**: Refunds automatically subtract earned loyalty points proportionally and record a `REFUND_REVERSAL` in `PointsLedger`.
+4. **Test Suite Integrity**: Zero regressions allowed. 409 backend integration suites and 59 frontend unit suites must pass on all builds.

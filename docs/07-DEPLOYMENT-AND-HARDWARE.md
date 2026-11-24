@@ -1,6 +1,6 @@
 # Volume 07: Hardware Setup, Mobile Apps & Production Deployment Guide
 
-> **KIVO — Software for Restaurant Management Simplified**  
+> **KIVOKO RESTAURANT OS — Enterprise Cloud & Offline-First POS System**  
 > Document Type: Hardware Integration, Mobile Architecture & Production Runbook  
 > Companion Architecture Doc: [`02-TECHNICAL-ARCHITECTURE.md`](./02-TECHNICAL-ARCHITECTURE.md)  
 > Version: 1.0.0  

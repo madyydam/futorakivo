@@ -1,6 +1,6 @@
 # Volume 03: APIs, Webhooks & MCP Technical Document
 
-> **KIVO — Software for Restaurant Management Simplified**  
+> **KIVOKO RESTAURANT OS — Enterprise Cloud & Offline-First POS System**  
 > Document Type: API, Webhook & Model Context Protocol (MCP) Technical Document  
 > Companion Architecture Doc: [`02-TECHNICAL-ARCHITECTURE.md`](./02-TECHNICAL-ARCHITECTURE.md)  
 > Version: 1.0.0  
@@ -10,9 +10,10 @@
 
 ## 1. Authentication & API Key Scopes
 
-KIVO provides two distinct integration layers:
+KIVOKO provides three distinct API integration layers:
 1. **REST Integration API**: Server-to-server HTTP API for external websites, mobile apps, self-service kiosks, and delivery aggregators.
-2. **Model Context Protocol (MCP) Server**: Direct AI assistant interface (Claude Desktop, Cursor, Antigravity) allowing AI agents to query orders, check live tables, and manage menus within staff permissions.
+2. **Public Guest QR API**: Lightweight, tokenless/session-isolated endpoints for mobile guest QR menu viewing and self-ordering.
+3. **Model Context Protocol (MCP) Server**: Direct AI assistant interface (Claude Desktop, Cursor, Antigravity) allowing AI agents to query orders, check live tables, and manage menus within staff permissions.
 
 ### 1.1 API Key Headers
 All requests to the Integration API must supply an API key in the `Authorization` header:
@@ -29,117 +30,57 @@ Content-Type: application/json
 | `menu:read` | Read public menus, categories, modifier groups, and current dish pricing. |
 | `menu:write` | Update item availability (86-ing dishes) or modify prices. |
 | `orders:read` | Query active and historical branch orders, item states, and payment status. |
-| `orders:read_customer` | Access customer phone numbers and delivery addresses (GDPR/DPDP restricted). |
+| `orders:read_customer` | Access customer phone numbers and delivery addresses (DPDP restricted). |
 | `orders:write` | Inject new takeaway, dine-in, or delivery orders. |
 | `reservations:read` | Query table reservations, guest counts, and booking slots. |
 | `reservations:write` | Create table reservations or update reservation seating status. |
 
 ---
 
-## 2. Integration REST API Endpoints
+## 2. Core API Endpoint Reference
 
-### 2.1 Base URL
-```text
-https://www.kivo.futoragroup.in/api/v1/integrations
-```
+### 2.1 Device Pairing & Session Management
+- **Generate Pairing Code**: `POST /v1/devices/codes` (Requires `device.manage` permission)  
+  *Response:* `{ "code": "849201", "expiresAt": "2026-11-24T10:15:00Z" }`
+- **Pair Physical Terminal**: `POST /v1/devices/pair` (Throttled: 10 requests / minute)  
+  *Body:* `{ "pairingCode": "849201", "name": "Counter POS 1", "deviceType": "TERMINAL" }`  
+  *Response:* `{ "deviceSessionToken": "dev_sess_...", "branchId": "..." }`
+- **Fast Staff PIN Login**: `POST /v1/auth/pin-login` (Throttled: 5 requests / minute)  
+  *Body:* `{ "userId": "usr_123", "pin": "123456" }`  
+  *Response:* `{ "accessToken": "staff_jwt_...", "user": { "id": "...", "role": "CASHIER", "permissions": [...] } }`
 
-### 2.2 Endpoint Reference
+### 2.2 In-Place Manager Approvals (🔐)
+- **Request Manager Approval**: `POST /v1/approvals/request` (Throttled: 10 requests / minute)  
+  *Body:* `{ "action": "DISCOUNT_APPLY", "reason": "VIP Guest Discount", "details": { "discountPercent": 15, "orderId": "ord_..." } }`  
+  *Response:* `{ "requestId": "appr_9921", "status": "PENDING" }`
+- **Verify Manager PIN**: `POST /v1/approvals/verify`  
+  *Body:* `{ "requestId": "appr_9921", "managerPin": "654321" }`  
+  *Response:* `{ "approved": true, "approvalToken": "tok_appr_...", "managerName": "Sarah Manager" }`
 
-#### A. List Active Branches
-```http
-GET /locations
-```
-**Response (200 OK):**
-```json
-{
-  "data": [
-    {
-      "id": "brn_mumbai_01",
-      "name": "Bandra West Flagship",
-      "currency": "INR",
-      "timezone": "Asia/Kolkata",
-      "address": "Hill Road, Bandra West, Mumbai 400050",
-      "taxScheme": "GST_STANDARD_5"
-    }
-  ]
-}
-```
+### 2.3 Public Guest QR Menu & Self-Ordering
+- **Fetch Guest Menu**: `GET /v1/public/menu/:slug` (Cached, public read)  
+  *Response:* Returns categories, veg/non-veg tags, allergen warnings, prices, and QR mode (`MODE_A` or `MODE_B`).
+- **Submit Guest Table Order**: `POST /v1/public/menu/:slug/order`  
+  *Headers:* `Idempotency-Key: <uuid>`  
+  *Body:* `{ "tableToken": "tbl_tok_...", "guestName": "Rahul", "guestPhone": "9876543210", "items": [...] }`  
+  *Response:* `{ "orderId": "ord_...", "orderNumber": 42, "acceptance": "PENDING" }`  
+  *Safety:* Blocked if `QrSettings.emergencyPause` is active, or if guest phone is in `GuestBlock`.
+- **Call Waiter / Request Bill**: `POST /v1/public/menu/:slug/request`  
+  *Body:* `{ "tableToken": "tbl_tok_...", "type": "CALL_WAITER" | "REQUEST_BILL" }`
 
-#### B. Fetch Branch Menu
-```http
-GET /locations/:branchId/menu
-```
-**Response (200 OK):**
-```json
-{
-  "categories": [
-    {
-      "id": "cat_woodfired_pizza",
-      "name": "Woodfired Pizza",
-      "sortOrder": 1,
-      "items": [
-        {
-          "id": "item_margherita",
-          "name": "Classic Margherita",
-          "basePrice": 450,
-          "isVeg": true,
-          "isAvailable": true,
-          "modifierGroups": ["mod_cheese", "mod_crust"]
-        }
-      ]
-    }
-  ]
-}
-```
-
-#### C. Create External Order (with Idempotency)
-```http
-POST /locations/:branchId/orders
-Idempotency-Key: c9d8e7a6-b5c4-4321-a1b2-c3d4e5f60718
-```
-**Request Body:**
-```json
-{
-  "type": "DELIVERY",
-  "customerName": "Rohan Sharma",
-  "customerPhone": "+919876543210",
-  "delivery": {
-    "addressLine1": "Flat 402, Sea Green Apartments",
-    "landmark": "Near Bandra Post Office",
-    "pincode": "400050"
-  },
-  "items": [
-    {
-      "menuItemId": "item_margherita",
-      "quantity": 2,
-      "selectedModifiers": ["mod_extra_mozzarella"],
-      "prepNotes": "Well done crust, please"
-    }
-  ]
-}
-```
-**Response (201 Created):**
-```json
-{
-  "orderId": "ord_8829104",
-  "orderNumber": 108,
-  "status": "ACCEPTED",
-  "subtotal": 900,
-  "taxes": { "cgst": 22.5, "sgst": 22.5 },
-  "deliveryFee": 40,
-  "totalAmount": 985,
-  "estimatedPrepMinutes": 20
-}
-```
+### 2.4 Offline IndexedDB Replay Sync
+- **Reconcile Offline Outbox**: `POST /v1/sync`  
+  *Body:* `{ "branchId": "brn_...", "actions": [ { "actionId": "...", "type": "ORDER_CREATE", "payload": {...}, "timestamp": "..." } ] }`  
+  *Response:* `{ "processed": 4, "conflicts": [], "reconciledAt": "..." }`
 
 ---
 
 ## 3. Webhook Notifications & Signature Verification
 
-KIVO dispatches real-time HTTPS webhooks for critical restaurant events.
+KIVOKO dispatches real-time HTTPS webhooks for critical restaurant events.
 
 ### 3.1 Supported Webhook Events
-- `order.created`: Triggered when an order is submitted via POS, aggregator, or kiosk.
+- `order.created`: Triggered when an order is submitted via POS, aggregator, or QR menu.
 - `order.status_updated`: Dispatched on KDS ticket bumps (`PREPARING`, `READY`, `DISPATCHED`).
 - `payment.settled`: Dispatched when a bill payment is recorded.
 - `inventory.low_stock`: Fired when a raw ingredient dips below its safety reorder threshold.
@@ -149,7 +90,6 @@ Every webhook includes two security headers:
 - `X-KIVO-Timestamp`: Current UNIX timestamp in seconds.
 - `X-KIVO-Signature`: `sha256=HEX_ENCODED_HMAC_SIGNATURE`.
 
-#### Node.js / Express Verification Example:
 ```typescript
 import crypto from "crypto";
 
@@ -159,13 +99,9 @@ export function verifyKivoWebhook(
   incomingSignature: string,
   secretKey: string
 ): boolean {
-  // 1. Prevent replay attacks: Reject payloads older than 5 minutes
   const currentTime = Math.floor(Date.now() / 1000);
-  if (Math.abs(currentTime - parseInt(timestamp, 10)) > 300) {
-    return false;
-  }
+  if (Math.abs(currentTime - parseInt(timestamp, 10)) > 300) return false;
 
-  // 2. Compute expected HMAC-SHA256 signature
   const signedPayload = `${timestamp}.${rawBody}`;
   const computedHash = crypto
     .createHmac("sha256", secretKey)
@@ -173,8 +109,6 @@ export function verifyKivoWebhook(
     .digest("hex");
 
   const expectedSignature = `sha256=${computedHash}`;
-
-  // 3. Constant-time string comparison to prevent timing attacks
   return crypto.timingSafeEqual(
     Buffer.from(incomingSignature),
     Buffer.from(expectedSignature)
@@ -186,7 +120,7 @@ export function verifyKivoWebhook(
 
 ## 4. Model Context Protocol (MCP) Server for AI Agents
 
-KIVO ships with an embedded **Model Context Protocol (MCP)** server, enabling AI assistants (such as Claude Desktop, Cursor, or Antigravity) to safely interact with restaurant operations.
+KIVOKO ships with an embedded **Model Context Protocol (MCP)** server, enabling AI assistants (such as Claude Desktop, Cursor, or Antigravity) to safely interact with restaurant operations.
 
 ### 4.1 MCP Endpoint
 ```text
@@ -202,26 +136,6 @@ Authorization: Bearer mcp_pat_live_...
 | `dashboard_summary` | `orders:read` | Returns today's gross revenue, active table count, order count, and open KDS tickets. |
 | `list_open_orders` | `orders:read` | Lists active dine-in and delivery orders currently in progress. |
 | `create_order` | `orders:write` | Injects a new order into the live POS queue with modifier choices. |
-| `update_table_status` | `tables:write` | Updates table occupancy state (`VACANT`, `SEATED`, `BILLED`). |
+| `update_table_status` | `tables:write` | Updates table occupancy state (`AVAILABLE`, `OCCUPIED`, `BILLED`). |
 | `list_low_stock` | `inventory:read` | Lists all ingredients currently beneath minimum reorder thresholds. |
 | `clock_in` / `clock_out` | Staff Self | Logs staff attendance timestamps without administrative bypass. |
-
----
-
-## 5. Food Delivery Aggregator Bridges (Swiggy / Zomato)
-
-KIVO's integration engine includes a universal payload adapter that normalizes third-party delivery webhooks into standard KIVO order structures:
-
-```
-[Swiggy / Zomato Webhook]
-          │
-          ▼
-[Payload Normalizer DTO]
-          │
-          ├── Maps Aggregator Item IDs ──► KIVO MenuItem IDs
-          ├── Normalizes Tax Breakdown ──► CGST / SGST split
-          ├── Rider Arrival Time       ──► KDS Dispatch Timer
-          │
-          ▼
-[KIVO Central Kitchen Queue (KDS & Thermal Print)]
-```

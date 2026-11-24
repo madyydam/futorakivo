@@ -1,6 +1,6 @@
 # Volume 05: Inventory, Recipe Costing & Supply Chain Guide
 
-> **KIVO — Software for Restaurant Management Simplified**  
+> **KIVOKO RESTAURANT OS — Enterprise Cloud & Offline-First POS System**  
 > Document Type: Inventory, Recipe Costing & Commissary Supply Chain Guide  
 > Companion PRD: [`01-PRD-PRODUCT-REQUIREMENTS.md`](./01-PRD-PRODUCT-REQUIREMENTS.md)  
 > Version: 1.0.0  

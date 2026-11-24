@@ -1,7 +1,10 @@
-# KIVO Cloud SaaS — Production Cloud Deployment & Operations Manual
-**Platform:** KIVO (HORECA management simplified)  
-**Parent Brand:** FUTORA group  
-**Architecture Model:** True Multi-Tenant Cloud SaaS (Petpooja Benchmark)  
+# Volume 10: Production Cloud SaaS Deployment & Operations Manual
+
+> **KIVOKO RESTAURANT OS — Enterprise Cloud & Offline-First POS System**  
+> Document Type: Production Cloud SaaS Deployment & Operations Manual  
+> Companion Architecture Doc: [`02-TECHNICAL-ARCHITECTURE.md`](./02-TECHNICAL-ARCHITECTURE.md)  
+> Version: 1.0.0  
+> Status: Approved / Production Deployment Standard  
 
 ---
 

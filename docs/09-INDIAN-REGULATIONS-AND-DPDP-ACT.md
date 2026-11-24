@@ -1,10 +1,10 @@
-# Comprehensive Indian Legal, Regulatory, Tax & DPDP Act 2023 Compliance Manual
-## For HORECA Management, POS, Kiosk & Table QR Self-Ordering SaaS Platforms (KIVOKO)
+# Volume 09: Indian Regulations & DPDP Act 2023 Compliance Manual
 
-**Document Version:** 1.0 (Enterprise Statutory Baseline)  
-**Effective Year:** 2026  
-**Jurisdiction:** Republic of India  
-**Target Entities:** Restaurants, Cafes, Quick Service Restaurants (QSRs), Cloud Kitchens, Bars, Food Courts, and the KIVOKO Multi-Tenant Restaurant SaaS Platform.
+> **KIVOKO RESTAURANT OS — Enterprise Cloud & Offline-First POS System**  
+> Document Type: Statutory Legal, Regulatory, Tax & DPDP Act 2023 Compliance Manual  
+> Companion RBAC & Security Doc: [`06-SECURITY-AND-COMPLIANCE.md`](./06-SECURITY-AND-COMPLIANCE.md)  
+> Version: 1.0.0  
+> Status: Approved / Indian Statutory Baseline  
 
 ---
 

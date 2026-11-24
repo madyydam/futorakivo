@@ -129,9 +129,12 @@ export class SuperAdminService {
       iss: 'kivoko-super-admin',
     };
 
+    // Sign with SUPER_ADMIN_JWT_SECRET so Super Admin tokens are
+    // cryptographically isolated from restaurant-scoped tokens.
+    // Falls back to JWT_SECRET only if the env var is absent (dev mode).
     const token = this.jwtService.sign(payload, {
       expiresIn: '24h',
-      secret: process.env.JWT_SECRET,
+      secret: process.env.SUPER_ADMIN_JWT_SECRET || process.env.JWT_SECRET,
     });
 
     await this.audit.record({
@@ -202,6 +205,8 @@ export class SuperAdminService {
         impersonatedBy: superAdminEmail,
       },
       {
+        // Impersonation tokens are restaurant-scoped and must use JWT_SECRET
+        // so the standard JwtStrategy validates them on the REST API side.
         expiresIn: '15m',
         secret: process.env.JWT_SECRET,
       },
@@ -258,6 +263,11 @@ export class SuperAdminService {
     const permissions = await this.prisma.permission.findMany();
     const permissionByKey = new Map(permissions.map((p) => [p.key, p]));
 
+    // Hash the temp password BEFORE opening the transaction to avoid holding
+    // the DB transaction open during a ~100 ms bcrypt operation (lock contention).
+    const tempPassword = `Kivoko@${randomInt(100000, 999999)}`;
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
     const result = await this.prisma.$transaction(async (tx) => {
       const restaurant = await tx.restaurant.create({
         data: {
@@ -311,9 +321,7 @@ export class SuperAdminService {
         }
       }
 
-      const tempPassword = `Kivoko@${randomInt(100000, 999999)}`;
-      const passwordHash = await bcrypt.hash(tempPassword, 10);
-
+      // tempPassword and passwordHash were pre-computed before the transaction
       const user = await tx.user.create({
         data: {
           restaurantId: restaurant.id,

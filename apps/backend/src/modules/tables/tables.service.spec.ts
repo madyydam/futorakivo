@@ -30,6 +30,7 @@ describe('TablesService - Assignments & Sessions', () => {
         findFirst: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn(),
       },
       $transaction: jest.fn(async (cb: any) => cb(prisma)),
     };
@@ -150,18 +151,14 @@ describe('TablesService - Assignments & Sessions', () => {
       expect(prisma.tableSession.create).toHaveBeenCalled();
     });
 
-    it('closes active table session', async () => {
-      prisma.tableSession.findFirst.mockResolvedValue({ id: 'sess-1' });
-      prisma.tableSession.update.mockResolvedValue({
-        id: 'sess-1',
-        status: TableSessionStatus.CLOSED,
-      });
+    it('closes active table session atomically via updateMany', async () => {
+      prisma.tableSession.updateMany.mockResolvedValue({ count: 1 });
 
       const closed = await service.closeTableSession('rest-1', 'branch-1', 'tbl-1', 'user-1', 'Bill paid');
-      expect(closed?.status).toBe(TableSessionStatus.CLOSED);
-      expect(prisma.tableSession.update).toHaveBeenCalledWith(
+      expect(closed).toEqual({ closed: true, count: 1 });
+      expect(prisma.tableSession.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'sess-1' },
+          where: expect.objectContaining({ status: TableSessionStatus.ACTIVE }),
           data: expect.objectContaining({ status: TableSessionStatus.CLOSED }),
         }),
       );

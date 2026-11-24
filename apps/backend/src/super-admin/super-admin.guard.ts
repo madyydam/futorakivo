@@ -46,8 +46,15 @@ export class SuperAdminGuard implements CanActivate {
 
     const token = authHeader.split(' ')[1];
     try {
+      // Super Admin tokens MUST be signed with SUPER_ADMIN_JWT_SECRET, which is
+      // cryptographically isolated from the restaurant-scoped JWT_SECRET.
+      // This prevents a restaurant-level OWNER JWT (even if its payload were
+      // somehow crafted to include role:'SUPER_ADMIN') from ever passing
+      // this guard — the two token families cannot cross-verify.
+      const superAdminSecret =
+        process.env.SUPER_ADMIN_JWT_SECRET || process.env.JWT_SECRET;
       const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET,
+        secret: superAdminSecret,
       });
 
       if (payload.role !== 'SUPER_ADMIN') {

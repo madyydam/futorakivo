@@ -371,20 +371,14 @@ export class TablesService {
     closedBy: string,
     closedReason?: string,
   ) {
-    const active = await this.prisma.tableSession.findFirst({
+    // Atomic TOCTOU-safe close: updateMany with the ACTIVE status predicate
+    // ensures only one concurrent caller wins the race to close the session.
+    const result = await this.prisma.tableSession.updateMany({
       where: {
         outletId: branchId,
         tableId,
         status: TableSessionStatus.ACTIVE,
       },
-    });
-
-    if (!active) {
-      return null;
-    }
-
-    return this.prisma.tableSession.update({
-      where: { id: active.id },
       data: {
         status: TableSessionStatus.CLOSED,
         closedAt: new Date(),
@@ -392,5 +386,7 @@ export class TablesService {
         closedReason: closedReason ?? 'Table cleared and settled',
       },
     });
+    // Return count so callers can distinguish "already closed" (0) from "just closed" (1+).
+    return result.count > 0 ? { closed: true, count: result.count } : null;
   }
 }

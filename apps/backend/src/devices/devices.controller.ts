@@ -6,6 +6,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import type {
   CreatePairingCodeDto,
@@ -34,6 +35,7 @@ export class DevicesController {
     );
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('pair')
   pairDevice(@Body() dto: PairDeviceDto, @Ip() ip: string) {
     return this.devices.pairDevice(dto, ip);

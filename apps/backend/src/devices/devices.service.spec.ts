@@ -82,10 +82,9 @@ describe('DevicesService', () => {
         createdBy: 'user-admin',
       };
       prisma.devicePairingCode.findFirst.mockResolvedValue(codeRecord);
-      prisma.devicePairingCode.update.mockResolvedValue({
-        ...codeRecord,
-        usedAt: new Date(),
-      });
+      prisma.devicePairingCode.updateMany = jest
+        .fn()
+        .mockResolvedValue({ count: 1 });
       prisma.deviceRegistration.create.mockImplementation((args: any) => ({
         id: 'dev-1',
         ...args.data,
@@ -100,9 +99,25 @@ describe('DevicesService', () => {
       expect(res.deviceToken).toBeDefined();
       expect(res.deviceToken).toHaveLength(64); // 32 bytes hex
       expect(res.status).toBe(DeviceStatus.APPROVED);
-      expect(prisma.devicePairingCode.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'code-id-1' } }),
+      expect(prisma.devicePairingCode.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'code-id-1', usedAt: null } }),
       );
+    });
+
+    it('rejects pairing when code was raced and already consumed', async () => {
+      const codeRecord = {
+        id: 'code-id-1',
+        restaurantId: 'rest-1',
+        outletId: 'branch-1',
+      };
+      prisma.devicePairingCode.findFirst.mockResolvedValue(codeRecord);
+      prisma.devicePairingCode.updateMany = jest
+        .fn()
+        .mockResolvedValue({ count: 0 }); // Someone else consumed it!
+
+      await expect(
+        service.pairDevice({ code: 'RACED1', label: 'POS Terminal 2' }),
+      ).rejects.toThrow('Invalid or expired device pairing code');
     });
   });
 

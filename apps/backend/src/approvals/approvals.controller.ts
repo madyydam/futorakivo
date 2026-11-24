@@ -5,6 +5,7 @@ import {
   Post,
   UsePipes,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import {
   requestApprovalSchema,
@@ -25,6 +26,7 @@ export class ApprovalsController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('request')
   @Auth('order.create')
   @UsePipes(new ZodValidationPipe(requestApprovalSchema))

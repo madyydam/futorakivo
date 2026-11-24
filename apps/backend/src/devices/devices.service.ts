@@ -76,11 +76,14 @@ export class DevicesService {
       throw new BadRequestException('Invalid or expired device pairing code');
     }
 
-    // Mark pairing code as consumed
-    await this.prisma.devicePairingCode.update({
-      where: { id: codeRecord.id },
+    // Mark pairing code as consumed atomically to prevent concurrent pairing race conditions
+    const consumed = await this.prisma.devicePairingCode.updateMany({
+      where: { id: codeRecord.id, usedAt: null },
       data: { usedAt: new Date() },
     });
+    if (consumed.count === 0) {
+      throw new BadRequestException('Invalid or expired device pairing code');
+    }
 
     // Generate cryptographic 256-bit device bearer token
     const rawToken = crypto.randomBytes(32).toString('hex');

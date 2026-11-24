@@ -327,7 +327,7 @@ export class OrdersController {
     return this.ordersService.updateOrder(
       branchId,
       id,
-      user.id,
+      user,
       body as UpdateOrderDto,
     );
   }
@@ -347,7 +347,7 @@ export class OrdersController {
       branchId,
       id,
       itemId,
-      user.id,
+      user,
       body as UpdateOrderItemDto,
     );
   }

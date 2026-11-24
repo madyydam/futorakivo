@@ -44,51 +44,7 @@ export class ApprovalsService {
   }): Promise<IssueApprovalResult> {
     const { restaurantId, requesterId, deviceId, dto } = params;
 
-    const pinLookup = this.pinHasher.computeLookup(
-      restaurantId,
-      dto.managerPin,
-    );
-    const approver = await this.prisma.user.findFirst({
-      where: {
-        restaurantId,
-        pinLookup,
-        isActive: true,
-      },
-      include: permissionInclude,
-    });
-
-    const isPinValid =
-      approver && approver.pinHash
-        ? await this.pinHasher.verifyPin(dto.managerPin, approver.pinHash)
-        : false;
-
-    if (!isPinValid || !approver) {
-      throw new UnauthorizedException('Invalid manager PIN');
-    }
-
-    // Verify approver holds the required permission
-    const approverPermissions = effectivePermissions(approver);
-    const hasPermission = permissionSatisfied(
-      approverPermissions,
-      dto.permissionKey as PermissionKey,
-    );
-    if (!hasPermission) {
-      throw new ForbiddenException(
-        `The approving user does not possess the required permission: ${dto.permissionKey}`,
-      );
-    }
-
-    // Owner PIN rule: payment settings changes require Owner role
-    if (
-      dto.permissionKey === 'qrsettings.payment' &&
-      approver.role.name !== 'OWNER'
-    ) {
-      throw new ForbiddenException(
-        'Payment QR and UPI changes require Owner PIN approval',
-      );
-    }
-
-    // Resolve or provision valid deviceId for foreign key constraint
+    // Resolve or provision valid deviceId for foreign key constraint & rate limiting
     let effectiveDeviceId = deviceId || dto.deviceId;
     if (!effectiveDeviceId) {
       const dev = await this.prisma.deviceRegistration.findFirst({
@@ -116,6 +72,85 @@ export class ApprovalsService {
           effectiveDeviceId = 'system-device';
         }
       }
+    }
+
+    // Rate-limiting / brute-force lockout: 5 failed manager PIN attempts in 15 minutes locks approvals
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const recentFailedAttempts = this.prisma.approvalLog.count
+      ? await this.prisma.approvalLog.count({
+          where: {
+            restaurantId,
+            outcome: ApprovalOutcome.DENIED,
+            createdAt: { gte: fifteenMinutesAgo },
+            ...(effectiveDeviceId ? { deviceId: effectiveDeviceId } : {}),
+          },
+        })
+      : 0;
+
+    if (recentFailedAttempts >= 5) {
+      throw new UnauthorizedException(
+        'Too many failed manager PIN attempts. Manager approval is temporarily locked for 15 minutes.',
+      );
+    }
+
+    const pinLookup = this.pinHasher.computeLookup(
+      restaurantId,
+      dto.managerPin,
+    );
+    const approver = await this.prisma.user.findFirst({
+      where: {
+        restaurantId,
+        pinLookup,
+        isActive: true,
+      },
+      include: permissionInclude,
+    });
+
+    // Constant-time PIN verification to prevent timing attack enumeration of manager PINs
+    const isPinValid = await this.pinHasher.verifyPin(
+      dto.managerPin,
+      approver?.pinHash,
+    );
+
+    if (!isPinValid || !approver) {
+      if (this.prisma.approvalLog.create) {
+        await this.prisma.approvalLog.create({
+          data: {
+            restaurantId,
+            requesterId,
+            approverId: requesterId,
+            permissionKey: dto.permissionKey,
+            targetEntity: dto.targetEntity,
+            targetId: dto.targetId,
+            reason: dto.reason ?? 'Failed manager PIN entry',
+            deviceId: effectiveDeviceId,
+            outcome: ApprovalOutcome.DENIED,
+          },
+        });
+      }
+      throw new UnauthorizedException('Invalid manager PIN');
+    }
+
+    // Verify approver holds the required permission
+    const approverPermissions = effectivePermissions(approver);
+    const hasPermission = permissionSatisfied(
+      approverPermissions,
+      dto.permissionKey as PermissionKey,
+    );
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        `The approving user does not possess the required permission: ${dto.permissionKey}`,
+      );
+    }
+
+    // Owner PIN rule: payment settings changes require Owner role
+    if (
+      dto.permissionKey === 'qrsettings.payment' &&
+      approver.role.name !== 'OWNER'
+    ) {
+      throw new ForbiddenException(
+        'Payment QR and UPI changes require Owner PIN approval',
+      );
     }
 
     // Generate single-use 256-bit token

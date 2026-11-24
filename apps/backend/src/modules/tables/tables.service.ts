@@ -1,4 +1,4 @@
-﻿import { randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -316,29 +316,31 @@ export class TablesService {
   ) {
     await this.assertTableInBranch(branchId, tableId);
 
-    const existing = await this.prisma.tableSession.findFirst({
-      where: {
-        outletId: branchId,
-        tableId,
-        status: TableSessionStatus.ACTIVE,
-      },
-      include: { guests: true, bills: true },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.tableSession.findFirst({
+        where: {
+          outletId: branchId,
+          tableId,
+          status: TableSessionStatus.ACTIVE,
+        },
+        include: { guests: true, bills: true },
+      });
 
-    if (existing) {
-      return existing;
-    }
+      if (existing) {
+        return existing;
+      }
 
-    return this.prisma.tableSession.create({
-      data: {
-        restaurantId,
-        outletId: branchId,
-        tableId,
-        status: TableSessionStatus.ACTIVE,
-        openedAt: new Date(),
-        expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6-hour idle session
-      },
-      include: { guests: true, bills: true },
+      return tx.tableSession.create({
+        data: {
+          restaurantId,
+          outletId: branchId,
+          tableId,
+          status: TableSessionStatus.ACTIVE,
+          openedAt: new Date(),
+          expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6-hour idle session
+        },
+        include: { guests: true, bills: true },
+      });
     });
   }
 

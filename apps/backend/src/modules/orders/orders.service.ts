@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -506,6 +506,32 @@ export class OrdersService {
 
     if (options.historical) return this.getOrder(branchId, order.id);
 
+    if (this.orderEvents) {
+      void this.prisma.branch
+        .findUnique({
+          where: { id: branchId },
+          select: { restaurantId: true },
+        })
+        .then((b) => {
+          if (b && this.orderEvents) {
+            void this.orderEvents.record({
+              restaurantId: b.restaurantId,
+              outletId: branchId,
+              entity: 'Order',
+              entityId: order.id,
+              eventType: 'CREATED',
+              actorType: channel === 'ONLINE' ? 'GUEST' : 'STAFF',
+              actorId: userId,
+              afterState: {
+                orderNumber: order.orderNumber,
+                totalAmount: Number(order.totalAmount),
+                tableId: order.tableId,
+              },
+            });
+          }
+        });
+    }
+
     // `acceptance` rides along so a kitchen screen can sound the alert for an
     // order that is waiting on a yes/no (it has no ticket to announce yet).
     this.realtime.emitToBranch(branchId, 'order.created', {
@@ -883,6 +909,15 @@ export class OrdersService {
         where: { id: tableId },
         data: { status: 'AVAILABLE', statusSince: new Date() },
       });
+      // Atomically close any active table session to prevent order/session state leakage to new guests
+      await tx.tableSession.updateMany({
+        where: { tableId, status: 'ACTIVE' },
+        data: {
+          status: 'CLOSED',
+          closedAt: new Date(),
+          closedReason: 'Order settled - table released',
+        },
+      });
     }
   }
 
@@ -1026,6 +1061,30 @@ export class OrdersService {
 
     this.emitOrderWithdrawn(branchId, orderId, order.tableId);
 
+    if (this.orderEvents) {
+      void this.prisma.branch
+        .findUnique({
+          where: { id: branchId },
+          select: { restaurantId: true },
+        })
+        .then((b) => {
+          if (b && this.orderEvents) {
+            void this.orderEvents.record({
+              restaurantId: b.restaurantId,
+              outletId: branchId,
+              entity: 'Order',
+              entityId: orderId,
+              eventType: 'CANCELLED',
+              actorType: options.source === 'CUSTOMER' ? 'GUEST' : 'STAFF',
+              actorId: userId,
+              reason,
+              beforeState: { orderNumber: order.orderNumber, status: order.status },
+              afterState: { status: 'CANCELLED' },
+            });
+          }
+        });
+    }
+
     await this.audit.record({
       userId,
       action: options.declineIncoming ? 'order.declined' : 'order.cancelled',
@@ -1087,7 +1146,11 @@ export class OrdersService {
     });
   }
 
-  private async editableOrder(branchId: string, orderId: string) {
+  private async editableOrder(
+    branchId: string,
+    orderId: string,
+    user?: SessionUser,
+  ) {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, branchId },
       include: { items: true, payments: { select: { id: true } } },
@@ -1101,6 +1164,9 @@ export class OrdersService {
       );
     }
     this.assertNoPayments(order);
+    if (user) {
+      await this.assertOrderOwnership(order, user);
+    }
     return order;
   }
 
@@ -1119,10 +1185,14 @@ export class OrdersService {
   async updateOrder(
     branchId: string,
     orderId: string,
-    userId: string,
+    userOrUserId: SessionUser | string,
     dto: UpdateOrderDto,
   ) {
-    const order = await this.editableOrder(branchId, orderId);
+    const sessionUser =
+      typeof userOrUserId === 'object' ? userOrUserId : undefined;
+    const userId =
+      typeof userOrUserId === 'string' ? userOrUserId : userOrUserId.id;
+    const order = await this.editableOrder(branchId, orderId, sessionUser);
 
     if (dto.customerId) {
       const customer = await this.prisma.customer.findFirst({
@@ -1226,10 +1296,14 @@ export class OrdersService {
     branchId: string,
     orderId: string,
     itemId: string,
-    userId: string,
+    userOrUserId: SessionUser | string,
     dto: UpdateOrderItemDto,
   ) {
-    const order = await this.editableOrder(branchId, orderId);
+    const sessionUser =
+      typeof userOrUserId === 'object' ? userOrUserId : undefined;
+    const userId =
+      typeof userOrUserId === 'string' ? userOrUserId : userOrUserId.id;
+    const order = await this.editableOrder(branchId, orderId, sessionUser);
     const item = order.items.find((i) => i.id === itemId);
     if (!item) throw new NotFoundException('Item not found on this bill');
     if (dto.quantity > item.quantity) {
@@ -1856,6 +1930,31 @@ export class OrdersService {
       where: { id: orderId },
       include: { payments: true, table: true },
     });
+
+    if (this.orderEvents && settlement.fullyPaid) {
+      void this.prisma.branch
+        .findUnique({
+          where: { id: branchId },
+          select: { restaurantId: true },
+        })
+        .then((b) => {
+          if (b && this.orderEvents) {
+            void this.orderEvents.record({
+              restaurantId: b.restaurantId,
+              outletId: branchId,
+              entity: 'Bill',
+              entityId: orderId,
+              eventType: 'SETTLED',
+              actorType: 'STAFF',
+              actorId: userId,
+              afterState: {
+                totalPaid: Number(updated.totalAmount),
+                paymentsCount: updated.payments.length,
+              },
+            });
+          }
+        });
+    }
 
     if (stockSkipped.length > 0) {
       this.logger.warn(

@@ -268,6 +268,14 @@ export default function SuperAdminPage() {
   const [activeTab, setActiveTab] = useState<"tenants" | "subscriptions" | "hardware" | "broadcasts" | "security">("tenants");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // Authentication gate state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [loginEmail, setLoginEmail] = useState("admin@futoragroup.in");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginTotp, setLoginTotp] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
   // Modals state
   const [openNewOutletModal, setOpenNewOutletModal] = useState(false);
   const [openBroadcastModal, setOpenBroadcastModal] = useState(false);
@@ -282,35 +290,114 @@ export default function SuperAdminPage() {
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [broadcastLevel, setBroadcastLevel] = useState<"INFO" | "WARNING" | "CRITICAL">("INFO");
 
-  // Fetch real tenants from Cloud SaaS backend
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const res = await fetch("/api/v1/super-admin/tenants");
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setAdmins(data);
-          }
+  const getAuthHeaders = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("kivoko_super_admin_token") : null;
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  const loadData = async (token?: string) => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    try {
+      const res = await fetch("/api/v1/super-admin/tenants", { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setAdmins(data);
         }
-      } catch {
-        // Keeps mock data if offline
+      }
+    } catch {
+      // Keeps mock data if offline
+    }
+
+    try {
+      const resBc = await fetch("/api/v1/super-admin/broadcasts", { headers });
+      if (resBc.ok) {
+        const dataBc = await resBc.json();
+        if (Array.isArray(dataBc) && dataBc.length > 0) {
+          setBroadcasts(dataBc);
+        }
+      }
+    } catch {
+      // Keeps initial broadcasts
+    }
+  };
+
+  // Check Super Admin session on mount
+  useEffect(() => {
+    async function checkAuthAndLoad() {
+      const token = typeof window !== "undefined" ? localStorage.getItem("kivoko_super_admin_token") : null;
+      if (!token) {
+        setIsAuthenticated(false);
+        return;
       }
 
       try {
-        const resBc = await fetch("/api/v1/super-admin/broadcasts");
-        if (resBc.ok) {
-          const dataBc = await resBc.json();
-          if (Array.isArray(dataBc) && dataBc.length > 0) {
-            setBroadcasts(dataBc);
-          }
+        const meRes = await fetch("/api/v1/super-admin/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (meRes.ok) {
+          setIsAuthenticated(true);
+          loadData(token);
+        } else {
+          localStorage.removeItem("kivoko_super_admin_token");
+          setIsAuthenticated(false);
         }
       } catch {
-        // Keeps initial broadcasts
+        // Fallback for dev / offline
+        setIsAuthenticated(true);
+        loadData(token);
       }
     }
-    loadData();
+
+    checkAuthAndLoad();
   }, []);
+
+  const handleSuperAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError("");
+
+    try {
+      const res = await fetch("/api/v1/super-admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: loginEmail,
+          password: loginPassword,
+          totpCode: loginTotp || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setLoginError(data.message || "Invalid Super Admin credentials");
+        setLoginLoading(false);
+        return;
+      }
+
+      localStorage.setItem("kivoko_super_admin_token", data.accessToken);
+      setIsAuthenticated(true);
+      loadData(data.accessToken);
+    } catch (err: any) {
+      setLoginError(err.message || "Failed to reach Super Admin authentication gateway");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleSuperAdminLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("kivoko_super_admin_token");
+    }
+    setIsAuthenticated(false);
+  };
 
   const toggleAdminStatus = async (id: string) => {
     const admin = admins.find((a) => a.id === id);
@@ -324,7 +411,7 @@ export default function SuperAdminPage() {
     try {
       await fetch(`/api/v1/super-admin/tenants/${id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status: nextStatus }),
       });
     } catch {
@@ -343,7 +430,7 @@ export default function SuperAdminPage() {
     try {
       await fetch(`/api/v1/super-admin/tenants/${id}/plan`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ plan }),
       });
     } catch {
@@ -362,7 +449,7 @@ export default function SuperAdminPage() {
     try {
       await fetch(`/api/v1/super-admin/tenants/${id}/extend-trial`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ days }),
       });
     } catch {
@@ -417,7 +504,7 @@ export default function SuperAdminPage() {
     try {
       await fetch("/api/v1/super-admin/broadcasts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(newBc),
       });
     } catch {
@@ -425,7 +512,37 @@ export default function SuperAdminPage() {
     }
   };
 
-  const handleImpersonate = (admin: RestaurantAdmin) => {
+  const handleImpersonate = async (admin: RestaurantAdmin) => {
+    try {
+      const res = await fetch(`/api/v1/super-admin/impersonate/${admin.id}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof window !== "undefined") {
+          const fullPermissions = PERMISSIONS.map((p) => p.key);
+          const impersonatedUser = {
+            id: "impersonated-" + admin.id,
+            restaurantId: admin.id,
+            name: admin.ownerName,
+            token: data.token,
+            roleId: "role-owner",
+            roleName: "OWNER",
+            permissions: fullPermissions,
+          };
+          localStorage.setItem("kivo_impersonated_user", JSON.stringify(impersonatedUser));
+          localStorage.setItem("FUTORA group_demo_user", JSON.stringify(impersonatedUser));
+          localStorage.setItem("FUTORA group_restaurant_name", data.restaurantName || admin.restaurantName);
+          localStorage.setItem("FUTORA group_branch_name", admin.branches?.[0]?.name || "Main Outlet");
+        }
+        router.push("/dashboard");
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+
     if (typeof window !== "undefined") {
       const fullPermissions = PERMISSIONS.map((p) => p.key);
       const impersonatedUser = {
@@ -564,9 +681,96 @@ export default function SuperAdminPage() {
             Exit to Restaurant POS
           </Button>
         </Link>
+
+        <Button
+          variant="ghost"
+          onClick={handleSuperAdminLogout}
+          className="w-full text-xs h-8 text-rose-500 hover:bg-rose-500/10 gap-1.5 cursor-pointer"
+        >
+          <Power className="size-3.5" />
+          Logout Super Admin
+        </Button>
       </div>
     </div>
   );
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#0C0D10] px-4 py-12 text-slate-100 select-none">
+        <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#14151B] p-8 shadow-2xl">
+          <div className="pointer-events-none absolute -left-12 -top-12 h-48 w-48 rounded-full bg-[#9f1239]/40 blur-3xl" />
+          <div className="pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 rounded-full bg-[#be123c]/20 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9f1239] to-[#881337] shadow-lg">
+              <ShieldCheck className="size-7 text-white" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-white">KIVOKO Control Plane</h1>
+            <p className="mt-1 text-xs text-slate-400">Restricted Super Admin &amp; Multi-Tenant Cockpit</p>
+
+            {loginError && (
+              <div className="mt-4 flex w-full items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+                <ShieldAlert className="size-4 shrink-0 text-rose-400" />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSuperAdminLogin} className="mt-6 w-full space-y-4 text-left">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Super Admin Email</label>
+                <Input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="admin@futoragroup.in"
+                  required
+                  className="mt-1.5 bg-black/40 border-white/10 text-white text-xs h-10 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Master Password</label>
+                <Input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  required
+                  className="mt-1.5 bg-black/40 border-white/10 text-white text-xs h-10 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                  TOTP Authenticator Code <span className="text-[10px] text-slate-500 lowercase">(optional in dev)</span>
+                </label>
+                <Input
+                  type="text"
+                  maxLength={6}
+                  value={loginTotp}
+                  onChange={(e) => setLoginTotp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="mt-1.5 bg-black/40 border-white/10 text-white font-mono text-center tracking-widest text-sm h-10 rounded-xl"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loginLoading}
+                className="mt-2 w-full h-11 bg-gradient-to-r from-[#9f1239] via-[#be123c] to-[#9f1239] text-white font-semibold text-xs rounded-xl shadow-lg hover:brightness-110 cursor-pointer"
+              >
+                {loginLoading ? "Authenticating..." : "Unlock Control Plane"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-[10px] text-slate-500">
+              Protected by Futora Zero-Trust Access Gateway · All attempts logged
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-[#FAF8F8] dark:bg-[#0C0D10] text-foreground">
@@ -631,6 +835,15 @@ export default function SuperAdminPage() {
                 Exit
               </Button>
             </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSuperAdminLogout}
+              className="h-8 text-xs text-rose-500 border-rose-500/20 hover:bg-rose-500/10 gap-1.5 cursor-pointer"
+            >
+              <Power className="size-3.5" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
           </div>
         </header>
 

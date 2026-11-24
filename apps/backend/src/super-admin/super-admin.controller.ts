@@ -1,5 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { SuperAdminGuard } from './super-admin.guard';
 import { SuperAdminService } from './super-admin.service';
 
 @ApiTags('super-admin')
@@ -7,36 +17,70 @@ import { SuperAdminService } from './super-admin.service';
 export class SuperAdminController {
   constructor(private readonly superAdminService: SuperAdminService) {}
 
+  /**
+   * Super Admin Login Endpoint (Unprotected by SuperAdminGuard).
+   */
+  @Post('auth/login')
+  async login(
+    @Body('email') email: string,
+    @Body('password') password: string,
+    @Body('totpCode') totpCode?: string,
+  ) {
+    return this.superAdminService.login(email, password, totpCode);
+  }
+
+  /**
+   * Verify Active Super Admin Session.
+   */
+  @Get('auth/me')
+  @UseGuards(SuperAdminGuard)
+  async getMe(@Req() req: any) {
+    return {
+      authenticated: true,
+      user: req.superAdmin,
+    };
+  }
+
   @Get('tenants')
+  @UseGuards(SuperAdminGuard)
   async getTenants() {
     return this.superAdminService.getTenants();
   }
 
   @Get('analytics')
+  @UseGuards(SuperAdminGuard)
   async getPlatformAnalytics() {
     return this.superAdminService.getPlatformAnalytics();
   }
 
   @Get('plans')
+  @UseGuards(SuperAdminGuard)
   getPlans() {
     return this.superAdminService.getPlans();
   }
 
   @Get('broadcasts')
+  @UseGuards(SuperAdminGuard)
   getBroadcasts() {
     return this.superAdminService.getBroadcasts();
   }
 
   @Post('broadcasts')
+  @UseGuards(SuperAdminGuard)
   createBroadcast(
     @Body('title') title: string,
     @Body('message') message: string,
     @Body('level') level: 'INFO' | 'WARNING' | 'CRITICAL',
   ) {
-    return this.superAdminService.createBroadcast(title, message, level || 'INFO');
+    return this.superAdminService.createBroadcast(
+      title,
+      message,
+      level || 'INFO',
+    );
   }
 
   @Patch('tenants/:id/status')
+  @UseGuards(SuperAdminGuard)
   async updateTenantStatus(
     @Param('id') id: string,
     @Body('status') status: string,
@@ -45,6 +89,7 @@ export class SuperAdminController {
   }
 
   @Patch('tenants/:id/plan')
+  @UseGuards(SuperAdminGuard)
   async updateTenantPlan(
     @Param('id') id: string,
     @Body('plan') plan: string,
@@ -53,10 +98,54 @@ export class SuperAdminController {
   }
 
   @Post('tenants/:id/extend-trial')
-  async extendTrial(
-    @Param('id') id: string,
-    @Body('days') days: number,
-  ) {
+  @UseGuards(SuperAdminGuard)
+  async extendTrial(@Param('id') id: string, @Body('days') days: number) {
     return this.superAdminService.extendTrial(id, Number(days) || 14);
+  }
+
+  /**
+   * Cryptographically Signed Support Impersonation ("Login as Tenant").
+   */
+  @Post('impersonate/:restaurantId')
+  @UseGuards(SuperAdminGuard)
+  async impersonateTenant(
+    @Param('restaurantId') restaurantId: string,
+    @Req() req: any,
+  ) {
+    const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
+    return this.superAdminService.impersonateTenant(restaurantId, adminEmail);
+  }
+
+  /**
+   * Emergency Killswitch / Freeze on a tenant.
+   */
+  @Post('tenants/:id/killswitch')
+  @UseGuards(SuperAdminGuard)
+  async killswitchTenant(
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+    @Req() req: any,
+  ) {
+    const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
+    return this.superAdminService.killswitchTenant(id, reason, adminEmail);
+  }
+
+  /**
+   * Hardware fleet monitoring.
+   */
+  @Get('hardware')
+  @UseGuards(SuperAdminGuard)
+  async getHardwareFleet() {
+    return this.superAdminService.getHardwareFleet();
+  }
+
+  /**
+   * Remote device revoke / unpair.
+   */
+  @Post('hardware/:id/revoke')
+  @UseGuards(SuperAdminGuard)
+  async revokeDevice(@Param('id') id: string, @Req() req: any) {
+    const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
+    return this.superAdminService.revokeDevice(id, adminEmail);
   }
 }

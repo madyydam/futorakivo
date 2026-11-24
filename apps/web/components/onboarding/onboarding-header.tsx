@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Cloud, RefreshCw } from "lucide-react";
+import { CheckCircle2, Cloud, RefreshCw, WifiOff } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,14 @@ interface OnboardingHeaderProps {
   lang: Language;
   onLanguageChange: (lang: Language) => void;
   isSaving: boolean;
+  isOnline?: boolean;
 }
 
 export function OnboardingHeader({
   lang,
   onLanguageChange,
   isSaving,
+  isOnline = true,
 }: OnboardingHeaderProps) {
   const t = ONBOARDING_I18N[lang];
 
@@ -47,9 +49,16 @@ export function OnboardingHeader({
 
         {/* Right Controls: Autosave Badge & Language Toggle */}
         <div className="flex items-center gap-3">
-          {/* Autosave Status Indicator */}
+          {/* Autosave & Connectivity Indicator */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border/60 bg-muted/30 text-[11px]">
-            {isSaving ? (
+            {!isOnline ? (
+              <>
+                <WifiOff className="size-3 text-amber-500" />
+                <span className="text-amber-600 font-semibold hidden sm:inline">
+                  {lang === "en" ? "Offline (Saved Locally)" : "ऑफ़लाइन (लोकल सुरक्षित)"}
+                </span>
+              </>
+            ) : isSaving ? (
               <>
                 <RefreshCw className="size-3 text-amber-500 animate-spin" />
                 <span className="text-muted-foreground hidden sm:inline">

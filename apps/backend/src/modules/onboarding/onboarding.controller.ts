@@ -7,6 +7,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   updateOnboardingProgressSchema,
   type UpdateOnboardingProgressDto,
@@ -15,6 +16,7 @@ import {
 import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { AuditAction } from '../../audit/audit-action';
 import { OnboardingService } from './onboarding.service';
 
 @ApiTags('onboarding')
@@ -29,6 +31,8 @@ export class OnboardingController {
   }
 
   @Auth('settings.manage')
+  @AuditAction('update_progress', 'onboarding')
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Put('progress')
   @UsePipes(new ZodValidationPipe(updateOnboardingProgressSchema))
   async updateProgress(
@@ -39,6 +43,8 @@ export class OnboardingController {
   }
 
   @Auth('settings.manage')
+  @AuditAction('complete', 'onboarding')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('complete')
   async completeOnboarding(@CurrentUser() user: SessionUser) {
     return this.onboardingService.completeOnboarding(user.restaurantId);

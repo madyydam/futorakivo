@@ -25,6 +25,8 @@ import { Step9Device } from "@/components/onboarding/steps/step9-device";
 import { Step10TestOrder } from "@/components/onboarding/steps/step10-test-order";
 import { Step11GoLive } from "@/components/onboarding/steps/step11-go-live";
 
+const LOCAL_BACKUP_KEY = "kivo_onboarding_local_backup";
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: onboardingData, isLoading, isError, error } = useOnboarding();
@@ -36,9 +38,14 @@ export default function OnboardingPage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [initialized, setInitialized] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
-  // Sync state once fetched from backend, or handle 401 unauthorized
+  // Sync state once fetched from backend, or handle 401 unauthorized & local recovery
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
+    }
+
     if (onboardingData && !initialized) {
       if (onboardingData.currentStep) {
         setCurrentStep(onboardingData.currentStep);
@@ -46,8 +53,16 @@ export default function OnboardingPage() {
       if (onboardingData.completedSteps) {
         setCompletedSteps(onboardingData.completedSteps);
       }
-      if (onboardingData.draftJson) {
+      if (onboardingData.draftJson && Object.keys(onboardingData.draftJson).length > 0) {
         setDraft(onboardingData.draftJson);
+      } else if (typeof window !== "undefined") {
+        const local = localStorage.getItem(LOCAL_BACKUP_KEY);
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (parsed.draft) setDraft(parsed.draft);
+          } catch {}
+        }
       }
       setInitialized(true);
     } else if (isError) {
@@ -55,16 +70,64 @@ export default function OnboardingPage() {
       if (status === 401) {
         router.push("/login?redirect=/onboarding");
       } else {
-        // Fallback for offline demo preview
+        // Fallback for offline demo preview / local storage recovery
+        if (typeof window !== "undefined") {
+          const local = localStorage.getItem(LOCAL_BACKUP_KEY);
+          if (local) {
+            try {
+              const parsed = JSON.parse(local);
+              if (parsed.draft) setDraft(parsed.draft);
+              if (parsed.currentStep) setCurrentStep(parsed.currentStep);
+              if (parsed.completedSteps) setCompletedSteps(parsed.completedSteps);
+            } catch {}
+          }
+        }
         setInitialized(true);
       }
     }
   }, [onboardingData, initialized, isError, error, router]);
 
-  // Patch draft and optionally persist immediately
+  // Online / Offline recovery event listeners
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem(LOCAL_BACKUP_KEY);
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (parsed.draft) {
+              updateMutation.mutate({
+                currentStep: parsed.currentStep || currentStep,
+                draftJson: parsed.draft,
+              });
+            }
+          } catch {}
+        }
+      }
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [currentStep, updateMutation]);
+
+  // Patch draft and mirror to device storage for crash/offline recovery
   const handleUpdateDraft = (patch: Record<string, any>) => {
     setDraft((prev) => {
       const updated = { ...prev, ...patch };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            LOCAL_BACKUP_KEY,
+            JSON.stringify({ draft: updated, currentStep, completedSteps }),
+          );
+        } catch {}
+      }
       return updated;
     });
   };
@@ -116,6 +179,7 @@ export default function OnboardingPage() {
         lang={lang}
         onLanguageChange={setLang}
         isSaving={updateMutation.isPending}
+        isOnline={isOnline}
       />
 
       {/* Main Wizard Workspace */}

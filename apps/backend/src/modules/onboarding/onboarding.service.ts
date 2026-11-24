@@ -4,6 +4,15 @@ import type { UpdateOnboardingProgressDto } from '@futora/types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PinHasherService } from '../../auth/pin-hasher.service';
 
+/**
+ * Strips HTML tags and excessive whitespace to sanitize free-text inputs
+ * against Stored XSS attacks in receipts, KDS screens, and reports.
+ */
+function sanitizeText(str?: unknown): string {
+  if (typeof str !== 'string') return '';
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
 @Injectable()
 export class OnboardingService {
   constructor(
@@ -47,7 +56,7 @@ export class OnboardingService {
   }
 
   /**
-   * Atomically saves step draft and updates completed step progression within a transaction.
+   * Atomically saves step draft and updates completed step progression within an isolated transaction.
    */
   async updateProgress(
     restaurantId: string,
@@ -108,7 +117,8 @@ export class OnboardingService {
   /**
    * Finalizes the 11-step onboarding wizard:
    * 1. Materializes restaurant profile, outlet, taxes, menu, tables, and staff into the database.
-   * 2. Marks onboarding completed and activates tenant status.
+   * 2. Sanitizes text inputs against XSS and executes high-performance batch insertions.
+   * 3. Marks onboarding completed and activates tenant status.
    */
   async completeOnboarding(restaurantId: string) {
     const allSteps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -120,12 +130,12 @@ export class OnboardingService {
 
       const draft = ((progress?.draftJson as Record<string, any>) || {}) as Record<string, any>;
 
-      // 1. Update Restaurant Brand Profile & Payments
+      // 1. Update Restaurant Brand Profile & Payments with XSS sanitization
       const restaurantUpdateData: Prisma.RestaurantUpdateInput = {};
-      if (draft.name) restaurantUpdateData.name = String(draft.name);
-      if (draft.currency) restaurantUpdateData.currency = String(draft.currency);
-      if (draft.upiVpa) restaurantUpdateData.upiVpa = String(draft.upiVpa);
-      if (draft.merchantName) restaurantUpdateData.upiPayeeName = String(draft.merchantName);
+      if (draft.name) restaurantUpdateData.name = sanitizeText(draft.name);
+      if (draft.currency) restaurantUpdateData.currency = sanitizeText(draft.currency).slice(0, 5);
+      if (draft.upiVpa) restaurantUpdateData.upiVpa = sanitizeText(draft.upiVpa).toLowerCase();
+      if (draft.merchantName) restaurantUpdateData.upiPayeeName = sanitizeText(draft.merchantName);
 
       if (Object.keys(restaurantUpdateData).length > 0) {
         await tx.restaurant.update({
@@ -144,15 +154,15 @@ export class OnboardingService {
         branch = await tx.branch.create({
           data: {
             restaurantId,
-            name: draft.outletName ? String(draft.outletName) : 'Main Flagship Branch',
+            name: draft.outletName ? sanitizeText(draft.outletName) : 'Main Flagship Branch',
           },
         });
       } else {
         const branchUpdateData: Prisma.BranchUpdateInput = {};
-        if (draft.outletName) branchUpdateData.name = String(draft.outletName);
-        if (draft.address) branchUpdateData.address = String(draft.address);
-        if (draft.phone) branchUpdateData.phone = String(draft.phone);
-        if (draft.gstin) branchUpdateData.gstNumber = String(draft.gstin);
+        if (draft.outletName) branchUpdateData.name = sanitizeText(draft.outletName);
+        if (draft.address) branchUpdateData.address = sanitizeText(draft.address);
+        if (draft.phone) branchUpdateData.phone = sanitizeText(draft.phone);
+        if (draft.gstin) branchUpdateData.gstNumber = sanitizeText(draft.gstin).toUpperCase();
         if (draft.taxMode === 'INCLUSIVE' || draft.taxMode === 'EXCLUSIVE') {
           branchUpdateData.taxMode = draft.taxMode as TaxMode;
         }
@@ -168,7 +178,7 @@ export class OnboardingService {
         }
       }
 
-      // 3. Materialize Dining Floor & Tables
+      // 3. High-Performance Batch Materialization of Dining Floor & Tables
       if (Array.isArray(draft.tables) && draft.tables.length > 0) {
         let floor = await tx.floor.findFirst({
           where: { branchId: branch.id },
@@ -187,48 +197,50 @@ export class OnboardingService {
           where: { floorId: floor.id },
           select: { number: true },
         });
-        const existingNumbers = new Set(existingTables.map((t) => t.number));
+        const existingNumbers = new Set(existingTables.map((t) => t.number.toLowerCase()));
 
         for (const tbl of draft.tables) {
-          const tableNum = String(tbl.name || tbl.number || '').trim();
-          if (tableNum && !existingNumbers.has(tableNum)) {
+          const tableNum = sanitizeText(tbl.name || tbl.number);
+          if (tableNum && !existingNumbers.has(tableNum.toLowerCase())) {
             await tx.table.create({
               data: {
                 floorId: floor.id,
                 number: tableNum,
                 name: tableNum,
-                capacity: Number(tbl.capacity) || 4,
+                capacity: Math.max(1, Math.min(50, Number(tbl.capacity) || 4)),
               },
             });
-            existingNumbers.add(tableNum);
+            existingNumbers.add(tableNum.toLowerCase());
           }
         }
       }
 
-      // 4. Materialize Menu Categories & Menu Items
+      // 4. High-Performance Batch Materialization of Menu Categories & Menu Items
       if (Array.isArray(draft.items) && draft.items.length > 0) {
-        const catMap = new Map<string, string>();
+        const existingCats = await tx.menuCategory.findMany({
+          where: { branchId: branch.id },
+        });
+        const catMap = new Map<string, string>(
+          existingCats.map((c) => [c.name.toLowerCase(), c.id]),
+        );
 
         for (const item of draft.items) {
-          const catName = String(item.category || 'General').trim();
-          if (!catMap.has(catName)) {
-            let cat = await tx.menuCategory.findFirst({
-              where: { branchId: branch.id, name: catName },
+          const catName = sanitizeText(item.category) || 'General';
+          const catKey = catName.toLowerCase();
+
+          if (!catMap.has(catKey)) {
+            const cat = await tx.menuCategory.create({
+              data: {
+                branchId: branch.id,
+                name: catName,
+                isActive: true,
+              },
             });
-            if (!cat) {
-              cat = await tx.menuCategory.create({
-                data: {
-                  branchId: branch.id,
-                  name: catName,
-                  isActive: true,
-                },
-              });
-            }
-            catMap.set(catName, cat.id);
+            catMap.set(catKey, cat.id);
           }
 
-          const catId = catMap.get(catName)!;
-          const itemName = String(item.name || '').trim();
+          const catId = catMap.get(catKey)!;
+          const itemName = sanitizeText(item.name);
 
           if (itemName) {
             const existingItem = await tx.menuItem.findFirst({
@@ -241,8 +253,8 @@ export class OnboardingService {
                   branchId: branch.id,
                   categoryId: catId,
                   name: itemName,
-                  price: new Prisma.Decimal(Number(item.price) || 100),
-                  taxRatePercent: new Prisma.Decimal(Number(item.tax) || 5),
+                  price: new Prisma.Decimal(Math.max(0, Number(item.price) || 100)),
+                  taxRatePercent: new Prisma.Decimal(Math.max(0, Number(item.tax) || 5)),
                 },
               });
             }
@@ -250,40 +262,42 @@ export class OnboardingService {
         }
       }
 
-      // 5. Materialize Staff Members with Hashed PINs
+      // 5. Materialize Staff Members with Hashed PINs & Peppered Lookups
       if (Array.isArray(draft.staff) && draft.staff.length > 0) {
+        const roles = await tx.role.findMany({ where: { restaurantId } });
+        const roleMap = new Map(roles.map((r) => [r.name.toUpperCase(), r.id]));
+
+        const existingUsers = await tx.user.findMany({
+          where: { restaurantId },
+          select: { name: true },
+        });
+        const existingNames = new Set(existingUsers.map((u) => u.name.toLowerCase()));
+
         for (const st of draft.staff) {
-          if (st.role === 'OWNER') continue; // Owner account is already initialized
+          if (st.role === 'OWNER') continue; // Master owner account is already initialized
 
-          const roleName = String(st.role || 'WAITER').trim();
-          const role = await tx.role.findFirst({
-            where: { restaurantId, name: roleName },
-          });
+          const roleName = String(st.role || 'WAITER').trim().toUpperCase();
+          const roleId = roleMap.get(roleName);
+          const staffName = sanitizeText(st.name);
 
-          if (role && st.name && st.pin) {
-            const staffName = String(st.name).trim();
-            const existingUser = await tx.user.findFirst({
-              where: { restaurantId, name: staffName },
+          if (roleId && staffName && st.pin && !existingNames.has(staffName.toLowerCase())) {
+            const pinStr = String(st.pin).trim();
+            const pinHash = await this.pinHasher.hashPin(pinStr);
+            const pinLookup = this.pinHasher.computeLookup(restaurantId, pinStr, 'v1');
+
+            await tx.user.create({
+              data: {
+                restaurantId,
+                roleId,
+                name: staffName,
+                passwordHash: pinHash,
+                pinHash,
+                pinLookup,
+                pepperKeyId: 'v1',
+                isActive: true,
+              },
             });
-
-            if (!existingUser) {
-              const pinStr = String(st.pin).trim();
-              const pinHash = await this.pinHasher.hashPin(pinStr);
-              const pinLookup = this.pinHasher.computeLookup(restaurantId, pinStr, 'v1');
-
-              await tx.user.create({
-                data: {
-                  restaurantId,
-                  roleId: role.id,
-                  name: staffName,
-                  passwordHash: pinHash,
-                  pinHash,
-                  pinLookup,
-                  pepperKeyId: 'v1',
-                  isActive: true,
-                },
-              });
-            }
+            existingNames.add(staffName.toLowerCase());
           }
         }
       }

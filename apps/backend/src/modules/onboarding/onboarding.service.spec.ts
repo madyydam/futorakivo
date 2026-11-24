@@ -30,6 +30,7 @@ describe('OnboardingService', () => {
       },
       menuCategory: {
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn(),
       },
       menuItem: {
@@ -38,9 +39,11 @@ describe('OnboardingService', () => {
       },
       role: {
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([{ id: 'role-captain', name: 'CAPTAIN' }]),
       },
       user: {
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn(),
       },
       onboardingProgress: {
@@ -205,6 +208,7 @@ describe('OnboardingService', () => {
         name: 'Main Dining Hall',
       });
 
+      prisma.menuCategory.findMany.mockResolvedValue([]);
       prisma.menuCategory.findFirst.mockResolvedValue(null);
       prisma.menuCategory.create.mockImplementation(({ data }: any) => ({
         id: `cat-${data.name}`,
@@ -212,7 +216,8 @@ describe('OnboardingService', () => {
       }));
 
       prisma.menuItem.findFirst.mockResolvedValue(null);
-      prisma.role.findFirst.mockResolvedValue({ id: 'role-captain', name: 'CAPTAIN' });
+      prisma.role.findMany.mockResolvedValue([{ id: 'role-captain', name: 'CAPTAIN' }]);
+      prisma.user.findMany.mockResolvedValue([]);
       prisma.user.findFirst.mockResolvedValue(null);
 
       prisma.restaurant.findUnique.mockResolvedValue({

@@ -12,6 +12,9 @@ export interface GatedRoute {
 
 /** Permission needed to open `pathname`, from the longest matching nav entry. */
 export function requiredPermissionFor(pathname: string, routes: readonly GatedRoute[]): string | undefined {
+  if (pathname === "/crm" || pathname.startsWith("/crm/")) {
+    return "customers.manage";
+  }
   let best: GatedRoute | undefined;
   for (const r of routes) {
     if (pathname === r.href || pathname.startsWith(`${r.href}/`)) {

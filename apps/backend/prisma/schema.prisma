@@ -1319,6 +1319,10 @@ model Customer {
   marketingOptOut Boolean @default(false)
   walletBalance   Decimal @default(0) @db.Decimal(12, 2) // store credit
 
+  visitCount      Int               @default(1)
+  lastTableNumber String?
+  lastVisitedAt   DateTime?         @default(now())
+
   createdAt        DateTime          @default(now())
   orders           Order[]
   giftCards        GiftCard[]
@@ -1326,9 +1330,26 @@ model Customer {
   referralsMade    Referral[]        @relation("ReferralReferrer")
   referralReceived Referral?         @relation("ReferralReferred")
   pointsLedger     PointsLedger[]
+  consents         CustomerConsent[]
 
   @@index([branchId, phone])
   @@map("customers")
+}
+
+model CustomerConsent {
+  id             String    @id @default(cuid())
+  restaurantId   String
+  customerId     String
+  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  termsVersion   String    @default("v1.0-2026")
+  consentedAt    DateTime  @default(now())
+  consentIp      String?
+  userAgent      String?
+  isAffirmative  Boolean   @default(true)
+  scope          String    @default("BILLING,SERVICE,LOYALTY")
+
+  @@index([restaurantId, customerId])
+  @@map("customer_consents")
 }
 
 // Saved delivery addresses (a customer can have several). An order copies the

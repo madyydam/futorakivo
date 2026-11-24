@@ -1,4 +1,13 @@
-﻿import { Body, Controller, Get, Param, Post, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Ip,
+  Param,
+  Post,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -28,17 +37,26 @@ export class PublicMenuController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('menu/:qrToken/order')
   @UsePipes(new ZodValidationPipe(publicOrderSchema))
-  createOrder(@Param('qrToken') qrToken: string, @Body() body: unknown) {
-    const { items, guestName, guestPhone } = body as {
+  createOrder(
+    @Param('qrToken') qrToken: string,
+    @Body() body: unknown,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    const { items, guestName, guestPhone, termsAccepted } = body as {
       items: never;
       guestName: string;
-      guestPhone?: string;
+      guestPhone: string;
+      termsAccepted: boolean;
     };
     return this.publicMenuService.createOrder(
       qrToken,
       items,
       guestName,
       guestPhone,
+      termsAccepted,
+      ip,
+      userAgent,
     );
   }
 

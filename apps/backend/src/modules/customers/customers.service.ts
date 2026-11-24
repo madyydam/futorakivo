@@ -24,7 +24,62 @@ export class CustomersService {
             }
           : {}),
       },
+      include: {
+        orders: {
+          where: { status: 'PAID' },
+          select: { totalAmount: true },
+        },
+        consents: {
+          orderBy: { consentedAt: 'desc' },
+          take: 1,
+        },
+      },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getHistory(branchId: string, customerId: string) {
+    await this.assertInBranch(branchId, customerId);
+    return this.prisma.order.findMany({
+      where: { customerId, branchId },
+      include: {
+        table: {
+          select: {
+            id: true,
+            number: true,
+            name: true,
+          },
+        },
+        items: {
+          include: {
+            modifiers: {
+              select: {
+                id: true,
+                nameSnapshot: true,
+                priceAdjSnapshot: true,
+              },
+            },
+          },
+        },
+        payments: {
+          select: {
+            id: true,
+            method: true,
+            amount: true,
+            reference: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getConsentAudit(branchId: string, customerId: string) {
+    await this.assertInBranch(branchId, customerId);
+    return this.prisma.customerConsent.findMany({
+      where: { customerId },
+      orderBy: { consentedAt: 'desc' },
     });
   }
 

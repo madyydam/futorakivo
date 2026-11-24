@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { CartItemDto } from '@futora/types';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -87,28 +87,62 @@ export class PublicMenuService {
     qrToken: string,
     items: CartItemDto[],
     guestName: string,
-    guestPhone?: string,
+    guestPhone: string,
+    termsAccepted = true,
+    ip = '127.0.0.1',
+    userAgent = 'Unknown',
   ) {
     const table = await this.resolveTable(qrToken);
     const branchId = table.floor.branchId;
+    const restaurantId = table.floor.branch.restaurantId;
 
-    // Automatic CRM capture: create or link customer profile by phone number
-    let customerId: string | undefined;
-    if (guestPhone && guestPhone.trim().length >= 6) {
-      const cleanPhone = guestPhone.trim();
-      let customer = await this.prisma.customer.findFirst({
-        where: { branchId, phone: cleanPhone },
+    // Automatic CRM capture: create or link customer profile by phone number (master key)
+    const cleanPhone = guestPhone.trim();
+    let customer = await this.prisma.customer.findFirst({
+      where: { branchId, phone: cleanPhone },
+    });
+
+    if (customer) {
+      // Returning customer: preserve ID, increment visit counter, update last seen
+      customer = await this.prisma.customer.update({
+        where: { id: customer.id },
+        data: {
+          name: guestName,
+          visitCount: { increment: 1 },
+          lastTableNumber: table.number,
+          lastVisitedAt: new Date(),
+        },
       });
-      if (!customer) {
-        customer = await this.prisma.customer.create({
-          data: {
-            branchId,
-            name: guestName,
-            phone: cleanPhone,
-          },
-        });
-      }
-      customerId = customer.id;
+    } else {
+      // First-time customer
+      customer = await this.prisma.customer.create({
+        data: {
+          branchId,
+          name: guestName,
+          phone: cleanPhone,
+          visitCount: 1,
+          lastTableNumber: table.number,
+          lastVisitedAt: new Date(),
+        },
+      });
+    }
+
+    const customerId = customer.id;
+
+    // DPDP Act 2023 Consent Audit Recording:
+    if (termsAccepted) {
+      await this.prisma.customerConsent.create({
+        data: {
+          restaurantId,
+          customerId,
+          termsVersion: 'v1.0-2026',
+          consentedAt: new Date(),
+          consentIp: ip || '127.0.0.1',
+          userAgent: userAgent || 'Unknown',
+          isAffirmative: true,
+          scope: 'BILLING,SERVICE,LOYALTY',
+        },
+      });
     }
 
     // A guest who already ordered once this visit and scans again to add
@@ -158,17 +192,23 @@ export class PublicMenuService {
     );
   }
 
-  /** Live status of the table's current tab, for the guest's QR page. */
+  /** Live status of the table's current tab, for the guest's QR page with strict 3-hour TTL privacy shield */
   async getStatus(qrToken: string) {
     const table = await this.resolveTable(qrToken);
+    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
     const order = await this.prisma.order.findFirst({
-      where: { tableId: table.id, status: { in: ['OPEN', 'BILLED'] } },
+      where: {
+        tableId: table.id,
+        status: { in: ['OPEN', 'BILLED'] },
+        createdAt: { gte: threeHoursAgo }, // Strict 3-Hour TTL privacy shield
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         orderNumber: true,
         status: true,
         acceptance: true,
         totalAmount: true,
+        createdAt: true,
         items: {
           select: {
             id: true,
@@ -183,7 +223,7 @@ export class PublicMenuService {
       where: { tableId: table.id, resolvedAt: null },
       select: { type: true },
     });
-    return { order, openRequests: requests.map((r) => r.type) };
+    return { order, openRequests: requests.map((r) => r.type), expired: !order };
   }
 
   /** "Call waiter" / "Bring the bill". One open request per type per table. */

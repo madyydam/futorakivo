@@ -17,7 +17,64 @@ export interface Customer {
   marketingOptOut?: boolean;
   loyaltyPoints: number;
   walletBalance: string;
+  visitCount?: number;
+  lastTableNumber?: string | null;
+  lastVisitedAt?: string | null;
+  orders?: { totalAmount: string }[];
+  consents?: CustomerConsentAudit[];
   createdAt: string;
+}
+
+export interface CustomerOrderItemModifier {
+  id: string;
+  nameSnapshot: string;
+  priceAdjSnapshot: string;
+}
+
+export interface CustomerOrderItem {
+  id: string;
+  nameSnapshot: string;
+  quantity: number;
+  unitPriceSnapshot: string;
+  lineTotal: string;
+  status: string;
+  modifiers?: CustomerOrderItemModifier[];
+}
+
+export interface CustomerPayment {
+  id: string;
+  method: string;
+  amount: string;
+  reference?: string | null;
+  createdAt: string;
+}
+
+export interface CustomerOrderHistory {
+  id: string;
+  orderNumber: string;
+  type: string;
+  status: string;
+  subtotal: string;
+  taxAmount: string;
+  discountAmount: string;
+  tipAmount: string;
+  totalAmount: string;
+  createdAt: string;
+  billedAt: string | null;
+  guestName: string | null;
+  table?: { id: string; number: string; name: string | null } | null;
+  items: CustomerOrderItem[];
+  payments: CustomerPayment[];
+}
+
+export interface CustomerConsentAudit {
+  id: string;
+  termsVersion: string;
+  consentedAt: string;
+  consentIp: string | null;
+  userAgent: string | null;
+  isAffirmative: boolean;
+  scope: string;
 }
 
 export interface CustomerAddress {
@@ -148,5 +205,23 @@ export function useCustomerRewards(branchId: string | null, id: string | null) {
     queryKey: ["customers", branchId, "rewards", id],
     queryFn: () => api.get<CustomerRewards>(`/customers/${id}/rewards?branchId=${branchId}`),
     enabled: !!branchId && !!id,
+  });
+}
+
+export function useCustomerHistory(branchId: string | null, customerId: string | null) {
+  return useQuery({
+    queryKey: ["customers", branchId, "history", customerId],
+    queryFn: () =>
+      api.get<CustomerOrderHistory[]>(`/customers/${customerId}/history?branchId=${branchId}`),
+    enabled: !!branchId && !!customerId,
+  });
+}
+
+export function useCustomerConsent(branchId: string | null, customerId: string | null) {
+  return useQuery({
+    queryKey: ["customers", branchId, "consent", customerId],
+    queryFn: () =>
+      api.get<CustomerConsentAudit[]>(`/customers/${customerId}/consent?branchId=${branchId}`),
+    enabled: !!branchId && !!customerId,
   });
 }

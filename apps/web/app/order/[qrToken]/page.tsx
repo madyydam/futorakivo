@@ -1,12 +1,20 @@
 "use client";
 
-import { BellRing, CheckCircle2, Leaf, Minus, Plus, Receipt, UtensilsCrossed } from "lucide-react";
+import { BellRing, CheckCircle2, FileText, Leaf, Minus, Plus, Receipt, ShieldCheck, UtensilsCrossed } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ModifierPickerDialog } from "@/components/pos/modifier-picker-dialog";
 import { PopBurst } from "@/components/order/pop-burst";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,6 +60,7 @@ interface PublicStatus {
     items: { id: string; nameSnapshot: string; quantity: number; status: string }[];
   } | null;
   openRequests: ("WAITER" | "BILL")[];
+  expired?: boolean;
 }
 
 const ITEM_STATUS_LABEL: Record<string, string> = {
@@ -84,23 +93,36 @@ export default function PublicMenuPage({
   const { t } = useI18n();
   const nameStorageKey = `qr-guest-name:${qrToken}`;
   const phoneStorageKey = `qr-guest-phone:${qrToken}`;
+  const termsStorageKey = `qr-guest-terms:${qrToken}`;
   const [cart, setCart] = useState<CartLine[]>([]);
   const [pickerItem, setPickerItem] = useState<PublicMenuItem | null>(null);
   const queryClient = useQueryClient();
   const [placed, setPlaced] = useState<{ orderNumber: string } | null>(null);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [phoneDraft, setPhoneDraft] = useState("");
+  const [termsDraft, setTermsDraft] = useState(false); // DPDP Act 2023: MUST default to false (unchecked)
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem(nameStorageKey);
     const savedPhone = sessionStorage.getItem(phoneStorageKey);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (saved) setGuestName(saved);
-    if (savedPhone) setGuestPhone(savedPhone);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const savedTerms = sessionStorage.getItem(termsStorageKey);
+    if (saved) {
+      setGuestName(saved);
+      setNameDraft(saved);
+    }
+    if (savedPhone) {
+      setGuestPhone(savedPhone);
+      setPhoneDraft(savedPhone);
+    }
+    if (savedTerms === "true") {
+      setTermsAccepted(true);
+      setTermsDraft(true);
+    }
+  }, [nameStorageKey, phoneStorageKey, termsStorageKey]);
 
   useEffect(() => {
     if (placed) {
@@ -132,7 +154,8 @@ export default function PublicMenuPage({
     mutationFn: () =>
       api.post<{ orderNumber: string }>(`/public/menu/${qrToken}/order`, {
         guestName,
-        guestPhone: guestPhone || undefined,
+        guestPhone,
+        termsAccepted: true,
         items: cart.map((l) => ({
           menuItemId: l.menuItemId,
           quantity: l.quantity,
@@ -146,14 +169,19 @@ export default function PublicMenuPage({
     },
   });
 
-  const confirmName = () => {
+  const cleanPhone = phoneDraft.replace(/[^0-9]/g, "");
+  const isFormValid =
+    nameDraft.trim().length >= 2 && cleanPhone.length >= 10 && termsDraft === true;
+
+  const confirmGuestInfo = () => {
     const trimmed = nameDraft.trim();
-    if (!trimmed) return;
-    const trimmedPhone = phoneDraft.trim();
+    if (!trimmed || cleanPhone.length < 10 || !termsDraft) return;
     sessionStorage.setItem(nameStorageKey, trimmed);
-    if (trimmedPhone) sessionStorage.setItem(phoneStorageKey, trimmedPhone);
+    sessionStorage.setItem(phoneStorageKey, cleanPhone);
+    sessionStorage.setItem(termsStorageKey, "true");
     setGuestName(trimmed);
-    setGuestPhone(trimmedPhone);
+    setGuestPhone(cleanPhone);
+    setTermsAccepted(true);
   };
 
   const cartCount = cart.reduce((sum, l) => sum + l.quantity, 0);
@@ -221,7 +249,7 @@ export default function PublicMenuPage({
     );
   }
 
-  if (!guestName) {
+  if (!guestName || !guestPhone || !termsAccepted) {
     return (
       <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <div className="absolute right-4 top-4">
@@ -239,13 +267,13 @@ export default function PublicMenuPage({
           </div>
         )}
         <form
-          className="flex w-full max-w-xs flex-col gap-3"
+          className="flex w-full max-w-xs flex-col gap-3.5"
           onSubmit={(e) => {
             e.preventDefault();
-            confirmName();
+            confirmGuestInfo();
           }}
         >
-          <div className="flex flex-col gap-2 text-left">
+          <div className="flex flex-col gap-1.5 text-left">
             <Label htmlFor="guest-name">{t("order.whatsYourName")}</Label>
             <Input
               id="guest-name"
@@ -256,7 +284,7 @@ export default function PublicMenuPage({
               maxLength={60}
             />
           </div>
-          <div className="flex flex-col gap-2 text-left">
+          <div className="flex flex-col gap-1.5 text-left">
             <Label htmlFor="guest-phone">Phone Number</Label>
             <Input
               id="guest-phone"
@@ -266,11 +294,105 @@ export default function PublicMenuPage({
               placeholder="e.g. 9876543210"
               maxLength={15}
             />
+            <span className="text-[11px] text-muted-foreground">
+              Required for live kitchen updates, digital bill & loyalty.
+            </span>
           </div>
-          <Button type="submit" className="h-11" disabled={!nameDraft.trim()}>
+
+          <div className="flex items-start gap-2.5 pt-1 text-left">
+            <Checkbox
+              id="dpdp-terms"
+              checked={termsDraft}
+              onCheckedChange={(checked) => setTermsDraft(Boolean(checked))}
+              className="mt-0.5"
+            />
+            <label
+              htmlFor="dpdp-terms"
+              className="text-xs leading-snug text-muted-foreground cursor-pointer select-none"
+            >
+              I agree to the{" "}
+              <button
+                type="button"
+                className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setTermsModalOpen(true);
+                }}
+              >
+                Terms of Service & Privacy Notice (DPDP Act 2023)
+              </button>
+              . Data is used exclusively for dining and billing.
+            </label>
+          </div>
+
+          <Button type="submit" className="h-11 mt-1" disabled={!isFormValid}>
             {t("order.continueToMenu")}
           </Button>
         </form>
+
+        <Dialog open={termsModalOpen} onOpenChange={setTermsModalOpen}>
+          <DialogContent className="max-w-md text-left">
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <DialogTitle>DPDP Act 2023 Privacy Notice</DialogTitle>
+              </div>
+              <DialogDescription>
+                Statutory disclosure under the Digital Personal Data Protection Act, 2023.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 text-xs text-muted-foreground leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
+              <div>
+                <h4 className="font-semibold text-foreground">1. Data Fiduciary</h4>
+                <p>
+                  Your personal data is collected by {data?.branchName ?? "the Restaurant"} and
+                  processed securely via the KIVOKO platform.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">2. Purpose Specification</h4>
+                <p>
+                  Your name and phone number are collected strictly for order fulfilment,
+                  Kitchen Order Ticket (KOT) status tracking, GST-compliant electronic billing,
+                  and dining loyalty accumulation.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">3. No Third-Party Commercial Sharing</h4>
+                <p>
+                  Under Section 6 of the DPDP Act 2023, your contact information will never be
+                  sold, rented, or distributed to third-party telemarketers or advertisers.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">4. 3-Hour Table Privacy Shield</h4>
+                <p>
+                  To protect your transaction privacy from subsequent patrons scanning this table QR
+                  code, active order details expire from public view after 3 hours.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">5. Your Statutory Rights</h4>
+                <p>
+                  You hold the legal right to access, rectify, or request the erasure of your personal
+                  data at any time. Simply ask the restaurant management to delete your profile.
+                </p>
+              </div>
+            </div>
+            <div className="pt-2">
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setTermsDraft(true);
+                  setTermsModalOpen(false);
+                }}
+              >
+                I Understand & Agree
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -370,6 +492,15 @@ export default function PublicMenuPage({
 
       {status && (status.order || status.openRequests.length > 0 || data) && (
         <section className="mx-auto max-w-lg px-5 pb-6">
+          {status.expired && !status.order && (
+            <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground shadow-xs">
+              <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+              <span>
+                <strong>DPDP Privacy Shield:</strong> Prior order details on this table expire
+                after 3 hours to safeguard your personal data.
+              </span>
+            </div>
+          )}
           {status.order && (
             <div className="mb-4 rounded-2xl border border-border p-4">
               <p className="text-sm font-medium text-foreground">

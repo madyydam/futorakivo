@@ -57,6 +57,28 @@ export class CustomersController {
   }
 
   @Auth('customers.manage')
+  @Get(':id/history')
+  async getHistory(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.customersService.getHistory(branchId, id);
+  }
+
+  @Auth('customers.manage')
+  @Get(':id/consent')
+  async getConsent(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') id: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.customersService.getConsentAudit(branchId, id);
+  }
+
+  @Auth('customers.manage')
   @Get(':id')
   async getById(
     @CurrentUser() user: SessionUser,

@@ -52,6 +52,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { AggregatorModule } from './modules/aggregators/aggregator.module';
 import { DevicesModule } from './devices/devices.module';
+import { ApprovalsModule } from './approvals/approvals.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { DevicesModule } from './devices/devices.module';
     SubscriptionModule,
     AggregatorModule,
     DevicesModule,
+    ApprovalsModule,
   ],
   controllers: [AppController],
   providers: [

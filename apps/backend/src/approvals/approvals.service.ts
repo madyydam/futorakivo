@@ -216,6 +216,7 @@ export class ApprovalsService {
     rawToken: string,
     permissionKey: string,
     targetId?: string,
+    changePayload?: unknown,
   ) {
     if (!rawToken || rawToken.length < 32) {
       throw new ForbiddenException(
@@ -267,6 +268,18 @@ export class ApprovalsService {
         );
       }
 
+      if (record.changeHash && changePayload !== undefined && changePayload !== null) {
+        const computedPayloadHash = crypto
+          .createHash('sha256')
+          .update(JSON.stringify(changePayload))
+          .digest('hex');
+        if (computedPayloadHash !== record.changeHash) {
+          throw new ForbiddenException(
+            'Approval token payload mismatch: request data does not match the approved manager change',
+          );
+        }
+      }
+
       // Mark token as consumed
       const updatedToken = await tx.approvalToken.update({
         where: { id: record.id },
@@ -281,6 +294,7 @@ export class ApprovalsService {
           permissionKey: record.permissionKey,
           approverId: record.approverId,
           outcome: ApprovalOutcome.APPROVED,
+          createdAt: { gte: record.createdAt },
         },
         data: { outcome: ApprovalOutcome.USED },
       });

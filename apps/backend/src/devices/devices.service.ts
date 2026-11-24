@@ -214,4 +214,26 @@ export class DevicesService {
       },
     });
   }
+
+  /**
+   * Clears lockout and resets failed attempts for a temporarily locked device.
+   */
+  async unlockDevice(
+    restaurantId: string,
+    deviceId: string,
+    unlockedBy: string,
+  ) {
+    const device = await this.prisma.deviceRegistration.findFirst({
+      where: { id: deviceId, restaurantId },
+    });
+    if (!device) throw new NotFoundException('Device not found');
+
+    return this.prisma.deviceRegistration.update({
+      where: { id: deviceId },
+      data: {
+        failedAttempts: 0,
+        lockedUntil: null,
+      },
+    });
+  }
 }

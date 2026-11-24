@@ -4,6 +4,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -23,6 +24,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TwoFactorService } from './two-factor.service';
 import { PinHasherService } from './pin-hasher.service';
 import { DevicesService } from '../devices/devices.service';
+import { PermissionsCacheService } from '../permissions/permissions-cache.service';
 import {
   effectivePermissions,
   permissionInclude,
@@ -37,6 +39,7 @@ export class AuthService {
     private readonly twoFactor: TwoFactorService,
     private readonly pinHasher: PinHasherService,
     private readonly devices: DevicesService,
+    @Optional() private readonly cache?: PermissionsCacheService,
   ) {}
 
   private toSessionUser(user: {
@@ -513,8 +516,13 @@ export class AuthService {
         pinHash,
         pepperKeyId: 'v1',
         mustChangePin: false,
+        permissionsVersion: { increment: 1 },
       },
     });
+
+    if (this.cache) {
+      this.cache.invalidateUser(dto.staffUserId);
+    }
 
     return { success: true, message: 'PIN updated successfully' };
   }
@@ -523,7 +531,11 @@ export class AuthService {
     user: Parameters<AuthService['toSessionUser']>[0],
   ) {
     const sessionUser = this.toSessionUser(user);
-    const token = await this.jwt.signAsync({ sub: user.id });
+    const token = await this.jwt.signAsync({
+      sub: user.id,
+      restaurantId: user.restaurantId,
+      pv: user.permissionsVersion ?? 1,
+    });
     return { token, user: sessionUser };
   }
 }

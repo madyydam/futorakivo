@@ -114,6 +114,7 @@ export class OrdersService {
           where: {
             tableId: order.tableId,
             staffUserId: user.id,
+            releasedAt: null,
           },
         });
         if (activeAssignment) {
@@ -633,12 +634,16 @@ export class OrdersService {
     orderId: string,
     items: CartItemDto[],
     options: { enforceModifierLimits?: boolean; websiteOnly?: boolean } = {},
+    user?: SessionUser,
   ) {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, branchId },
       include: { items: true, payments: { select: { id: true } } },
     });
     if (!order) throw new NotFoundException('Order not found');
+    if (user) {
+      await this.assertOrderOwnership(order, user);
+    }
     this.assertNoPayments(order);
     await this.validateModifierSelections(
       branchId,
@@ -719,6 +724,7 @@ export class OrdersService {
       const result = await tx.order.update({
         where: { id: orderId },
         data: {
+          version: { increment: 1 },
           subtotal: totals.subtotal,
           taxAmount: totals.taxAmount,
           totalAmount: totals.subtotal,

@@ -276,7 +276,7 @@ export class OrdersController {
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
     const { items } = body as { items: never };
-    return this.ordersService.addItems(branchId, id, items);
+    return this.ordersService.addItems(branchId, id, items, {}, user);
   }
 
   @Auth('orders.accept')

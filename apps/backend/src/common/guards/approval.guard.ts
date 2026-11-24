@@ -65,6 +65,7 @@ export class ApprovalGuard implements CanActivate {
       rawToken,
       requiredPermission,
       targetId,
+      request.body,
     );
 
     // Attach approver context to request

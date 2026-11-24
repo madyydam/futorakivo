@@ -64,4 +64,13 @@ export class DevicesController {
   ) {
     return this.devices.revokeDevice(user.restaurantId, deviceId, user.id);
   }
+
+  @Post(':id/unlock')
+  @Auth('settings.manage')
+  unlockDevice(
+    @CurrentUser() user: SessionUser,
+    @Param('id') deviceId: string,
+  ) {
+    return this.devices.unlockDevice(user.restaurantId, deviceId, user.id);
+  }
 }

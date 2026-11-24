@@ -43,10 +43,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (payload.deviceId) {
       const device = await this.prisma.deviceRegistration.findUnique({
         where: { id: payload.deviceId },
-        select: { status: true },
+        select: { status: true, lockedUntil: true },
       });
       if (!device || device.status !== 'APPROVED') {
         throw new UnauthorizedException('Terminal device has been revoked or is no longer approved');
+      }
+      if (device.lockedUntil && device.lockedUntil > new Date()) {
+        throw new UnauthorizedException('Terminal device is temporarily locked due to repeated incorrect PIN attempts');
       }
     }
 

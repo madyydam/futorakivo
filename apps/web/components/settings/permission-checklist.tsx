@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { PERMISSIONS } from "@futora/types";
 import { Checkbox } from "@/components/ui/checkbox";

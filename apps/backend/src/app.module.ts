@@ -53,6 +53,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { AggregatorModule } from './modules/aggregators/aggregator.module';
 import { DevicesModule } from './devices/devices.module';
 import { ApprovalsModule } from './approvals/approvals.module';
+import { OnboardingModule } from './modules/onboarding/onboarding.module';
 
 @Module({
   imports: [
@@ -106,6 +107,7 @@ import { ApprovalsModule } from './approvals/approvals.module';
     AggregatorModule,
     DevicesModule,
     ApprovalsModule,
+    OnboardingModule,
   ],
   controllers: [AppController],
   providers: [

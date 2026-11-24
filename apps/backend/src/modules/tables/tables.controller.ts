@@ -11,12 +11,14 @@
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
+  assignTablesSchema,
   bulkTableCreateSchema,
   floorSchema,
   floorUpdateSchema,
   tableSchema,
   tableUpdateSchema,
   tableLayoutUpdateSchema,
+  type AssignTablesDto,
   type SessionUser,
   type TableLayoutUpdateDto,
 } from '@futora/types';
@@ -54,6 +56,60 @@ export class TablesController {
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
     return this.tablesService.resolveRequest(branchId, id);
+  }
+
+  @Auth('table.assign')
+  @Post('assignments')
+  @UsePipes(new ZodValidationPipe(assignTablesSchema))
+  async assignTables(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Body() dto: AssignTablesDto,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.assignTables(
+      user.restaurantId,
+      branchId,
+      dto,
+      user.id,
+    );
+  }
+
+  @Auth('tables.view')
+  @Get('assignments')
+  async listAssignments(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Query('staffUserId') staffUserId?: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.listActiveAssignments(branchId, staffUserId);
+  }
+
+  @Auth('table.assign')
+  @Delete('assignments/:tableId')
+  async releaseAssignment(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('tableId') tableId: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.releaseTableAssignment(branchId, tableId);
+  }
+
+  @Auth('tables.view')
+  @Get(':id/session')
+  async getTableSession(
+    @CurrentUser() user: SessionUser,
+    @Query('branchId') branchId: string,
+    @Param('id') tableId: string,
+  ) {
+    await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    return this.tablesService.getOrCreateActiveSession(
+      user.restaurantId,
+      branchId,
+      tableId,
+    );
   }
 
   @Auth('tables.view')

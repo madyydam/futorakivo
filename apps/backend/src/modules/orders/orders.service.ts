@@ -5,6 +5,7 @@
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -50,6 +51,7 @@ import {
 } from '../../common/online-price';
 import { ReferralsService } from '../referrals/referrals.service';
 import { VerifactuService } from '../verifactu/verifactu.service';
+import { OrderEventsService } from './order-events.service';
 
 const KOT_FORWARD_STATUSES = [
   'ACCEPTED',
@@ -73,7 +75,62 @@ export class OrdersService {
     private readonly webhooks: WebhooksService,
     private readonly verifactu: VerifactuService,
     private readonly referrals: ReferralsService,
+    @Optional() private readonly orderEvents?: OrderEventsService,
   ) {}
+
+  /**
+   * Asserts order ownership rules:
+   * 1. If staff holds `order.modify_any`, `orders.edit`, or `tables.manage` -> authorized.
+   * 2. If staff is the creator of the order (`order.userId === user.id`) -> authorized.
+   * 3. If staff is assigned to the table (`table.assignedWaiterId === user.id` or active TableAssignment) -> authorized.
+   * Otherwise throws ForbiddenException.
+   */
+  async assertOrderOwnership(
+    order: {
+      id: string;
+      userId?: string | null;
+      tableId?: string | null;
+      branchId: string;
+    },
+    user: SessionUser,
+  ) {
+    if (
+      user.permissions.includes('order.modify_any') ||
+      user.permissions.includes('orders.edit') ||
+      user.permissions.includes('tables.manage')
+    ) {
+      return;
+    }
+
+    if (order.userId && order.userId === user.id) {
+      return;
+    }
+
+    if (order.tableId) {
+      const activeAssignment = await this.prisma.tableAssignment.findFirst({
+        where: {
+          tableId: order.tableId,
+          staffUserId: user.id,
+          releasedAt: null,
+        },
+      });
+      if (activeAssignment) {
+        return;
+      }
+
+      const table = await this.prisma.table.findUnique({
+        where: { id: order.tableId },
+        select: { assignedWaiterId: true },
+      });
+      if (table?.assignedWaiterId === user.id) {
+        return;
+      }
+    }
+
+    throw new ForbiddenException(
+      'You are not assigned to this table. Only the assigned waiter or a manager can modify this order.',
+    );
+  }
 
   async listOpen(branchId: string, tableId?: string) {
     return this.prisma.order.findMany({

@@ -55,3 +55,9 @@ export const tableLayoutUpdateSchema = z.object({
   rotation: z.number(),
 });
 export type TableLayoutUpdateDto = z.infer<typeof tableLayoutUpdateSchema>;
+
+export const assignTablesSchema = z.object({
+  tableIds: z.array(z.string().min(1)).min(1, "At least one table must be selected"),
+  staffUserId: z.string().min(1, "Staff user ID is required"),
+});
+export type AssignTablesDto = z.infer<typeof assignTablesSchema>;

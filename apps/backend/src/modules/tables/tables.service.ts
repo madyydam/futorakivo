@@ -5,7 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { TableSessionStatus } from '@prisma/client';
 import type {
+  AssignTablesDto,
   BulkTableCreateDto,
   FloorDto,
   FloorUpdateDto,
@@ -210,5 +212,163 @@ export class TablesService {
     });
     this.realtime.emitToBranch(branchId, 'table.request', { id });
     return updated;
+  }
+
+  async assignTables(
+    restaurantId: string,
+    branchId: string,
+    dto: AssignTablesDto,
+    assignedBy: string,
+  ) {
+    const staff = await this.prisma.user.findFirst({
+      where: { id: dto.staffUserId, restaurantId, isActive: true },
+    });
+    if (!staff) {
+      throw new NotFoundException('Staff member not found in this restaurant');
+    }
+
+    const tables = await this.prisma.table.findMany({
+      where: { id: { in: dto.tableIds }, floor: { branchId } },
+      select: { id: true },
+    });
+    if (tables.length !== dto.tableIds.length) {
+      throw new BadRequestException(
+        'One or more tables are invalid for this branch',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.tableAssignment.updateMany({
+        where: {
+          outletId: branchId,
+          tableId: { in: dto.tableIds },
+          releasedAt: null,
+        },
+        data: { releasedAt: new Date() },
+      });
+
+      await tx.tableAssignment.createMany({
+        data: dto.tableIds.map((tableId) => ({
+          restaurantId,
+          outletId: branchId,
+          tableId,
+          staffUserId: dto.staffUserId,
+          assignedBy,
+        })),
+      });
+
+      await tx.table.updateMany({
+        where: { id: { in: dto.tableIds } },
+        data: { assignedWaiterId: dto.staffUserId },
+      });
+    });
+
+    this.realtime.emitToBranch(branchId, 'table.assignments.updated', {
+      tableIds: dto.tableIds,
+      staffUserId: dto.staffUserId,
+    });
+
+    return { success: true, count: dto.tableIds.length };
+  }
+
+  async releaseTableAssignment(branchId: string, tableId: string) {
+    await this.assertTableInBranch(branchId, tableId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.tableAssignment.updateMany({
+        where: { outletId: branchId, tableId, releasedAt: null },
+        data: { releasedAt: new Date() },
+      });
+
+      await tx.table.update({
+        where: { id: tableId },
+        data: { assignedWaiterId: null },
+      });
+    });
+
+    this.realtime.emitToBranch(branchId, 'table.assignments.updated', {
+      tableId,
+      staffUserId: null,
+    });
+
+    return { success: true };
+  }
+
+  async listActiveAssignments(branchId: string, staffUserId?: string) {
+    return this.prisma.tableAssignment.findMany({
+      where: {
+        outletId: branchId,
+        releasedAt: null,
+        ...(staffUserId ? { staffUserId } : {}),
+      },
+      include: {
+        table: { select: { id: true, number: true, name: true } },
+        staffUser: { select: { id: true, name: true } },
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+  }
+
+  async getOrCreateActiveSession(
+    restaurantId: string,
+    branchId: string,
+    tableId: string,
+  ) {
+    await this.assertTableInBranch(branchId, tableId);
+
+    const existing = await this.prisma.tableSession.findFirst({
+      where: {
+        outletId: branchId,
+        tableId,
+        status: TableSessionStatus.ACTIVE,
+      },
+      include: { guests: true, bills: true },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    return this.prisma.tableSession.create({
+      data: {
+        restaurantId,
+        outletId: branchId,
+        tableId,
+        status: TableSessionStatus.ACTIVE,
+        openedAt: new Date(),
+        expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6-hour idle session
+      },
+      include: { guests: true, bills: true },
+    });
+  }
+
+  async closeTableSession(
+    restaurantId: string,
+    branchId: string,
+    tableId: string,
+    closedBy: string,
+    closedReason?: string,
+  ) {
+    const active = await this.prisma.tableSession.findFirst({
+      where: {
+        outletId: branchId,
+        tableId,
+        status: TableSessionStatus.ACTIVE,
+      },
+    });
+
+    if (!active) {
+      return null;
+    }
+
+    return this.prisma.tableSession.update({
+      where: { id: active.id },
+      data: {
+        status: TableSessionStatus.CLOSED,
+        closedAt: new Date(),
+        closedBy,
+        closedReason: closedReason ?? 'Table cleared and settled',
+      },
+    });
   }
 }

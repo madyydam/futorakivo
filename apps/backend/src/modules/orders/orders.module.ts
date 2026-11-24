@@ -11,6 +11,7 @@ import { KotPrintService } from './kot-print.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ScheduledOrdersService } from './scheduled-orders.service';
+import { OrderEventsService } from './order-events.service';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { ScheduledOrdersService } from './scheduled-orders.service';
     KotPrintService,
     ScheduledOrdersService,
     BranchAccessService,
+    OrderEventsService,
   ],
-  exports: [OrdersService, KotPrintService],
+  exports: [OrdersService, KotPrintService, OrderEventsService],
 })
 export class OrdersModule {}

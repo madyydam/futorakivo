@@ -40,11 +40,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<SessionUser> {
+    const [device, user] = await Promise.all([
+      payload.deviceId
+        ? this.prisma.deviceRegistration.findUnique({
+            where: { id: payload.deviceId },
+            select: { status: true, lockedUntil: true },
+          })
+        : null,
+      this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: {
+          ...permissionInclude,
+          restaurant: {
+            select: {
+              id: true,
+              status: true,
+              isActivated: true,
+              subscriptionExpiresAt: true,
+            },
+          },
+        },
+      }),
+    ]);
+
     if (payload.deviceId) {
-      const device = await this.prisma.deviceRegistration.findUnique({
-        where: { id: payload.deviceId },
-        select: { status: true, lockedUntil: true },
-      });
       if (!device || device.status !== 'APPROVED') {
         throw new UnauthorizedException('Terminal device has been revoked or is no longer approved');
       }
@@ -52,21 +71,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Terminal device is temporarily locked due to repeated incorrect PIN attempts');
       }
     }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      include: {
-        ...permissionInclude,
-        restaurant: {
-          select: {
-            id: true,
-            status: true,
-            isActivated: true,
-            subscriptionExpiresAt: true,
-          },
-        },
-      },
-    });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Session no longer valid');

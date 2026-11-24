@@ -116,20 +116,24 @@ export class ApprovalsService {
     );
 
     if (!isPinValid || !approver) {
-      if (this.prisma.approvalLog.create) {
-        await this.prisma.approvalLog.create({
-          data: {
-            restaurantId,
-            requesterId,
-            approverId: requesterId,
-            permissionKey: dto.permissionKey,
-            targetEntity: dto.targetEntity,
-            targetId: dto.targetId,
-            reason: dto.reason ?? 'Failed manager PIN entry',
-            deviceId: effectiveDeviceId,
-            outcome: ApprovalOutcome.DENIED,
-          },
-        });
+      try {
+        if (this.prisma.approvalLog?.create) {
+          await this.prisma.approvalLog.create({
+            data: {
+              restaurantId,
+              requesterId,
+              approverId: requesterId,
+              permissionKey: dto.permissionKey,
+              targetEntity: dto.targetEntity,
+              targetId: dto.targetId,
+              reason: dto.reason ?? 'Failed manager PIN entry',
+              deviceId: effectiveDeviceId,
+              outcome: ApprovalOutcome.DENIED,
+            },
+          });
+        }
+      } catch {
+        // Non-fatal: ensure UnauthorizedException is always correctly thrown
       }
       throw new UnauthorizedException('Invalid manager PIN');
     }
@@ -172,33 +176,35 @@ export class ApprovalsService {
 
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes TTL
 
-    await this.prisma.approvalToken.create({
-      data: {
-        tokenHash,
-        restaurantId,
-        permissionKey: dto.permissionKey,
-        targetEntity: dto.targetEntity,
-        targetId: dto.targetId,
-        changeHash,
-        requesterId,
-        approverId: approver.id,
-        deviceId: effectiveDeviceId,
-        expiresAt,
-      },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.approvalToken.create({
+        data: {
+          tokenHash,
+          restaurantId,
+          permissionKey: dto.permissionKey,
+          targetEntity: dto.targetEntity,
+          targetId: dto.targetId,
+          changeHash,
+          requesterId,
+          approverId: approver.id,
+          deviceId: effectiveDeviceId,
+          expiresAt,
+        },
+      });
 
-    await this.prisma.approvalLog.create({
-      data: {
-        restaurantId,
-        requesterId,
-        approverId: approver.id,
-        permissionKey: dto.permissionKey,
-        targetEntity: dto.targetEntity,
-        targetId: dto.targetId,
-        reason: dto.reason,
-        deviceId: effectiveDeviceId,
-        outcome: ApprovalOutcome.APPROVED,
-      },
+      await tx.approvalLog.create({
+        data: {
+          restaurantId,
+          requesterId,
+          approverId: approver.id,
+          permissionKey: dto.permissionKey,
+          targetEntity: dto.targetEntity,
+          targetId: dto.targetId,
+          reason: dto.reason,
+          deviceId: effectiveDeviceId,
+          outcome: ApprovalOutcome.APPROVED,
+        },
+      });
     });
 
     return {

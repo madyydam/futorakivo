@@ -64,12 +64,17 @@ export class PinHasherService {
     return bcrypt.compare(pin, pinHash);
   }
 
+  private readonly pepperCache = new Map<string, string>();
+
   private getPepper(version: string): string {
     if (version === 'v1') return this.pepperV1;
+    const cached = this.pepperCache.get(version);
+    if (cached) return cached;
     const custom = this.config.get<string>(
       `SERVER_PEPPER_${version.toUpperCase()}`,
     );
-    if (custom) return custom;
-    return this.pepperV1;
+    const resolved = custom || this.pepperV1;
+    this.pepperCache.set(version, resolved);
+    return resolved;
   }
 }

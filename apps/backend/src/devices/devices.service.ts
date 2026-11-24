@@ -85,15 +85,6 @@ export class DevicesService {
       throw new BadRequestException('Invalid or expired device pairing code');
     }
 
-    // Mark pairing code as consumed atomically to prevent concurrent pairing race conditions
-    const consumed = await this.prisma.devicePairingCode.updateMany({
-      where: { id: codeRecord.id, usedAt: null },
-      data: { usedAt: new Date() },
-    });
-    if (consumed.count === 0) {
-      throw new BadRequestException('Invalid or expired device pairing code');
-    }
-
     // Generate cryptographic 256-bit device bearer token
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto
@@ -101,20 +92,35 @@ export class DevicesService {
       .update(rawToken)
       .digest('hex');
 
-    const device = await this.prisma.deviceRegistration.create({
-      data: {
-        restaurantId: codeRecord.restaurantId,
-        outletId: codeRecord.outletId,
-        label: dto.label.trim(),
-        status: DeviceStatus.APPROVED,
-        tokenHash,
-        userAgent: dto.userAgent ?? null,
-        lastSeenAt: new Date(),
-        lastIp: ip,
-        approvedBy: codeRecord.createdBy,
-        approvedAt: new Date(),
-      },
-    });
+    // Atomically consume code and register device in one transaction to avoid partial failure
+    const performPair = async (client: any) => {
+      const consumed = await client.devicePairingCode.updateMany({
+        where: { id: codeRecord.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      if (consumed.count === 0) {
+        throw new BadRequestException('Invalid or expired device pairing code');
+      }
+
+      return client.deviceRegistration.create({
+        data: {
+          restaurantId: codeRecord.restaurantId,
+          outletId: codeRecord.outletId,
+          label: dto.label.trim(),
+          status: DeviceStatus.APPROVED,
+          tokenHash,
+          userAgent: dto.userAgent ?? null,
+          lastSeenAt: new Date(),
+          lastIp: ip,
+          approvedBy: codeRecord.createdBy,
+          approvedAt: new Date(),
+        },
+      });
+    };
+
+    const device = this.prisma.$transaction
+      ? await this.prisma.$transaction(performPair)
+      : await performPair(this.prisma);
 
     return {
       deviceId: device.id,

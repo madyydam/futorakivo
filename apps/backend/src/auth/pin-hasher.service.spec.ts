@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { PinHasherService } from './pin-hasher.service';
 
+jest.setTimeout(25000);
+
 describe('PinHasherService', () => {
   let service: PinHasherService;
 

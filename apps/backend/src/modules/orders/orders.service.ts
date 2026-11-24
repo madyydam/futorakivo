@@ -109,24 +109,23 @@ export class OrdersService {
     }
 
     if (order.tableId) {
-      if ((this.prisma as any).tableAssignment) {
-        const activeAssignment = await (this.prisma as any).tableAssignment.findFirst({
-          where: {
-            tableId: order.tableId,
-            staffUserId: user.id,
-            releasedAt: null,
-          },
-        });
-        if (activeAssignment) {
-          return;
-        }
-      }
+      const [activeAssignment, table] = await Promise.all([
+        (this.prisma as any).tableAssignment
+          ? (this.prisma as any).tableAssignment.findFirst({
+              where: {
+                tableId: order.tableId,
+                staffUserId: user.id,
+                releasedAt: null,
+              },
+            })
+          : null,
+        this.prisma.table.findUnique({
+          where: { id: order.tableId },
+          select: { assignedWaiterId: true },
+        }),
+      ]);
 
-      const table = await this.prisma.table.findUnique({
-        where: { id: order.tableId },
-        select: { assignedWaiterId: true },
-      });
-      if (table?.assignedWaiterId === user.id) {
+      if (activeAssignment || table?.assignedWaiterId === user.id) {
         return;
       }
     }

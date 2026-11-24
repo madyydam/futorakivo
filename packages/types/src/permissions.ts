@@ -115,13 +115,26 @@ export const PERMISSION_IMPLIES: Partial<Record<PermissionKey, PermissionKey[]>>
   "settings.manage": ["settings.tax"],
 };
 
+// Precomputed reverse-lookup index to evaluate permission satisfaction in O(1) without heap allocation
+const IMPLIED_BY = new Map<string, string[]>();
+for (const [owner, implied] of Object.entries(PERMISSION_IMPLIES)) {
+  for (const imp of implied as string[]) {
+    const list = IMPLIED_BY.get(imp);
+    if (list) {
+      list.push(owner);
+    } else {
+      IMPLIED_BY.set(imp, [owner]);
+    }
+  }
+}
+
 /** True when `held` satisfies `required`, directly or through PERMISSION_IMPLIES. */
 export function permissionSatisfied(held: readonly string[], required: string): boolean {
   if (held.includes("*") || held.includes("all")) return true;
   if (held.includes(required)) return true;
-  return Object.entries(PERMISSION_IMPLIES).some(
-    ([owner, implied]) => held.includes(owner) && (implied as string[]).includes(required),
-  );
+  const granters = IMPLIED_BY.get(required);
+  if (!granters) return false;
+  return granters.some((g) => held.includes(g));
 }
 
 // Roles allowed to view the high-level revenue dashboard

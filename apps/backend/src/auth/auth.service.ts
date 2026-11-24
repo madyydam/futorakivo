@@ -361,10 +361,12 @@ export class AuthService {
       throw new UnauthorizedException('Device is not registered or approved');
     }
 
-    const deviceRestaurant = await this.prisma.restaurant?.findUnique?.({
-      where: { id: device.restaurantId },
-      select: { status: true },
-    });
+    const deviceRestaurant =
+      (device as any).restaurant ??
+      (await this.prisma.restaurant?.findUnique?.({
+        where: { id: device.restaurantId },
+        select: { status: true },
+      }));
     if (deviceRestaurant?.status === 'SUSPENDED') {
       throw new UnauthorizedException(
         'This restaurant account has been suspended by Super Admin.',

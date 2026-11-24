@@ -83,25 +83,22 @@ export default function PublicMenuPage({
   const { qrToken } = use(params);
   const { t } = useI18n();
   const nameStorageKey = `qr-guest-name:${qrToken}`;
+  const phoneStorageKey = `qr-guest-phone:${qrToken}`;
   const [cart, setCart] = useState<CartLine[]>([]);
   const [pickerItem, setPickerItem] = useState<PublicMenuItem | null>(null);
   const queryClient = useQueryClient();
   const [placed, setPlaced] = useState<{ orderNumber: string } | null>(null);
   const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
   const [nameDraft, setNameDraft] = useState("");
+  const [phoneDraft, setPhoneDraft] = useState("");
 
-  // Read any name saved earlier this session after mount, not in the state
-  // initializer — sessionStorage isn't available during server rendering,
-  // so reading it there would make the client's first render disagree with
-  // the server-rendered HTML. This is the legitimate exception the
-  // set-state-in-effect rule carves out for genuine external-system reads
-  // (a browser storage API unavailable until after hydration), not the
-  // derive-state-from-already-available-data anti-pattern it otherwise
-  // flags.
   useEffect(() => {
     const saved = sessionStorage.getItem(nameStorageKey);
+    const savedPhone = sessionStorage.getItem(phoneStorageKey);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved) setGuestName(saved);
+    if (savedPhone) setGuestPhone(savedPhone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -135,6 +132,7 @@ export default function PublicMenuPage({
     mutationFn: () =>
       api.post<{ orderNumber: string }>(`/public/menu/${qrToken}/order`, {
         guestName,
+        guestPhone: guestPhone || undefined,
         items: cart.map((l) => ({
           menuItemId: l.menuItemId,
           quantity: l.quantity,
@@ -151,8 +149,11 @@ export default function PublicMenuPage({
   const confirmName = () => {
     const trimmed = nameDraft.trim();
     if (!trimmed) return;
+    const trimmedPhone = phoneDraft.trim();
     sessionStorage.setItem(nameStorageKey, trimmed);
+    if (trimmedPhone) sessionStorage.setItem(phoneStorageKey, trimmedPhone);
     setGuestName(trimmed);
+    setGuestPhone(trimmedPhone);
   };
 
   const cartCount = cart.reduce((sum, l) => sum + l.quantity, 0);
@@ -253,6 +254,17 @@ export default function PublicMenuPage({
               placeholder={t("order.namePlaceholder")}
               autoFocus
               maxLength={60}
+            />
+          </div>
+          <div className="flex flex-col gap-2 text-left">
+            <Label htmlFor="guest-phone">Phone Number</Label>
+            <Input
+              id="guest-phone"
+              type="tel"
+              value={phoneDraft}
+              onChange={(e) => setPhoneDraft(e.target.value)}
+              placeholder="e.g. 9876543210"
+              maxLength={15}
             />
           </div>
           <Button type="submit" className="h-11" disabled={!nameDraft.trim()}>

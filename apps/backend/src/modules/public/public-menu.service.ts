@@ -83,9 +83,33 @@ export class PublicMenuService {
     });
   }
 
-  async createOrder(qrToken: string, items: CartItemDto[], guestName: string) {
+  async createOrder(
+    qrToken: string,
+    items: CartItemDto[],
+    guestName: string,
+    guestPhone?: string,
+  ) {
     const table = await this.resolveTable(qrToken);
     const branchId = table.floor.branchId;
+
+    // Automatic CRM capture: create or link customer profile by phone number
+    let customerId: string | undefined;
+    if (guestPhone && guestPhone.trim().length >= 6) {
+      const cleanPhone = guestPhone.trim();
+      let customer = await this.prisma.customer.findFirst({
+        where: { branchId, phone: cleanPhone },
+      });
+      if (!customer) {
+        customer = await this.prisma.customer.create({
+          data: {
+            branchId,
+            name: guestName,
+            phone: cleanPhone,
+          },
+        });
+      }
+      customerId = customer.id;
+    }
 
     // A guest who already ordered once this visit and scans again to add
     // more (e.g. drinks now, food later) should land on the same tab, not
@@ -126,6 +150,7 @@ export class PublicMenuService {
       {
         type: 'QR_ORDER',
         tableId: table.id,
+        customerId,
         guestName,
         items,
       },

@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { createHash, randomInt, timingSafeEqual } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import { DEFAULT_ROLE_PERMISSIONS, STAFF_ROLES } from '@futora/types';
+import { verifyTotp } from '../auth/totp';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -104,6 +105,21 @@ export class SuperAdminService {
     if (process.env.SUPER_ADMIN_TOTP_SECRET) {
       if (!totpCode || totpCode.trim().length !== 6) {
         throw new BadRequestException('6-Digit TOTP Authenticator code required');
+      }
+      const validStep = verifyTotp(
+        process.env.SUPER_ADMIN_TOTP_SECRET,
+        totpCode.trim(),
+      );
+      if (validStep === null) {
+        await this.audit.record({
+          action: 'SUPER_ADMIN_LOGIN_FAILED_2FA',
+          entity: 'SuperAdmin',
+          metadata: {
+            attemptedEmail: email,
+            timestamp: new Date().toISOString(),
+          },
+        });
+        throw new UnauthorizedException('Invalid 6-Digit TOTP Authenticator code');
       }
     }
 
@@ -526,51 +542,129 @@ export class SuperAdminService {
     return results;
   }
 
-  async updateTenantStatus(id: string, status: string) {
+  async updateTenantStatus(
+    id: string,
+    status: string,
+    superAdminEmail: string = 'admin@futoragroup.in',
+  ) {
+    const validStatuses = [
+      'ACTIVE',
+      'TRIAL',
+      'SUSPENDED',
+      'EXPIRED',
+      'PENDING_APPROVAL',
+      'APPROVED',
+    ];
+    if (!validStatuses.includes(status)) {
+      throw new BadRequestException(
+        `Invalid status '${status}'. Allowed: ${validStatuses.join(', ')}`,
+      );
+    }
+
     const restaurant = await this.prisma.restaurant.findUnique({ where: { id } });
     if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    return this.prisma.restaurant.update({
+    const updated = await this.prisma.restaurant.update({
       where: { id },
       data: { status },
     });
+
+    await this.audit.record({
+      action: 'SUPER_ADMIN_UPDATE_TENANT_STATUS',
+      entity: 'Restaurant',
+      entityId: id,
+      metadata: {
+        superAdminEmail,
+        previousStatus: restaurant.status,
+        newStatus: status,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    return updated;
   }
 
-  async updateTenantPlan(id: string, plan: string) {
-    const restaurant = await this.prisma.restaurant.findUnique({ where: { id } });
-    if (!restaurant) throw new NotFoundException('Restaurant not found');
-
+  async updateTenantPlan(
+    id: string,
+    plan: string,
+    superAdminEmail: string = 'admin@futoragroup.in',
+  ) {
     const branchLimits: Record<string, number> = {
       Starter: 1,
       Growth: 3,
       Enterprise: 100,
     };
 
-    return this.prisma.restaurant.update({
-      where: { id },
-      data: {
-        plan,
-        maxBranches: branchLimits[plan] || 1,
-        status: 'ACTIVE',
-      },
-    });
-  }
+    if (!branchLimits[plan]) {
+      throw new BadRequestException(
+        `Invalid plan '${plan}'. Allowed: ${Object.keys(branchLimits).join(', ')}`,
+      );
+    }
 
-  async extendTrial(id: string, days: number = 14) {
     const restaurant = await this.prisma.restaurant.findUnique({ where: { id } });
     if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    const currentExpiry = restaurant.trialEndsAt ? new Date(restaurant.trialEndsAt) : new Date();
-    const newExpiry = new Date(currentExpiry);
-    newExpiry.setDate(newExpiry.getDate() + days);
+    const updated = await this.prisma.restaurant.update({
+      where: { id },
+      data: {
+        plan,
+        maxBranches: branchLimits[plan],
+        status: 'ACTIVE',
+      },
+    });
 
-    return this.prisma.restaurant.update({
+    await this.audit.record({
+      action: 'SUPER_ADMIN_UPDATE_TENANT_PLAN',
+      entity: 'Restaurant',
+      entityId: id,
+      metadata: {
+        superAdminEmail,
+        previousPlan: restaurant.plan,
+        newPlan: plan,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    return updated;
+  }
+
+  async extendTrial(
+    id: string,
+    days: number = 14,
+    superAdminEmail: string = 'admin@futoragroup.in',
+  ) {
+    const safeDays = Math.max(1, Math.min(365, Number(days) || 14));
+    const restaurant = await this.prisma.restaurant.findUnique({ where: { id } });
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+
+    const currentExpiry = restaurant.trialEndsAt
+      ? new Date(restaurant.trialEndsAt)
+      : new Date();
+    const newExpiry = new Date(currentExpiry);
+    newExpiry.setDate(newExpiry.getDate() + safeDays);
+
+    const updated = await this.prisma.restaurant.update({
       where: { id },
       data: {
         trialEndsAt: newExpiry,
         status: 'TRIAL',
       },
     });
+
+    await this.audit.record({
+      action: 'SUPER_ADMIN_EXTEND_TRIAL',
+      entity: 'Restaurant',
+      entityId: id,
+      metadata: {
+        superAdminEmail,
+        previousTrialEndsAt: restaurant.trialEndsAt?.toISOString() || null,
+        newTrialEndsAt: newExpiry.toISOString(),
+        extendedDays: safeDays,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    return updated;
   }
 
   async getPlatformAnalytics() {
@@ -665,20 +759,37 @@ export class SuperAdminService {
     return this.broadcasts;
   }
 
-  createBroadcast(
+  async createBroadcast(
     title: string,
     message: string,
-    level: 'INFO' | 'WARNING' | 'CRITICAL',
+    level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO',
+    superAdminEmail: string = 'admin@futoragroup.in',
   ) {
+    if (!title?.trim() || !message?.trim()) {
+      throw new BadRequestException('Broadcast title and message are required');
+    }
     const item: PlatformBroadcast = {
       id: `bc-${Date.now()}`,
-      title,
-      message,
-      level,
+      title: title.trim(),
+      message: message.trim(),
+      level: ['INFO', 'WARNING', 'CRITICAL'].includes(level) ? level : 'INFO',
       createdAt: 'Just now',
       active: true,
     };
     this.broadcasts.unshift(item);
+
+    await this.audit.record({
+      action: 'SUPER_ADMIN_CREATE_BROADCAST',
+      entity: 'PlatformBroadcast',
+      entityId: item.id,
+      metadata: {
+        superAdminEmail,
+        title: item.title,
+        level: item.level,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
     return item;
   }
 

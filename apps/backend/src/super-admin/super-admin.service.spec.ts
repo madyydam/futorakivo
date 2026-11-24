@@ -1,6 +1,7 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { base32Decode, hotp, stepAt } from '../auth/totp';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SuperAdminGuard } from './super-admin.guard';
@@ -109,6 +110,22 @@ describe('SuperAdminService & Guard', () => {
       await expect(
         service.login('admin@futoragroup.in', 'WrongPassword!'),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('rejects invalid TOTP code when 2FA is required', async () => {
+      process.env.SUPER_ADMIN_TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
+      await expect(
+        service.login('admin@futoragroup.in', 'KivokoRoot@2026!', '000000'),
+      ).rejects.toThrow('Invalid 6-Digit TOTP Authenticator code');
+      delete process.env.SUPER_ADMIN_TOTP_SECRET;
+    });
+
+    it('accepts valid TOTP code when 2FA is required', async () => {
+      process.env.SUPER_ADMIN_TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
+      const validCode = hotp(base32Decode('JBSWY3DPEHPK3PXP'), stepAt(Date.now()));
+      const result = await service.login('admin@futoragroup.in', 'KivokoRoot@2026!', validCode);
+      expect(result).toHaveProperty('accessToken');
+      delete process.env.SUPER_ADMIN_TOTP_SECRET;
     });
   });
 
@@ -222,6 +239,22 @@ describe('SuperAdminService & Guard', () => {
       } as any;
 
       expect(guard.canActivate(mockContext)).toBe(true);
+    });
+
+    it('rejects master API key header if master key is missing or mismatched', () => {
+      delete process.env.SUPER_ADMIN_KEY;
+      const mockContext = {
+        switchToHttp: () => ({
+          getRequest: () => ({
+            headers: {
+              'x-super-admin-key': 'kivoko_master_superadmin_secret_key_2026',
+            },
+          }),
+        }),
+      } as any;
+
+      expect(() => guard.canActivate(mockContext)).toThrow(UnauthorizedException);
+      process.env.SUPER_ADMIN_KEY = 'kivoko_master_superadmin_secret_key_2026';
     });
 
     it('authorizes requests with valid Bearer token', () => {
@@ -451,6 +484,84 @@ describe('SuperAdminService & Guard', () => {
       expect(logs).toHaveLength(1);
       expect(logs[0].action).toBe('SUPER_ADMIN_LOGIN_SUCCESS');
       expect(logs[0].userName).toBe('System / Super Admin');
+    });
+  });
+
+  describe('Tenant Lifecycle, Plan Updates & Broadcasts', () => {
+    it('updates tenant status and records audit event', async () => {
+      mockPrisma.restaurant.findUnique.mockResolvedValue({ id: 'rest_1', status: 'TRIAL' });
+      mockPrisma.restaurant.update.mockResolvedValue({ id: 'rest_1', status: 'ACTIVE' });
+
+      const res = await service.updateTenantStatus('rest_1', 'ACTIVE', 'admin@futoragroup.in');
+      expect(res.status).toBe('ACTIVE');
+      expect(mockAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'SUPER_ADMIN_UPDATE_TENANT_STATUS',
+          entityId: 'rest_1',
+        }),
+      );
+    });
+
+    it('rejects invalid tenant status with BadRequestException', async () => {
+      await expect(
+        service.updateTenantStatus('rest_1', 'INVALID_STATUS'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('updates tenant plan and records audit event', async () => {
+      mockPrisma.restaurant.findUnique.mockResolvedValue({ id: 'rest_1', plan: 'Starter' });
+      mockPrisma.restaurant.update.mockResolvedValue({ id: 'rest_1', plan: 'Enterprise', maxBranches: 100 });
+
+      const res = await service.updateTenantPlan('rest_1', 'Enterprise', 'admin@futoragroup.in');
+      expect(res.plan).toBe('Enterprise');
+      expect(mockAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'SUPER_ADMIN_UPDATE_TENANT_PLAN',
+          entityId: 'rest_1',
+        }),
+      );
+    });
+
+    it('rejects invalid tenant plan with BadRequestException', async () => {
+      await expect(
+        service.updateTenantPlan('rest_1', 'UltraVIP'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('extends trial safely and records audit event', async () => {
+      mockPrisma.restaurant.findUnique.mockResolvedValue({
+        id: 'rest_1',
+        trialEndsAt: new Date('2026-11-20T00:00:00Z'),
+      });
+      mockPrisma.restaurant.update.mockImplementation(({ data }) => ({
+        id: 'rest_1',
+        ...data,
+      }));
+
+      const res = await service.extendTrial('rest_1', 14, 'admin@futoragroup.in');
+      expect(res.status).toBe('TRIAL');
+      expect(mockAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'SUPER_ADMIN_EXTEND_TRIAL',
+          entityId: 'rest_1',
+        }),
+      );
+    });
+
+    it('creates broadcast and records audit event', async () => {
+      const bc = await service.createBroadcast('Notice', 'System Update', 'INFO', 'admin@futoragroup.in');
+      expect(bc.title).toBe('Notice');
+      expect(mockAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'SUPER_ADMIN_CREATE_BROADCAST',
+        }),
+      );
+    });
+
+    it('rejects broadcast with empty title or message', async () => {
+      await expect(
+        service.createBroadcast('', 'Something'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

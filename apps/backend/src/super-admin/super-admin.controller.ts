@@ -87,47 +87,68 @@ export class SuperAdminController {
     return this.superAdminService.getBroadcasts();
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('broadcasts')
   @UseGuards(SuperAdminGuard)
   createBroadcast(
     @Body('title') title: string,
     @Body('message') message: string,
     @Body('level') level: 'INFO' | 'WARNING' | 'CRITICAL',
+    @Req() req: any,
   ) {
+    const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
     return this.superAdminService.createBroadcast(
       title,
       message,
       level || 'INFO',
+      adminEmail,
     );
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Patch('tenants/:id/status')
   @UseGuards(SuperAdminGuard)
   async updateTenantStatus(
     @Param('id') id: string,
     @Body('status') status: string,
+    @Req() req: any,
   ) {
-    return this.superAdminService.updateTenantStatus(id, status);
+    const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
+    return this.superAdminService.updateTenantStatus(id, status, adminEmail);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Patch('tenants/:id/plan')
   @UseGuards(SuperAdminGuard)
   async updateTenantPlan(
     @Param('id') id: string,
     @Body('plan') plan: string,
+    @Req() req: any,
   ) {
-    return this.superAdminService.updateTenantPlan(id, plan);
+    const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
+    return this.superAdminService.updateTenantPlan(id, plan, adminEmail);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('tenants/:id/extend-trial')
   @UseGuards(SuperAdminGuard)
-  async extendTrial(@Param('id') id: string, @Body('days') days: number) {
-    return this.superAdminService.extendTrial(id, Number(days) || 14);
+  async extendTrial(
+    @Param('id') id: string,
+    @Body('days') days: number,
+    @Req() req: any,
+  ) {
+    const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
+    return this.superAdminService.extendTrial(
+      id,
+      Number(days) || 14,
+      adminEmail,
+    );
   }
 
   /**
    * Cryptographically Signed Support Impersonation ("Login as Tenant").
    */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('impersonate/:restaurantId')
   @UseGuards(SuperAdminGuard)
   async impersonateTenant(
@@ -141,6 +162,7 @@ export class SuperAdminController {
   /**
    * Emergency Killswitch / Freeze on a tenant.
    */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('tenants/:id/killswitch')
   @UseGuards(SuperAdminGuard)
   async killswitchTenant(

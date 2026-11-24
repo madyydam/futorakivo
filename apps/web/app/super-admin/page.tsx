@@ -615,6 +615,7 @@ export default function SuperAdminPage() {
             roleName: "OWNER",
             permissions: fullPermissions,
           };
+          document.cookie = `nodedr_session=${data.token}; path=/; SameSite=Lax; max-age=900`;
           localStorage.setItem("kivo_impersonated_user", JSON.stringify(impersonatedUser));
           localStorage.setItem("FUTORA group_demo_user", JSON.stringify(impersonatedUser));
           localStorage.setItem("FUTORA group_restaurant_name", data.restaurantName || admin.restaurantName);

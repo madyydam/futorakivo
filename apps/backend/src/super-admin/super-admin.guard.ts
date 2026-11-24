@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 @Injectable()
 export class SuperAdminGuard implements CanActivate {
@@ -15,18 +16,32 @@ export class SuperAdminGuard implements CanActivate {
     const authHeader = request.headers['authorization'];
     const superAdminKeyHeader = request.headers['x-super-admin-key'];
 
-    // Master API Key bypass for server-to-server operations or emergencies
-    const configuredMasterKey = process.env.SUPER_ADMIN_KEY || 'kivoko_master_superadmin_secret_key_2026';
-    if (superAdminKeyHeader && superAdminKeyHeader === configuredMasterKey) {
-      request.superAdmin = {
-        email: process.env.SUPER_ADMIN_EMAIL || 'admin@futoragroup.in',
-        role: 'SUPER_ADMIN',
-      };
-      return true;
+    // Master API Key bypass for server-to-server operations or emergencies (strictly requires configured env with at least 32 chars)
+    const configuredMasterKey = process.env.SUPER_ADMIN_KEY;
+    if (
+      superAdminKeyHeader &&
+      configuredMasterKey &&
+      configuredMasterKey.length >= 32
+    ) {
+      const hashA = createHash('sha256')
+        .update(String(superAdminKeyHeader))
+        .digest();
+      const hashB = createHash('sha256')
+        .update(configuredMasterKey)
+        .digest();
+      if (timingSafeEqual(hashA, hashB)) {
+        request.superAdmin = {
+          email: process.env.SUPER_ADMIN_EMAIL || 'admin@futoragroup.in',
+          role: 'SUPER_ADMIN',
+        };
+        return true;
+      }
     }
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing or invalid Super Admin authorization token');
+      throw new UnauthorizedException(
+        'Missing or invalid Super Admin authorization token',
+      );
     }
 
     const token = authHeader.split(' ')[1];
@@ -36,13 +51,17 @@ export class SuperAdminGuard implements CanActivate {
       });
 
       if (payload.role !== 'SUPER_ADMIN') {
-        throw new UnauthorizedException('Insufficient platform privileges: SUPER_ADMIN role required');
+        throw new UnauthorizedException(
+          'Insufficient platform privileges: SUPER_ADMIN role required',
+        );
       }
 
       request.superAdmin = payload;
       return true;
     } catch {
-      throw new UnauthorizedException('Invalid or expired Super Admin session token');
+      throw new UnauthorizedException(
+        'Invalid or expired Super Admin session token',
+      );
     }
   }
 }

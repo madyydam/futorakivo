@@ -24,8 +24,8 @@ describe('PublicMenuService - DPDP Act & Privacy Shield', () => {
       },
       customer: {
         findFirst: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
+        create: jest.fn().mockResolvedValue({ id: 'cust-new', name: 'Guest' }),
+        update: jest.fn().mockResolvedValue({ id: 'cust-1', name: 'Guest' }),
       },
       customerConsent: {
         create: jest.fn().mockResolvedValue({ id: 'consent-1' }),
@@ -288,6 +288,24 @@ describe('PublicMenuService - DPDP Act & Privacy Shield', () => {
 
       expect(status.order).toBeNull();
       expect(status.expired).toBe(true);
+    });
+
+    it('rejects adding new items from QR when current bill on table is already BILLED', async () => {
+      const { service, prisma } = buildMocks();
+      prisma.customer.findFirst.mockResolvedValue({ id: 'cust-1' });
+      prisma.order.findFirst.mockResolvedValue({ id: 'ord-billed', status: 'BILLED' });
+
+      await expect(
+        service.createOrder(
+          'test-token',
+          [{ menuItemId: 'm1', quantity: 1, modifierIds: [] }],
+          'Rahul',
+          '+919876543210',
+          true,
+        ),
+      ).rejects.toThrow(
+        'The bill for this table is already printed. Please ask your server to reopen the bill or settle your payment before ordering more.',
+      );
     });
   });
 });

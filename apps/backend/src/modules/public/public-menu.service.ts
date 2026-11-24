@@ -195,11 +195,20 @@ export class PublicMenuService {
     // more (e.g. drinks now, food later) should land on the same tab, not
     // open a second order for the table — mirrors how staff add a round
     // from the POS for an occupied table.
-    const openOrder = await this.prisma.order.findFirst({
-      where: { branchId, tableId: table.id, status: 'OPEN' },
+    const existingOrder = await this.prisma.order.findFirst({
+      where: {
+        branchId,
+        tableId: table.id,
+        status: { in: ['OPEN', 'BILLED'] },
+      },
     });
-    if (openOrder) {
-      return this.ordersService.addItems(branchId, openOrder.id, items, {
+    if (existingOrder) {
+      if (existingOrder.status === 'BILLED') {
+        throw new BadRequestException(
+          'The bill for this table is already printed. Please ask your server to reopen the bill or settle your payment before ordering more.',
+        );
+      }
+      return this.ordersService.addItems(branchId, existingOrder.id, items, {
         enforceModifierLimits: true,
         websiteOnly: true,
       });

@@ -1215,12 +1215,16 @@ export class OrdersService {
         throw new BadRequestException('That table is out of service');
       }
       const occupant = await this.prisma.order.findFirst({
-        where: { tableId: target.id, status: 'OPEN', id: { not: orderId } },
-        select: { orderNumber: true },
+        where: {
+          tableId: target.id,
+          status: { in: ['OPEN', 'BILLED'] },
+          id: { not: orderId },
+        },
+        select: { orderNumber: true, status: true },
       });
       if (occupant) {
         throw new ConflictException(
-          `That table already has open bill #${occupant.orderNumber} - merge the bills instead`,
+          `That table already has active bill #${occupant.orderNumber} (status ${occupant.status}) - settle or merge instead`,
         );
       }
     }
@@ -1254,6 +1258,28 @@ export class OrdersService {
     if (moving) {
       for (const id of [order.tableId, dto.tableId]) {
         if (id) this.realtime.emitToBranch(branchId, 'table.updated', { id });
+      }
+      if (this.orderEvents) {
+        void this.prisma.branch
+          .findUnique({
+            where: { id: branchId },
+            select: { restaurantId: true },
+          })
+          .then((b) => {
+            if (b && this.orderEvents) {
+              void this.orderEvents.record({
+                restaurantId: b.restaurantId,
+                outletId: branchId,
+                entity: 'Order',
+                entityId: orderId,
+                eventType: 'TABLE_TRANSFERRED',
+                actorType: 'STAFF',
+                actorId: userId,
+                beforeState: { tableId: order.tableId },
+                afterState: { tableId: dto.tableId },
+              });
+            }
+          });
       }
     }
     await this.audit.record({
@@ -2136,6 +2162,11 @@ export class OrdersService {
     if (order.status !== 'PAID') {
       throw new BadRequestException('Only a paid order can be refunded');
     }
+    if (dto.method === 'STORE_CREDIT' && !order.customerId) {
+      throw new BadRequestException(
+        'Cannot issue store credit refund for an order without an attached customer',
+      );
+    }
 
     const refund = await this.prisma.$transaction(async (tx) => {
       // Row lock: bumping the order row here (rather than only reading it)
@@ -2227,6 +2258,47 @@ export class OrdersService {
           where: { id: order.customerId },
           data: { walletBalance: { increment: dto.amount } },
         });
+      }
+
+      // Reclaim earned loyalty points proportionally if customer was attached
+      if (order.customerId) {
+        const earnedEntry = await tx.pointsLedger.findFirst({
+          where: { orderId, customerId: order.customerId, reason: 'EARN' },
+        });
+        if (earnedEntry && earnedEntry.delta > 0) {
+          const totalOrderAmount = Number(order.totalAmount);
+          const refundRatio =
+            totalOrderAmount > 0
+              ? Math.min(1, dto.amount / totalOrderAmount)
+              : 1;
+          const pointsToClawback = Math.floor(earnedEntry.delta * refundRatio);
+          if (pointsToClawback > 0) {
+            const cust = await tx.customer.findUnique({
+              where: { id: order.customerId },
+              select: { loyaltyPoints: true },
+            });
+            const actualDeduction = Math.min(
+              pointsToClawback,
+              cust?.loyaltyPoints ?? 0,
+            );
+            if (actualDeduction > 0) {
+              await tx.customer.update({
+                where: { id: order.customerId },
+                data: { loyaltyPoints: { decrement: actualDeduction } },
+              });
+              await tx.pointsLedger.create({
+                data: {
+                  branchId,
+                  customerId: order.customerId,
+                  delta: -actualDeduction,
+                  reason: 'REFUND_REVERSAL',
+                  orderId,
+                  idempotencyKey: `refund:${created.id}:points`,
+                },
+              });
+            }
+          }
+        }
       }
 
       return created;
@@ -2830,6 +2902,36 @@ export class OrdersService {
     );
     if (otherLive) {
       this.realtime.emitToBranch(branchId, 'order.updated', { id: order.id });
+    }
+    if (this.orderEvents) {
+      void this.prisma.branch
+        .findUnique({
+          where: { id: branchId },
+          select: { restaurantId: true },
+        })
+        .then((b) => {
+          if (b && this.orderEvents) {
+            void this.orderEvents.record({
+              restaurantId: b.restaurantId,
+              outletId: branchId,
+              entity: 'Order',
+              entityId: order.id,
+              eventType: !otherLive ? 'CANCELLED' : 'ITEM_CANCELLED',
+              actorType: 'STAFF',
+              actorId: userId,
+              reason,
+              beforeState: {
+                orderNumber: order.orderNumber,
+                ticketNumber: kot.ticketNumber,
+                lines: rejectedLines,
+              },
+              afterState: {
+                status: !otherLive ? 'CANCELLED' : order.status,
+                wholeOrderCancelled: !otherLive,
+              },
+            });
+          }
+        });
     }
     await this.audit.record({
       userId,

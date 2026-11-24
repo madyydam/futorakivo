@@ -30,6 +30,10 @@ export interface OutboxAction {
     orderNumber: string;
     createdAt: string;
     items?: OfflineItemSummary[];
+    customerName?: string;
+    customerPhone?: string;
+    deliveryAddress?: string;
+    payments?: Array<{ method: string; amount: number; tendered?: number | null; changeGiven?: number | null }>;
   };
   status: "PENDING" | "SYNCING" | "SYNCED" | "FAILED";
   error?: string;
@@ -166,6 +170,9 @@ export function queueOfflineOrder(
       orderNumber,
       createdAt: new Date().toISOString(),
       items: metadata?.itemsSummary,
+      customerName: dto.guestName,
+      customerPhone: dto.delivery?.phone,
+      deliveryAddress: dto.delivery?.address,
     },
     status: "PENDING",
     retries: 0,
@@ -200,10 +207,14 @@ export function queueOfflineCheckout(branchId: string, orderId: string, dto: Che
   const items = getOutboxItems();
   const existingOrder = items.find((i) => i.tempOrderId === orderId || i.id === orderId);
 
+  const totalPaid = dto.payments?.reduce((acc, p) => acc + (Number(p.amount) || 0), 0) || 0;
+  const totalTendered = dto.payments?.reduce((acc, p) => acc + (Number(p.tendered ?? p.amount) || 0), 0) || totalPaid;
+  const changeDue = Math.max(0, totalTendered - totalPaid);
+
   const totalAmount =
-    dto.payments?.reduce((acc, p) => acc + (Number(p.amount) || 0), 0)?.toFixed(2) ||
-    existingOrder?.orderSummary?.totalAmount ||
-    "0.00";
+    totalPaid > 0
+      ? totalPaid.toFixed(2)
+      : existingOrder?.orderSummary?.totalAmount || "0.00";
 
   const action: OutboxAction = {
     id: `act_pay_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -217,6 +228,15 @@ export function queueOfflineCheckout(branchId: string, orderId: string, dto: Che
       orderNumber: existingOrder?.orderSummary?.orderNumber || (orderId.startsWith("off_") ? `OFF-${orderId.slice(-4)}` : orderId.slice(-4)),
       createdAt: new Date().toISOString(),
       items: existingOrder?.orderSummary?.items,
+      customerName: existingOrder?.orderSummary?.customerName,
+      customerPhone: existingOrder?.orderSummary?.customerPhone,
+      deliveryAddress: existingOrder?.orderSummary?.deliveryAddress,
+      payments: dto.payments?.map((p) => ({
+        method: p.method,
+        amount: Number(p.amount) || 0,
+        tendered: p.tendered ? Number(p.tendered) : null,
+        changeGiven: changeDue > 0 ? changeDue : null,
+      })),
     },
     status: "PENDING",
     retries: 0,
@@ -240,9 +260,9 @@ export function queueOfflineCheckout(branchId: string, orderId: string, dto: Che
       status: "PAID",
       settlement: {
         amountDue: Number(totalAmount),
-        amountPaid: Number(totalAmount),
+        amountPaid: totalPaid,
         balanceDue: 0,
-        changeDue: 0,
+        changeDue: changeDue,
         fullyPaid: true,
       },
     },
@@ -353,6 +373,21 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
           saveOutboxItems(items);
           break;
         }
+
+        const isNetDrop =
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          err?.message?.includes("fetch") ||
+          err?.message?.includes("NetworkError") ||
+          err?.message?.includes("Failed to fetch") ||
+          err?.status === 0;
+
+        if (isNetDrop) {
+          console.warn("Outbox sync paused: Network disconnection detected during flush.");
+          item.status = "PENDING";
+          saveOutboxItems(items);
+          break;
+        }
+
         item.status = "FAILED";
         item.error = err?.message || "Sync failed";
         item.retries += 1;

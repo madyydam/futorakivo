@@ -28,6 +28,7 @@ import {
 import { useFloors, type RestaurantTable } from "@/hooks/use-tables";
 import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
+import { getOutboxItems } from "@/lib/offline-outbox";
 import { cn } from "@/lib/utils";
 
 export default function PosPage() {
@@ -99,7 +100,34 @@ function PosPageInner() {
     branchId,
     orderType === "DINE_IN" ? tableId || null : null,
   );
-  const existingOrders = openBillsQuery.data;
+
+  const offlineOrdersForTable = useMemo(() => {
+    if (!tableId || orderType !== "DINE_IN") return [];
+    const outbox = getOutboxItems();
+    return outbox
+      .filter((i) => i.type === "CREATE_ORDER" && i.orderSummary.tableId === tableId && i.status !== "SYNCED")
+      .map((i) => ({
+        id: i.tempOrderId,
+        orderNumber: i.orderSummary.orderNumber,
+        type: "DINE_IN",
+        tableId: i.orderSummary.tableId ?? null,
+        subtotal: i.orderSummary.totalAmount,
+        taxAmount: "0.00",
+        discountAmount: "0.00",
+        tipAmount: "0.00",
+        loyaltyPointsRedeemed: 0,
+        loyaltyDiscountAmount: "0.00",
+        totalAmount: i.orderSummary.totalAmount,
+        status: "OPEN",
+        customer: null,
+      } as OpenOrder));
+  }, [tableId, orderType]);
+
+  const existingOrders = useMemo(() => {
+    const serverOrders = openBillsQuery.data ?? [];
+    if (offlineOrdersForTable.length === 0) return serverOrders;
+    return [...serverOrders, ...offlineOrdersForTable];
+  }, [openBillsQuery.data, offlineOrdersForTable]);
   // A table can carry several open bills; the user picks which one gets the
   // new items (default: the newest). Until the table's bills are loaded we do
   // not know whether this is a new bill or a new round, so submitting waits.

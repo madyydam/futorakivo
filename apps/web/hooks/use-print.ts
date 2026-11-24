@@ -101,6 +101,11 @@ export function useOpenCashDrawer() {
   return useMutation({
     mutationFn: async (branchId?: string | null) => {
       const onDevice = canPrintOnDevice();
+      if (typeof navigator !== "undefined" && !navigator.onLine && onDevice) {
+        // Standard ESC/POS drawer kick pulse (ESC p 0 25 250) sent directly on device
+        await printEscposOnDevice(["\x1B\x70\x00\x19\xFA"]);
+        return { ok: true as const };
+      }
       const q = [branchId ? `branchId=${branchId}` : "", onDevice ? "via=device" : ""].filter(Boolean).join("&");
       const r = await api.post<{ ok: true; escpos?: string[] }>(`/orders/print/drawer${q ? `?${q}` : ""}`);
       if (onDevice && r.escpos) await printEscposOnDevice(r.escpos);

@@ -28,6 +28,10 @@ function generateOfflineReceiptHtml(orderId: string): string {
       : new Date().toLocaleString("en-IN")
   );
 
+  const customerName = item?.orderSummary?.customerName ? escapeHtml(item.orderSummary.customerName) : null;
+  const customerPhone = item?.orderSummary?.customerPhone ? escapeHtml(item.orderSummary.customerPhone) : null;
+  const deliveryAddr = item?.orderSummary?.deliveryAddress ? escapeHtml(item.orderSummary.deliveryAddress) : null;
+
   const itemRows = item?.orderSummary?.items?.length
     ? item.orderSummary.items
         .map(
@@ -43,6 +47,20 @@ function generateOfflineReceiptHtml(orderId: string): string {
       <span>Bill Summary (${Number(item?.orderSummary?.itemsCount) || 1} items)</span>
       <span>₹${total}</span>
     </div>`;
+
+  const paymentRows = item?.orderSummary?.payments?.length
+    ? item.orderSummary.payments
+        .map(
+          (p) => `
+    <div class="row" style="font-size: 11px;">
+      <span>Paid by ${escapeHtml(p.method)}:</span>
+      <span>₹${p.amount.toFixed(2)}</span>
+    </div>
+    ${p.tendered ? `<div class="row" style="font-size: 10px; color: #333;"><span>Cash Tendered:</span><span>₹${p.tendered.toFixed(2)}</span></div>` : ""}
+    ${p.changeGiven ? `<div class="row" style="font-size: 11px; font-weight: bold;"><span>Change Returned:</span><span>₹${p.changeGiven.toFixed(2)}</span></div>` : ""}`
+        )
+        .join("")
+    : "";
 
   return `<!DOCTYPE html>
 <html>
@@ -67,6 +85,9 @@ function generateOfflineReceiptHtml(orderId: string): string {
     <div class="brand-title">KIVO RESTAURANT</div>
     <div class="ticket-num">Order #${orderNum}</div>
     <div>${table}</div>
+    ${customerName ? `<div>Guest: ${customerName}</div>` : ""}
+    ${customerPhone ? `<div>Tel: ${customerPhone}</div>` : ""}
+    ${deliveryAddr ? `<div style="font-size: 10px; margin-top: 2px;">Delivery: ${deliveryAddr}</div>` : ""}
     <div style="font-size: 10px;">${dateStr}</div>
   </div>
   <div class="divider"></div>
@@ -74,6 +95,7 @@ function generateOfflineReceiptHtml(orderId: string): string {
   ${itemRows}
   <div class="divider"></div>
   <div class="row total-row"><span>NET TOTAL:</span><span>₹${total}</span></div>
+  ${paymentRows ? `<div class="divider"></div>${paymentRows}` : ""}
   <div class="divider"></div>
   <div class="footer">
     Stored locally in counter outbox queue.<br>
@@ -95,6 +117,10 @@ function generateOfflineKotHtml(orderId: string): string {
       ? new Date(item.createdAt).toLocaleTimeString("en-IN")
       : new Date().toLocaleTimeString("en-IN")
   );
+
+  const customerName = item?.orderSummary?.customerName ? escapeHtml(item.orderSummary.customerName) : null;
+  const customerPhone = item?.orderSummary?.customerPhone ? escapeHtml(item.orderSummary.customerPhone) : null;
+  const deliveryAddr = item?.orderSummary?.deliveryAddress ? escapeHtml(item.orderSummary.deliveryAddress) : null;
 
   const itemRows = item?.orderSummary?.items?.length
     ? item.orderSummary.items
@@ -132,6 +158,9 @@ function generateOfflineKotHtml(orderId: string): string {
   <div class="header">
     <div class="ticket-num">KOT #${orderNum}</div>
     <div class="table-name">${table}</div>
+    ${customerName ? `<div>Guest: ${customerName}</div>` : ""}
+    ${customerPhone ? `<div>Tel: ${customerPhone}</div>` : ""}
+    ${deliveryAddr ? `<div style="font-size: 10px;">Delivery: ${deliveryAddr}</div>` : ""}
     <div style="font-size: 11px;">Time: ${dateStr}</div>
   </div>
   <div class="divider"></div>

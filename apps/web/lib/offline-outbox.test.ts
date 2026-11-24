@@ -62,19 +62,22 @@ test("queueOfflineOrder creates a pending outbox item with OFF- ticket and itemi
   assert.equal(items[0].orderSummary.items?.length, 2);
 });
 
-test("queueOfflineCheckout creates a pending payment action with idempotency key", () => {
+test("queueOfflineCheckout calculates cash change and records payment breakdown", () => {
   const result = queueOfflineCheckout("branch-1", "off_12345", {
-    payments: [{ method: "CASH", amount: 250 }],
+    payments: [{ method: "CASH", amount: 250, tendered: 500 }],
   });
 
   assert.equal(result.tempResult.id, "off_12345");
   assert.equal(result.tempResult.status, "PAID");
   assert.equal(result.tempResult.settlement.fullyPaid, true);
+  assert.equal(result.tempResult.settlement.amountPaid, 250);
+  assert.equal(result.tempResult.settlement.changeDue, 250);
 
   const items = getOutboxItems();
   assert.equal(items.length, 1);
   assert.equal(items[0].type, "CHECKOUT_ORDER");
   assert.equal(items[0].orderSummary.totalAmount, "250.00");
+  assert.equal(items[0].orderSummary.payments?.[0].changeGiven, 250);
 });
 
 test("subscribeOutbox notifies subscriber immediately and on updates", () => {

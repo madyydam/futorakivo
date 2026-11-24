@@ -40,6 +40,7 @@ export function OfflineSyncIndicator() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setIsOnline(isDeviceOnline());
@@ -61,7 +62,13 @@ export function OfflineSyncIndicator() {
   const pendingCount = pendingItems.length;
 
   const handleManualSync = async () => {
-    await flushOutbox(queryClient);
+    if (isSubmitting || isSyncing) return;
+    setIsSubmitting(true);
+    try {
+      await flushOutbox(queryClient);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -243,12 +250,12 @@ export function OfflineSyncIndicator() {
             </Button>
             <Button
               size="sm"
-              disabled={isSyncing || !isOnline || pendingCount === 0}
+              disabled={isSyncing || isSubmitting || !isOnline || pendingCount === 0}
               onClick={handleManualSync}
               className="h-9 text-xs font-semibold gap-1.5 bg-primary text-primary-foreground shadow-xs cursor-pointer"
             >
-              <RefreshCw className={`size-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              <span>{isSyncing ? "Syncing..." : "Sync Outbox Now"}</span>
+              <RefreshCw className={`size-3.5 ${isSyncing || isSubmitting ? "animate-spin" : ""}`} />
+              <span>{isSyncing || isSubmitting ? "Syncing..." : "Sync Outbox Now"}</span>
             </Button>
           </DialogFooter>
         </DialogContent>

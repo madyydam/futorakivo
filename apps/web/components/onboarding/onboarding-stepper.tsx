@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "motion/react";
 import { Check } from "lucide-react";
 import type { Language } from "./onboarding-translations";
@@ -12,7 +13,7 @@ interface OnboardingStepperProps {
   lang: Language;
 }
 
-export function OnboardingStepper({
+export const OnboardingStepper = memo(function OnboardingStepper({
   currentStep,
   completedSteps,
   onSelectStep,
@@ -92,4 +93,4 @@ export function OnboardingStepper({
       </div>
     </div>
   );
-}
+});

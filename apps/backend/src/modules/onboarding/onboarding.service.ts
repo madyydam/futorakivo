@@ -13,6 +13,22 @@ function sanitizeText(str?: unknown): string {
   return str.replace(/<[^>]*>/g, '').trim();
 }
 
+/**
+ * Recursively sanitizes JSON objects against prototype pollution keys (__proto__, constructor, prototype).
+ */
+function sanitizeDraftJson(input: any): any {
+  if (!input || typeof input !== 'object') return input;
+  if (Array.isArray(input)) return input.map(sanitizeDraftJson);
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    clean[key] = sanitizeDraftJson(value);
+  }
+  return clean;
+}
+
 @Injectable()
 export class OnboardingService {
   constructor(
@@ -91,9 +107,10 @@ export class OnboardingService {
         completedSet.add(dto.completedStep);
       }
 
+      const cleanIncomingDraft = dto.draftJson ? sanitizeDraftJson(dto.draftJson) : {};
       const mergedDraft = {
         ...((existing.draftJson as Record<string, any>) || {}),
-        ...(dto.draftJson || {}),
+        ...cleanIncomingDraft,
       };
 
       const updated = await tx.onboardingProgress.update({
@@ -273,6 +290,8 @@ export class OnboardingService {
         });
         const existingNames = new Set(existingUsers.map((u) => u.name.toLowerCase()));
 
+        // Pre-filter candidate staff
+        const validStaff: Array<{ roleId: string; staffName: string; pinStr: string }> = [];
         for (const st of draft.staff) {
           if (st.role === 'OWNER') continue; // Master owner account is already initialized
 
@@ -281,24 +300,31 @@ export class OnboardingService {
           const staffName = sanitizeText(st.name);
 
           if (roleId && staffName && st.pin && !existingNames.has(staffName.toLowerCase())) {
-            const pinStr = String(st.pin).trim();
-            const pinHash = await this.pinHasher.hashPin(pinStr);
-            const pinLookup = this.pinHasher.computeLookup(restaurantId, pinStr, 'v1');
-
-            await tx.user.create({
-              data: {
-                restaurantId,
-                roleId,
-                name: staffName,
-                passwordHash: pinHash,
-                pinHash,
-                pinLookup,
-                pepperKeyId: 'v1',
-                isActive: true,
-              },
-            });
+            validStaff.push({ roleId, staffName, pinStr: String(st.pin).trim() });
             existingNames.add(staffName.toLowerCase());
           }
+        }
+
+        // Parallelize bcrypt hashing across CPU threads to avoid locking DB transaction
+        const hashedStaff = await Promise.all(
+          validStaff.map(async (st) => {
+            const pinHash = await this.pinHasher.hashPin(st.pinStr);
+            const pinLookup = this.pinHasher.computeLookup(restaurantId, st.pinStr, 'v1');
+            return {
+              restaurantId,
+              roleId: st.roleId,
+              name: st.staffName,
+              passwordHash: pinHash,
+              pinHash,
+              pinLookup,
+              pepperKeyId: 'v1',
+              isActive: true,
+            };
+          }),
+        );
+
+        for (const staffRecord of hashedStaff) {
+          await tx.user.create({ data: staffRecord });
         }
       }
 

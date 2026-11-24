@@ -32,12 +32,18 @@ export function Step9Device({ data, onChange, onNext, onBack, lang }: Step9Props
   const [isPaired, setIsPaired] = useState(Boolean(data.devicePaired));
 
   useEffect(() => {
-    if (isPaired || secondsLeft <= 0) return;
+    if (isPaired) return;
     const interval = setInterval(() => {
-      setSecondsLeft((prev) => Math.max(0, prev - 1));
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isPaired, secondsLeft]);
+  }, [isPaired]);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;

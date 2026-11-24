@@ -166,6 +166,44 @@ describe('OnboardingService', () => {
         },
       });
     });
+
+    it('sanitizes prototype pollution attempts in draftJson', async () => {
+      prisma.restaurant.findUnique.mockResolvedValue({
+        id: 'rest-1',
+        name: 'Curry House',
+        status: 'SETUP',
+      });
+      prisma.onboardingProgress.findUnique.mockResolvedValue({
+        restaurantId: 'rest-1',
+        currentStep: 1,
+        completedSteps: [],
+        draftJson: {},
+      });
+      prisma.onboardingProgress.update.mockResolvedValue({
+        restaurantId: 'rest-1',
+        currentStep: 2,
+        completedSteps: [1],
+        draftJson: { safeKey: 'valid' },
+      });
+
+      const maliciousPayload = JSON.parse(
+        '{"safeKey":"valid","__proto__":{"polluted":true},"constructor":{"polluted":true}}',
+      );
+
+      await service.updateProgress('rest-1', {
+        currentStep: 2,
+        completedStep: 1,
+        draftJson: maliciousPayload,
+      });
+
+      expect(prisma.onboardingProgress.update).toHaveBeenCalledWith({
+        where: { restaurantId: 'rest-1' },
+        data: expect.objectContaining({
+          draftJson: { safeKey: 'valid' },
+        }),
+      });
+      expect(({} as any).polluted).toBeUndefined();
+    });
   });
 
   describe('completeOnboarding', () => {

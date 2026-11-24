@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -116,45 +116,53 @@ export default function OnboardingPage() {
     };
   }, [currentStep, updateMutation]);
 
-  // Patch draft and mirror to device storage for crash/offline recovery
-  const handleUpdateDraft = (patch: Record<string, any>) => {
-    setDraft((prev) => {
-      const updated = { ...prev, ...patch };
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(
-            LOCAL_BACKUP_KEY,
-            JSON.stringify({ draft: updated, currentStep, completedSteps }),
-          );
-        } catch {}
-      }
-      return updated;
-    });
-  };
+  // Synchronize local storage backup outside render cycle
+  useEffect(() => {
+    if (!initialized || typeof window === "undefined") return;
+    try {
+      localStorage.setItem(
+        LOCAL_BACKUP_KEY,
+        JSON.stringify({ draft, currentStep, completedSteps }),
+      );
+    } catch {}
+  }, [draft, currentStep, completedSteps, initialized]);
 
-  const handleNextStep = (stepNumber: number) => {
-    const nextStep = Math.min(11, stepNumber + 1);
-    const newCompleted = Array.from(new Set([...completedSteps, stepNumber])).sort(
-      (a, b) => a - b,
-    );
-    setCompletedSteps(newCompleted);
-    setCurrentStep(nextStep);
+  // Patch draft in a pure state updater
+  const handleUpdateDraft = useCallback((patch: Record<string, any>) => {
+    setDraft((prev) => ({ ...prev, ...patch }));
+  }, []);
 
-    // Autosave progress to server
-    updateMutation.mutate({
-      currentStep: nextStep,
-      completedStep: stepNumber,
-      draftJson: draft,
-    });
-  };
+  const handleNextStep = useCallback(
+    (stepNumber: number) => {
+      const nextStep = Math.min(11, stepNumber + 1);
+      setCompletedSteps((prevCompleted) => {
+        const newCompleted = Array.from(new Set([...prevCompleted, stepNumber])).sort(
+          (a, b) => a - b,
+        );
+        return newCompleted;
+      });
+      setCurrentStep(nextStep);
 
-  const handleSelectStep = (step: number) => {
-    setCurrentStep(step);
-    updateMutation.mutate({
-      currentStep: step,
-      draftJson: draft,
-    });
-  };
+      // Autosave progress to server
+      updateMutation.mutate({
+        currentStep: nextStep,
+        completedStep: stepNumber,
+        draftJson: draft,
+      });
+    },
+    [draft, updateMutation],
+  );
+
+  const handleSelectStep = useCallback(
+    (step: number) => {
+      setCurrentStep(step);
+      updateMutation.mutate({
+        currentStep: step,
+        draftJson: draft,
+      });
+    },
+    [draft, updateMutation],
+  );
 
   const handleFinish = async () => {
     try {

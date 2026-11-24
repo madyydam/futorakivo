@@ -1,5 +1,6 @@
 ﻿import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSIONS,
@@ -95,7 +96,17 @@ async function main() {
     'Creating demo owner user (login: owner@demo.local / password: Password123!)...',
   );
   const passwordHash = await bcrypt.hash('Password123!', 12);
-  const pinHash = await bcrypt.hash('1234', 12);
+  const demoPin = '1234';
+  const pinHash = await bcrypt.hash(demoPin, 12);
+  const pepperV1 =
+    process.env.SERVER_PEPPER_V1 ??
+    'kivoko-default-secret-pepper-change-in-production-v1-min32bytes';
+  const pinLookup = crypto
+    .createHmac('sha256', pepperV1)
+    .update(
+      `${restaurant.id.length}:${restaurant.id}:${demoPin.length}:${demoPin}`,
+    )
+    .digest('hex');
   const ownerRoleId = roleByName.get('OWNER')!;
 
   const owner = await prisma.user.upsert({
@@ -113,8 +124,16 @@ async function main() {
       email: 'owner@demo.local',
       passwordHash,
       pinHash,
+      pinLookup,
+      pepperKeyId: 'v1',
     },
   });
+  if (!owner.pinLookup) {
+    await prisma.user.update({
+      where: { id: owner.id },
+      data: { pinLookup, pepperKeyId: 'v1' },
+    });
+  }
 
   await prisma.userBranch.upsert({
     where: { userId_branchId: { userId: owner.id, branchId: branch.id } },

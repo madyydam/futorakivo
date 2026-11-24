@@ -1,15 +1,18 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import type {
-  CreateStaffDto,
-  DepartmentDto,
-  SetPermissionOverridesDto,
-  UpdateStaffDto,
+import {
+  permissionSatisfied,
+  type CreateStaffDto,
+  type DepartmentDto,
+  type SessionUser,
+  type SetPermissionOverridesDto,
+  type UpdateStaffDto,
 } from '@futora/types';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -62,14 +65,21 @@ export class UsersService {
     });
   }
 
-  async create(restaurantId: string, actorId: string, dto: CreateStaffDto) {
-    await this.assertRoleInRestaurant(restaurantId, dto.roleId);
-    await this.assertBranchesInRestaurant(restaurantId, dto.branchIds);
+  async create(restaurantId: string, actor: SessionUser, dto: CreateStaffDto) {
+    const targetRole = await this.assertRoleInRestaurant(
+      restaurantId,
+      dto.roleId,
+    );
+    this.assertRoleAssignableByActor(actor, targetRole);
+    const uniqueBranchIds = [...new Set(dto.branchIds)];
+    await this.assertBranchesInRestaurant(restaurantId, uniqueBranchIds);
     await this.assertDepartmentInRestaurant(restaurantId, dto.departmentId);
 
-    if (dto.email) {
+    const normalizedEmail = dto.email ? dto.email.trim().toLowerCase() : undefined;
+    if (normalizedEmail) {
       const existing = await this.prisma.user.findFirst({
-        where: { restaurantId, email: dto.email },
+        where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+        select: { id: true },
       });
       if (existing) {
         throw new ConflictException(
@@ -83,20 +93,20 @@ export class UsersService {
       data: {
         restaurantId,
         name: dto.name,
-        email: dto.email,
+        email: normalizedEmail,
         phone: dto.phone,
         roleId: dto.roleId,
         departmentId: dto.departmentId ?? undefined,
         passwordHash,
         branches: {
-          create: dto.branchIds.map((branchId) => ({ branchId })),
+          create: uniqueBranchIds.map((branchId) => ({ branchId })),
         },
       },
       select: SELECT,
     });
 
     await this.audit.record({
-      userId: actorId,
+      userId: actor.id,
       action: 'staff.created',
       entity: 'User',
       entityId: user.id,
@@ -108,16 +118,33 @@ export class UsersService {
 
   async update(
     restaurantId: string,
-    actorId: string,
+    actor: SessionUser,
     id: string,
     dto: UpdateStaffDto,
   ) {
     const existing = await this.prisma.user.findFirst({
       where: { id, restaurantId },
-      include: { role: true },
+      include: {
+        role: {
+          include: {
+            permissions: { include: { permission: { select: { key: true } } } },
+          },
+        },
+      },
     });
     if (!existing) {
       throw new NotFoundException('Staff account not found');
+    }
+
+    this.assertRoleAssignableByActor(actor, existing.role);
+
+    if (id === actor.id) {
+      if (dto.roleId && dto.roleId !== existing.roleId) {
+        throw new BadRequestException('You cannot change your own role');
+      }
+      if (dto.isActive === false) {
+        throw new BadRequestException('You cannot deactivate your own account');
+      }
     }
 
     if (
@@ -140,10 +167,35 @@ export class UsersService {
     }
 
     if (dto.roleId) {
-      await this.assertRoleInRestaurant(restaurantId, dto.roleId);
+      const nextRole = await this.assertRoleInRestaurant(
+        restaurantId,
+        dto.roleId,
+      );
+      this.assertRoleAssignableByActor(actor, nextRole);
     }
-    if (dto.branchIds) {
-      await this.assertBranchesInRestaurant(restaurantId, dto.branchIds);
+
+    const normalizedEmail =
+      dto.email !== undefined ? dto.email.trim().toLowerCase() : undefined;
+    if (normalizedEmail) {
+      const emailConflict = await this.prisma.user.findFirst({
+        where: {
+          email: { equals: normalizedEmail, mode: 'insensitive' },
+          id: { not: id },
+        },
+        select: { id: true },
+      });
+      if (emailConflict) {
+        throw new ConflictException(
+          'A staff account with this email already exists',
+        );
+      }
+    }
+
+    const uniqueBranchIds = dto.branchIds
+      ? [...new Set(dto.branchIds)]
+      : undefined;
+    if (uniqueBranchIds) {
+      await this.assertBranchesInRestaurant(restaurantId, uniqueBranchIds);
     }
     await this.assertDepartmentInRestaurant(restaurantId, dto.departmentId);
 
@@ -151,26 +203,30 @@ export class UsersService {
       ? await bcrypt.hash(dto.password, 12)
       : undefined;
 
-    const roleOrStatusChanged =
-      (dto.roleId && dto.roleId !== existing.roleId) ||
-      (dto.isActive !== undefined && dto.isActive !== existing.isActive);
+    const securityOrScopeChanged =
+      (dto.roleId !== undefined && dto.roleId !== existing.roleId) ||
+      (dto.isActive !== undefined && dto.isActive !== existing.isActive) ||
+      Boolean(dto.password) ||
+      Boolean(uniqueBranchIds);
 
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
         name: dto.name,
-        email: dto.email,
+        email: normalizedEmail,
         phone: dto.phone,
         roleId: dto.roleId,
         departmentId: dto.departmentId,
         isActive: dto.isActive,
         passwordHash,
-        ...(roleOrStatusChanged ? { permissionsVersion: { increment: 1 } } : {}),
-        ...(dto.branchIds
+        ...(securityOrScopeChanged
+          ? { permissionsVersion: { increment: 1 } }
+          : {}),
+        ...(uniqueBranchIds
           ? {
               branches: {
                 deleteMany: {},
-                create: dto.branchIds.map((branchId) => ({ branchId })),
+                create: uniqueBranchIds.map((branchId) => ({ branchId })),
               },
             }
           : {}),
@@ -178,7 +234,7 @@ export class UsersService {
       select: SELECT,
     });
 
-    if (roleOrStatusChanged && this.cache) {
+    if (securityOrScopeChanged && this.cache) {
       this.cache.invalidateUser(id);
     }
 
@@ -187,17 +243,17 @@ export class UsersService {
     // flag, not the value, so a password rotation is still visible in the
     // trail without the audit log becoming a secondary place secrets leak.
     await this.audit.record({
-      userId: actorId,
+      userId: actor.id,
       action: 'staff.updated',
       entity: 'User',
       entityId: id,
       metadata: {
         name: dto.name,
-        email: dto.email,
+        email: normalizedEmail,
         phone: dto.phone,
         roleId: dto.roleId,
         isActive: dto.isActive,
-        branchIds: dto.branchIds,
+        branchIds: uniqueBranchIds,
         passwordChanged: Boolean(dto.password),
       },
     });
@@ -205,18 +261,26 @@ export class UsersService {
     return updated;
   }
 
-  async remove(restaurantId: string, actorId: string, id: string) {
-    if (id === actorId) {
+  async remove(restaurantId: string, actor: SessionUser, id: string) {
+    if (id === actor.id) {
       throw new BadRequestException('You cannot delete your own account');
     }
 
     const existing = await this.prisma.user.findFirst({
       where: { id, restaurantId },
-      include: { role: true },
+      include: {
+        role: {
+          include: {
+            permissions: { include: { permission: { select: { key: true } } } },
+          },
+        },
+      },
     });
     if (!existing) {
       throw new NotFoundException('Staff account not found');
     }
+
+    this.assertRoleAssignableByActor(actor, existing.role);
 
     if (existing.role.name === 'OWNER') {
       const otherActiveOwners = await this.prisma.user.count({
@@ -254,7 +318,7 @@ export class UsersService {
     }
 
     await this.audit.record({
-      userId: actorId,
+      userId: actor.id,
       action: 'staff.deleted',
       entity: 'User',
       entityId: id,
@@ -368,7 +432,7 @@ export class UsersService {
    */
   async setPermissionOverrides(
     restaurantId: string,
-    actor: { id: string; permissions: string[] },
+    actor: SessionUser,
     targetId: string,
     dto: SetPermissionOverridesDto,
   ) {
@@ -379,7 +443,13 @@ export class UsersService {
     }
     const target = await this.prisma.user.findFirst({
       where: { id: targetId, restaurantId },
-      include: { role: true },
+      include: {
+        role: {
+          include: {
+            permissions: { include: { permission: { select: { key: true } } } },
+          },
+        },
+      },
     });
     if (!target) throw new NotFoundException('Staff account not found');
     if (target.role.name === 'OWNER') {
@@ -387,6 +457,7 @@ export class UsersService {
         'The owner role cannot have permission overrides',
       );
     }
+    this.assertRoleAssignableByActor(actor, target.role);
 
     const keys = dto.overrides.map((o) => o.permissionKey);
     if (new Set(keys).size !== keys.length) {
@@ -403,7 +474,7 @@ export class UsersService {
       }
       if (
         o.effect === 'GRANT' &&
-        !actor.permissions.includes(o.permissionKey)
+        !permissionSatisfied(actor.permissions, o.permissionKey)
       ) {
         throw new BadRequestException(
           `You cannot grant "${o.permissionKey}" because you do not hold it yourself`,
@@ -457,6 +528,32 @@ export class UsersService {
     });
   }
 
+  private assertRoleAssignableByActor(
+    actor: SessionUser,
+    role: {
+      name: string;
+      permissions?: { permission: { key: string } }[];
+    },
+  ) {
+    if (
+      (role.name === 'OWNER' || role.name === 'ADMINISTRATOR') &&
+      actor.roleName !== 'OWNER'
+    ) {
+      throw new ForbiddenException(
+        `Only an Owner can assign or manage the ${role.name} role`,
+      );
+    }
+    const roleKeys = (role.permissions ?? []).map((rp) => rp.permission.key);
+    const missing = roleKeys.filter(
+      (k) => !permissionSatisfied(actor.permissions, k),
+    );
+    if (missing.length > 0) {
+      throw new ForbiddenException(
+        `Cannot manage a role holding permissions you lack: ${missing.join(', ')}`,
+      );
+    }
+  }
+
   private async assertDepartmentInRestaurant(
     restaurantId: string,
     departmentId: string | null | undefined,
@@ -472,20 +569,25 @@ export class UsersService {
   private async assertRoleInRestaurant(restaurantId: string, roleId: string) {
     const role = await this.prisma.role.findFirst({
       where: { id: roleId, restaurantId },
+      include: {
+        permissions: { include: { permission: { select: { key: true } } } },
+      },
     });
     if (!role) {
       throw new BadRequestException('Role not found for this restaurant');
     }
+    return role;
   }
 
   private async assertBranchesInRestaurant(
     restaurantId: string,
     branchIds: string[],
   ) {
+    const uniqueBranchIds = [...new Set(branchIds)];
     const count = await this.prisma.branch.count({
-      where: { id: { in: branchIds }, restaurantId },
+      where: { id: { in: uniqueBranchIds }, restaurantId },
     });
-    if (count !== branchIds.length) {
+    if (count !== uniqueBranchIds.length) {
       throw new BadRequestException('One or more branches are invalid');
     }
   }

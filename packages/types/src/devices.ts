@@ -11,7 +11,7 @@ export type CreatePairingCodeDto = z.infer<typeof createPairingCodeSchema>;
 export const pairDeviceSchema = z.object({
   code: z.string().trim().min(4).max(12),
   label: z.string().trim().min(1).max(100),
-  userAgent: z.string().optional(),
+  userAgent: z.string().max(500).optional(),
 });
 export type PairDeviceDto = z.infer<typeof pairDeviceSchema>;
 

@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
+  deleteAccountSchema,
   devicePinLoginSchema,
   loginSchema,
   pinLoginSchema,
@@ -21,6 +22,7 @@ import {
   twoFactorCodeSchema,
   twoFactorDisableSchema,
   updateStaffPinSchema,
+  type DeleteAccountDto,
   type DevicePinLoginDto,
   type SessionUser,
   type UpdateStaffPinDto,
@@ -126,19 +128,20 @@ export class AuthController {
     @CurrentUser() user: SessionUser,
     @Body() body: UpdateStaffPinDto,
   ) {
-    return this.authService.updateStaffPin(user.restaurantId, user.id, body);
+    return this.authService.updateStaffPin(user.restaurantId, user, body);
   }
 
   // Delete my own account; asks for the password again.
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Delete('me')
+  @UsePipes(new ZodValidationPipe(deleteAccountSchema))
   async deleteMe(
     @CurrentUser() user: SessionUser,
-    @Body() body: { password?: string },
+    @Body() body: DeleteAccountDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.authService.deleteOwnAccount(user.id, String(body?.password ?? ''));
+    await this.authService.deleteOwnAccount(user.id, body.password);
     res.clearCookie(SESSION_COOKIE, {
       httpOnly: true,
       sameSite: 'lax',
@@ -163,6 +166,7 @@ export class AuthController {
     return this.twoFactor.status(user.id);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseGuards(JwtAuthGuard)
   @Post('2fa/setup')
   twoFactorSetup(@CurrentUser() user: SessionUser) {
@@ -192,13 +196,14 @@ export class AuthController {
   }
 
   // An owner/admin unlocks a staff member who lost their authenticator.
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Auth('users.manage')
   @Post('2fa/reset/:userId')
   twoFactorReset(
     @CurrentUser() user: SessionUser,
     @Param('userId') userId: string,
   ) {
-    return this.twoFactor.adminReset(user.id, user.restaurantId, userId);
+    return this.twoFactor.adminReset(user, user.restaurantId, userId);
   }
 
   @UseGuards(JwtAuthGuard)

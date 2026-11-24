@@ -76,10 +76,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Session no longer valid');
     }
 
-    if (user.restaurant?.status === 'SUSPENDED' && !payload.isImpersonating) {
-      throw new UnauthorizedException(
-        'This restaurant account has been suspended by Super Admin.',
-      );
+    const r = user.restaurant;
+    if (r) {
+      if (r.status === 'SUSPENDED' && !payload.isImpersonating) {
+        throw new UnauthorizedException(
+          'This restaurant account has been suspended by Super Admin.',
+        );
+      }
+      if (r.status === 'PENDING_APPROVAL') {
+        throw new UnauthorizedException(
+          'Your restaurant registration is currently pending Super Admin approval. Please wait for approval.',
+        );
+      }
+      if (r.status === 'APPROVED' && !r.isActivated) {
+        throw new UnauthorizedException(
+          'Your restaurant has been approved! Please enter your 12-digit activation code on the activation page to start your subscription.',
+        );
+      }
+      if (
+        r.subscriptionExpiresAt &&
+        r.subscriptionExpiresAt < new Date() &&
+        r.status === 'ACTIVE'
+      ) {
+        throw new UnauthorizedException(
+          'Your subscription has expired. Please contact Super Admin to renew your license.',
+        );
+      }
     }
 
     if (

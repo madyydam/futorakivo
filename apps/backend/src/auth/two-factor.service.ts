@@ -1,11 +1,15 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { permissionSatisfied, type SessionUser } from '@futora/types';
 import * as bcrypt from 'bcrypt';
 import { AuditService } from '../audit/audit.service';
+import { PermissionsCacheService } from '../permissions/permissions-cache.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   generateRecoveryCode,
@@ -19,6 +23,7 @@ import {
 const MAX_FAILURES = 5;
 const LOCK_MS = 15 * 60_000;
 const RECOVERY_CODES = 8;
+const MAX_FAILURE_ENTRIES = 5_000;
 
 interface TwoFactorUser {
   id: string;
@@ -42,13 +47,12 @@ export class TwoFactorService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly audit: AuditService,
+    @Optional() private readonly cache?: PermissionsCacheService,
   ) {}
 
   private get keyMaterial() {
-    return (
-      this.config.get<string>('TWO_FACTOR_KEY') ??
-      this.config.getOrThrow<string>('JWT_SECRET')
-    );
+    const k = this.config.get<string>('TWO_FACTOR_KEY')?.trim();
+    return k ? k : this.config.getOrThrow<string>('JWT_SECRET');
   }
 
   private assertNotLocked(userId: string) {
@@ -60,11 +64,21 @@ export class TwoFactorService {
   }
 
   private fail(userId: string): never {
+    const now = Date.now();
+    if (this.failures.size >= MAX_FAILURE_ENTRIES && !this.failures.has(userId)) {
+      for (const [k, v] of this.failures) {
+        if (now >= v.until) this.failures.delete(k);
+      }
+      if (this.failures.size >= MAX_FAILURE_ENTRIES) {
+        const oldest = this.failures.keys().next().value;
+        if (oldest !== undefined) this.failures.delete(oldest);
+      }
+    }
     const f = this.failures.get(userId);
-    const fresh = !f || Date.now() >= f.until;
+    const fresh = !f || now >= f.until;
     this.failures.set(userId, {
       count: fresh ? 1 : f.count + 1,
-      until: Date.now() + LOCK_MS,
+      until: now + LOCK_MS,
     });
     throw new UnauthorizedException('Invalid verification code');
   }
@@ -119,20 +133,33 @@ export class TwoFactorService {
 
   private async consumeRecoveryCode(user: TwoFactorUser, input: string) {
     const normalised = input.toUpperCase().replace(/[\s-]/g, '');
-    for (const hash of user.twoFactorRecoveryHashes) {
-      if (await bcrypt.compare(normalised, hash)) {
-        const { count } = await this.prisma.user.updateMany({
-          where: { id: user.id, twoFactorRecoveryHashes: { has: hash } },
-          data: {
-            twoFactorRecoveryHashes: user.twoFactorRecoveryHashes.filter(
-              (h) => h !== hash,
-            ),
-          },
-        });
-        return count === 1;
+    const performConsume = async (tx: any): Promise<boolean> => {
+      const fresh = tx.user.findUnique
+        ? await tx.user.findUnique({
+            where: { id: user.id },
+            select: { twoFactorRecoveryHashes: true },
+          })
+        : null;
+      const hashes: string[] =
+        fresh?.twoFactorRecoveryHashes ?? user.twoFactorRecoveryHashes;
+
+      for (const hash of hashes) {
+        if (await bcrypt.compare(normalised, hash)) {
+          const { count } = await tx.user.updateMany({
+            where: { id: user.id, twoFactorRecoveryHashes: { has: hash } },
+            data: {
+              twoFactorRecoveryHashes: hashes.filter((h) => h !== hash),
+            },
+          });
+          return count === 1;
+        }
       }
-    }
-    return false;
+      return false;
+    };
+
+    return this.prisma.$transaction
+      ? this.prisma.$transaction(performConsume)
+      : performConsume(this.prisma);
   }
 
   async status(userId: string) {
@@ -180,24 +207,32 @@ export class TwoFactorService {
       throw new BadRequestException('Two-factor authentication is already on');
     if (!u.twoFactorSecret) throw new BadRequestException('Start setup first');
     this.assertNotLocked(userId);
-    const step = verifyTotp(
-      openSecret(u.twoFactorSecret, this.keyMaterial),
-      code,
-    );
+    let plain: string;
+    try {
+      plain = openSecret(u.twoFactorSecret, this.keyMaterial);
+    } catch {
+      throw new BadRequestException(
+        'Two-factor setup secret is invalid; please restart setup',
+      );
+    }
+    const step = verifyTotp(plain, code);
     if (step == null) this.fail(userId);
 
     const codes = Array.from({ length: RECOVERY_CODES }, generateRecoveryCode);
     const hashes = await Promise.all(
       codes.map((c) => bcrypt.hash(c.replace(/-/g, ''), 10)),
     );
-    await this.prisma.user.update({
-      where: { id: userId },
+    const { count } = await this.prisma.user.updateMany({
+      where: { id: userId, twoFactorEnabled: false },
       data: {
         twoFactorEnabled: true,
         twoFactorLastStep: step,
         twoFactorRecoveryHashes: hashes,
       },
     });
+    if (count !== 1) {
+      throw new BadRequestException('Two-factor authentication is already on');
+    }
     this.failures.delete(userId);
     await this.audit.record({
       userId,
@@ -218,7 +253,7 @@ export class TwoFactorService {
     if (!(await bcrypt.compare(password, u.passwordHash)))
       throw new UnauthorizedException('Incorrect password');
     await this.verifyLogin(u, code);
-    await this.clear(userId);
+    await this.clear(userId, false);
     await this.audit.record({
       userId,
       action: '2fa.disabled',
@@ -230,18 +265,47 @@ export class TwoFactorService {
 
   /** Lets an owner/admin unlock a staff member who lost their device. */
   async adminReset(
-    actorId: string,
+    actor: SessionUser,
     restaurantId: string,
     targetUserId: string,
   ) {
     const target = await this.prisma.user.findFirst({
       where: { id: targetUserId, restaurantId },
-      select: { id: true },
+      select: {
+        id: true,
+        role: {
+          select: {
+            name: true,
+            permissions: {
+              select: { permission: { select: { key: true } } },
+            },
+          },
+        },
+      },
     });
     if (!target) throw new BadRequestException('Staff member not found');
-    await this.clear(targetUserId);
+
+    if (
+      (target.role.name === 'OWNER' || target.role.name === 'ADMINISTRATOR') &&
+      actor.roleName !== 'OWNER'
+    ) {
+      throw new ForbiddenException(
+        `Only an Owner can reset two-factor authentication for ${target.role.name}`,
+      );
+    }
+    const targetKeys = target.role.permissions.map((p) => p.permission.key);
+    const missing = targetKeys.filter(
+      (k) => !permissionSatisfied(actor.permissions, k),
+    );
+    if (missing.length > 0) {
+      throw new ForbiddenException(
+        `Cannot reset two-factor authentication for a user holding permissions you lack: ${missing.join(', ')}`,
+      );
+    }
+
+    await this.clear(targetUserId, true);
     await this.audit.record({
-      userId: actorId,
+      userId: actor.id,
       action: '2fa.reset',
       entity: 'User',
       entityId: targetUserId,
@@ -249,7 +313,7 @@ export class TwoFactorService {
     return { ok: true };
   }
 
-  private async clear(userId: string) {
+  private async clear(userId: string, bumpSession: boolean) {
     this.failures.delete(userId);
     await this.prisma.user.update({
       where: { id: userId },
@@ -258,7 +322,11 @@ export class TwoFactorService {
         twoFactorSecret: null,
         twoFactorLastStep: null,
         twoFactorRecoveryHashes: [],
+        ...(bumpSession ? { permissionsVersion: { increment: 1 } } : {}),
       },
     });
+    if (bumpSession && this.cache) {
+      this.cache.invalidateUser(userId);
+    }
   }
 }

@@ -94,7 +94,7 @@ describe('PermissionsCacheService & PermissionsGuard version invalidation', () =
       expect(cached?.version).toBe(1);
     });
 
-    it('should reject when user permissionsVersion does not match cached version', () => {
+    it('should reject when user permissionsVersion is older than cached version', () => {
       // Simulate cache has version 2 (updated by admin)
       cache.set('u-1', 2, ['menu.view', 'pos.access']);
 
@@ -107,6 +107,24 @@ describe('PermissionsCacheService & PermissionsGuard version invalidation', () =
       const ctx = mockContext(staleUser, ['menu.view']);
 
       expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
+    });
+
+    it('should refresh stale cache and allow access when DB-backed user has newer permissionsVersion', () => {
+      // Simulate stale cache holding version 1 (e.g. multi-worker or external bump)
+      cache.set('u-1', 1, ['menu.view']);
+
+      // User re-authenticated and JwtStrategy resolved DB version 2
+      const freshUser = {
+        id: 'u-1',
+        permissionsVersion: 2,
+        permissions: ['menu.view', 'orders.accept'],
+      };
+      const ctx = mockContext(freshUser, ['orders.accept']);
+
+      expect(guard.canActivate(ctx)).toBe(true);
+      const updatedCache = cache.get('u-1');
+      expect(updatedCache?.version).toBe(2);
+      expect(updatedCache?.permissions).toEqual(['menu.view', 'orders.accept']);
     });
 
     it('should reject when missing required permission', () => {

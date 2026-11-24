@@ -12,6 +12,7 @@ import { DeviceStatus, Prisma } from '@prisma/client';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSIONS,
+  permissionSatisfied,
   STAFF_ROLES,
   type LoginDto,
   type PinLoginDto,
@@ -20,6 +21,7 @@ import {
   type UpdateStaffPinDto,
 } from '@futora/types';
 import * as bcrypt from 'bcrypt';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TwoFactorService } from './two-factor.service';
 import { PinHasherService } from './pin-hasher.service';
@@ -31,8 +33,17 @@ import {
   type PermissionSource,
 } from './effective-permissions';
 
+const PIN_MAX_FAILURES = 5;
+const PIN_LOCK_MS = 15 * 60_000;
+const PIN_MAX_TRACKED_USERS = 5_000;
+
 @Injectable()
 export class AuthService {
+  private readonly pinFailures = new Map<
+    string,
+    { count: number; until: number }
+  >();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -40,6 +51,7 @@ export class AuthService {
     private readonly pinHasher: PinHasherService,
     private readonly devices: DevicesService,
     @Optional() private readonly cache?: PermissionsCacheService,
+    @Optional() private readonly audit?: AuditService,
   ) {}
 
   private toSessionUser(user: {
@@ -108,6 +120,9 @@ export class AuthService {
           phone: null,
           passwordHash: scrambled,
           pinHash: null,
+          pinLookup: null,
+          pepperKeyId: null,
+          permissionsVersion: { increment: 1 },
           isActive: false,
           riderOnline: false,
           riderLat: null,
@@ -120,7 +135,52 @@ export class AuthService {
         },
       }),
     ]);
+    this.cache?.invalidateUser(userId);
+    await this.audit?.record({
+      userId,
+      action: 'user.self_deleted',
+      entity: 'User',
+      entityId: userId,
+      metadata: { restaurantId: user.restaurantId },
+    });
     return { ok: true };
+  }
+
+  private assertRestaurantActive(
+    restaurant:
+      | {
+          status: string;
+          isActivated?: boolean;
+          subscriptionExpiresAt?: Date | null;
+        }
+      | null
+      | undefined,
+  ) {
+    if (!restaurant) return;
+    if (restaurant.status === 'SUSPENDED') {
+      throw new UnauthorizedException(
+        'This restaurant account has been suspended by Super Admin.',
+      );
+    }
+    if (restaurant.status === 'PENDING_APPROVAL') {
+      throw new UnauthorizedException(
+        'Your restaurant registration is currently pending Super Admin approval. Please wait for approval.',
+      );
+    }
+    if (restaurant.status === 'APPROVED' && !restaurant.isActivated) {
+      throw new UnauthorizedException(
+        'Your restaurant has been approved! Please enter your 12-digit activation code on the activation page to start your subscription.',
+      );
+    }
+    if (
+      restaurant.subscriptionExpiresAt &&
+      restaurant.subscriptionExpiresAt < new Date() &&
+      restaurant.status === 'ACTIVE'
+    ) {
+      throw new UnauthorizedException(
+        'Your subscription has expired. Please contact Super Admin to renew your license.',
+      );
+    }
   }
 
   async login(dto: LoginDto) {
@@ -130,20 +190,27 @@ export class AuthService {
     // An email address, or a phone number as the login ID (delivery riders).
     // Every failure gives the same message so nothing reveals which IDs exist.
     if (id.includes('@')) {
-      const u = await this.prisma.user.findFirst({
-        where: { email: id, isActive: true },
+      const normalizedEmail = id.toLowerCase();
+      const candidates = await this.prisma.user.findMany({
+        where: {
+          email: { equals: normalizedEmail, mode: 'insensitive' },
+          isActive: true,
+        },
         include,
+        take: 10,
       });
-      if (u && (await bcrypt.compare(dto.password, u.passwordHash))) user = u;
+      for (const u of candidates) {
+        if (await bcrypt.compare(dto.password, u.passwordHash)) {
+          user = u;
+          break;
+        }
+      }
     } else {
       user = await this.findLoginCandidate(id, dto.password);
     }
     if (!user) {
-      // Spend comparable time when the ID is unknown, so timing does not reveal it.
-      await bcrypt.compare(
-        dto.password,
-        '$2b$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidi',
-      );
+      // Spend comparable cost-12 time when the ID is unknown, so timing does not reveal it.
+      await this.pinHasher.verifyPin(dto.password, null);
       throw new UnauthorizedException('Invalid login ID or password');
     }
 
@@ -152,30 +219,7 @@ export class AuthService {
         where: { id: user.restaurantId },
         select: { status: true, isActivated: true, subscriptionExpiresAt: true },
       });
-      if (restaurant?.status === 'SUSPENDED') {
-        throw new UnauthorizedException(
-          'This restaurant account has been suspended by Super Admin.',
-        );
-      }
-      if (restaurant?.status === 'PENDING_APPROVAL') {
-        throw new UnauthorizedException(
-          'Your restaurant registration is currently pending Super Admin approval. Please wait for approval.',
-        );
-      }
-      if (restaurant?.status === 'APPROVED' && !restaurant.isActivated) {
-        throw new UnauthorizedException(
-          'Your restaurant has been approved! Please enter your 12-digit activation code on the activation page to start your subscription.',
-        );
-      }
-      if (
-        restaurant?.subscriptionExpiresAt &&
-        restaurant.subscriptionExpiresAt < new Date() &&
-        restaurant.status === 'ACTIVE'
-      ) {
-        throw new UnauthorizedException(
-          'Your subscription has expired. Please contact Super Admin to renew your license.',
-        );
-      }
+      this.assertRestaurantActive(restaurant);
     }
 
     // Only asked for after the password is right, so the response never
@@ -214,8 +258,9 @@ export class AuthService {
         'Sign-up is currently disabled on this server.',
       );
     }
+    const normalizedEmail = dto.email.trim().toLowerCase();
     const existing = await this.prisma.user.findFirst({
-      where: { email: dto.email },
+      where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
     });
     if (existing) {
       throw new BadRequestException(
@@ -282,7 +327,7 @@ export class AuthService {
           restaurantId: restaurant.id,
           roleId: ownerRoleId,
           name: dto.ownerName,
-          email: dto.email,
+          email: normalizedEmail,
           passwordHash,
         },
         include: permissionInclude,
@@ -305,26 +350,57 @@ export class AuthService {
     return restaurant !== null;
   }
 
+  private assertPinNotLocked(userId: string) {
+    const f = this.pinFailures.get(userId);
+    if (f && f.count >= PIN_MAX_FAILURES && Date.now() < f.until) {
+      throw new UnauthorizedException(
+        'Too many incorrect PIN attempts. Try again in 15 minutes.',
+      );
+    }
+  }
+
+  private recordPinFailure(userId: string) {
+    const now = Date.now();
+    if (
+      this.pinFailures.size >= PIN_MAX_TRACKED_USERS &&
+      !this.pinFailures.has(userId)
+    ) {
+      for (const [k, v] of this.pinFailures) {
+        if (now >= v.until) this.pinFailures.delete(k);
+      }
+      if (this.pinFailures.size >= PIN_MAX_TRACKED_USERS) {
+        const oldest = this.pinFailures.keys().next().value;
+        if (oldest !== undefined) this.pinFailures.delete(oldest);
+      }
+    }
+    const f = this.pinFailures.get(userId);
+    const fresh = !f || now >= f.until;
+    this.pinFailures.set(userId, {
+      count: fresh ? 1 : f.count + 1,
+      until: now + PIN_LOCK_MS,
+    });
+  }
+
   async pinLogin(dto: PinLoginDto) {
+    this.assertPinNotLocked(dto.userId);
+
     const user = await this.prisma.user.findUnique({
       where: { id: dto.userId },
       include: permissionInclude,
     });
 
     if (!user || !user.isActive || !user.pinHash) {
+      await this.pinHasher.verifyPin(dto.pin, null);
+      this.recordPinFailure(dto.userId);
       throw new UnauthorizedException('PIN login not available for this user');
     }
 
     if (user.restaurantId) {
       const restaurant = await this.prisma.restaurant?.findUnique?.({
         where: { id: user.restaurantId },
-        select: { status: true },
+        select: { status: true, isActivated: true, subscriptionExpiresAt: true },
       });
-      if (restaurant?.status === 'SUSPENDED') {
-        throw new UnauthorizedException(
-          'This restaurant account has been suspended by Super Admin.',
-        );
-      }
+      this.assertRestaurantActive(restaurant);
     }
 
     // A 4-8 digit PIN must not be a way around the second factor.
@@ -334,11 +410,13 @@ export class AuthService {
       );
     }
 
-    const valid = await bcrypt.compare(dto.pin, user.pinHash);
+    const valid = await this.pinHasher.verifyPin(dto.pin, user.pinHash);
     if (!valid) {
+      this.recordPinFailure(dto.userId);
       throw new UnauthorizedException('Incorrect PIN');
     }
 
+    this.pinFailures.delete(dto.userId);
     return this.issueSession(user);
   }
 
@@ -365,13 +443,9 @@ export class AuthService {
       (device as any).restaurant ??
       (await this.prisma.restaurant?.findUnique?.({
         where: { id: device.restaurantId },
-        select: { status: true },
+        select: { status: true, isActivated: true, subscriptionExpiresAt: true },
       }));
-    if (deviceRestaurant?.status === 'SUSPENDED') {
-      throw new UnauthorizedException(
-        'This restaurant account has been suspended by Super Admin.',
-      );
-    }
+    this.assertRestaurantActive(deviceRestaurant);
 
     if (device.lockedUntil && device.lockedUntil > new Date()) {
       const waitMinutes = Math.ceil(
@@ -395,36 +469,56 @@ export class AuthService {
     const isPinValid = await this.pinHasher.verifyPin(pin, user?.pinHash);
 
     if (!isPinValid || !user) {
-      // Record failed attempt
-      await this.prisma.pinAttempt.create({
-        data: {
-          restaurantId: device.restaurantId,
-          deviceId: device.id,
-          ip,
-          success: false,
-        },
-      });
+      const now = new Date();
+      const recordFailure = async (tx: any): Promise<number> => {
+        await tx.pinAttempt.create({
+          data: {
+            restaurantId: device.restaurantId,
+            deviceId: device.id,
+            ip,
+            success: false,
+          },
+        });
 
-      // If existing lockout has expired, reset failedAttempts baseline to 0
-      const currentFailures =
-        device.lockedUntil && device.lockedUntil <= new Date()
-          ? 0
-          : (device.failedAttempts ?? 0);
-      const failedAttempts = currentFailures + 1;
-      let lockedUntil: Date | null = null;
-      if (failedAttempts >= 5) {
-        lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15-minute lockout
-      }
+        if (device.lockedUntil && device.lockedUntil <= now) {
+          const reset = await tx.deviceRegistration.updateMany({
+            where: { id: device.id, lockedUntil: { lte: now } },
+            data: {
+              failedAttempts: 1,
+              lockedUntil: null,
+              lastIp: ip,
+              lastSeenAt: now,
+            },
+          });
+          if (reset.count === 1) {
+            return 1;
+          }
+        }
 
-      await this.prisma.deviceRegistration.update({
-        where: { id: device.id },
-        data: {
-          failedAttempts,
-          lockedUntil,
-          lastIp: ip,
-          lastSeenAt: new Date(),
-        },
-      });
+        const updated = await tx.deviceRegistration.update({
+          where: { id: device.id },
+          data: {
+            failedAttempts: { increment: 1 },
+            lastIp: ip,
+            lastSeenAt: now,
+          },
+          select: { failedAttempts: true },
+        });
+        const nextCount = updated?.failedAttempts ?? (device.failedAttempts ?? 0) + 1;
+        if (nextCount >= 5) {
+          await tx.deviceRegistration.update({
+            where: { id: device.id },
+            data: {
+              lockedUntil: new Date(Date.now() + 15 * 60 * 1000),
+            },
+          });
+        }
+        return nextCount;
+      };
+
+      const failedAttempts = this.prisma.$transaction
+        ? await this.prisma.$transaction(recordFailure)
+        : await recordFailure(this.prisma);
 
       if (failedAttempts >= 5) {
         throw new UnauthorizedException(
@@ -482,14 +576,41 @@ export class AuthService {
    */
   async updateStaffPin(
     restaurantId: string,
-    actorId: string,
+    actor: SessionUser,
     dto: UpdateStaffPinDto,
   ) {
     const user = await this.prisma.user.findFirst({
       where: { id: dto.staffUserId, restaurantId },
+      include: {
+        role: {
+          include: {
+            permissions: { include: { permission: { select: { key: true } } } },
+          },
+        },
+      },
     });
     if (!user) {
       throw new NotFoundException('Staff member not found');
+    }
+
+    if (
+      (user.role?.name === 'OWNER' || user.role?.name === 'ADMINISTRATOR') &&
+      actor.roleName !== 'OWNER'
+    ) {
+      throw new ForbiddenException(
+        `Only an Owner can update the PIN for ${user.role.name}`,
+      );
+    }
+    const targetKeys = (user.role?.permissions ?? []).map(
+      (rp) => rp.permission.key,
+    );
+    const missing = targetKeys.filter(
+      (k) => !permissionSatisfied(actor.permissions, k),
+    );
+    if (missing.length > 0) {
+      throw new ForbiddenException(
+        `Cannot update PIN for a user holding permissions you lack: ${missing.join(', ')}`,
+      );
     }
 
     const pinLookup = this.pinHasher.computeLookup(restaurantId, dto.newPin);
@@ -525,6 +646,14 @@ export class AuthService {
     if (this.cache) {
       this.cache.invalidateUser(dto.staffUserId);
     }
+
+    await this.audit?.record({
+      userId: actor.id,
+      action: 'staff.pin_updated',
+      entity: 'User',
+      entityId: dto.staffUserId,
+      metadata: { restaurantId },
+    });
 
     return { success: true, message: 'PIN updated successfully' };
   }

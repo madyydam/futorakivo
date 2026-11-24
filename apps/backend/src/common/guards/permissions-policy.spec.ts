@@ -2,10 +2,12 @@
 import { Reflector } from '@nestjs/core';
 import {
   DEFAULT_ROLE_PERMISSIONS,
+  permissionSatisfied,
   STAFF_ROLES,
   type StaffRole,
 } from '@futora/types';
 import { DashboardController } from '../../modules/dashboard/dashboard.controller';
+import { DevicesController } from '../../devices/devices.controller';
 import { MenuController } from '../../modules/menu/menu.controller';
 import { TablesController } from '../../modules/tables/tables.controller';
 import { PermissionsGuard } from './permissions.guard';
@@ -164,5 +166,57 @@ describe('sales reports', () => {
   it('only reference keys that exist in the catalog', () => {
     const keys = new Set<string>(REPORT_CATALOG.map((r) => r.key));
     for (const k of SALES_REPORT_KEYS) expect(keys.has(k)).toBe(true);
+  });
+});
+
+describe('PERMISSION_IMPLIES canonical & legacy symmetry', () => {
+  it('supports wildcards and new implication edges', () => {
+    expect(permissionSatisfied(['*'], 'device.manage')).toBe(true);
+    expect(permissionSatisfied(['all'], 'settings.tax')).toBe(true);
+    expect(permissionSatisfied(['device.manage'], 'device.unlock')).toBe(true);
+    expect(permissionSatisfied(['discounts.unlimited'], 'discount.apply_any')).toBe(true);
+    expect(permissionSatisfied(['discounts.unlimited'], 'discount.apply_small')).toBe(true);
+    expect(permissionSatisfied(['discount.apply_any'], 'discount.apply_small')).toBe(true);
+    expect(permissionSatisfied(['discount.apply_any'], 'discounts.unlimited')).toBe(true);
+    expect(permissionSatisfied(['order.modify_any'], 'order.modify')).toBe(true);
+    expect(permissionSatisfied(['order.modify_any'], 'orders.edit')).toBe(true);
+    expect(permissionSatisfied(['qrorder.manage'], 'qrorder.view')).toBe(true);
+    expect(permissionSatisfied(['menu.manage'], 'menu.view')).toBe(true);
+    expect(permissionSatisfied(['menu.manage'], 'menu.edit')).toBe(true);
+  });
+});
+
+describe('devices RBAC policy', () => {
+  it('RESTAURANT_MANAGER can list and unlock devices, but cannot pair/approve/revoke', () => {
+    expect(allowed('RESTAURANT_MANAGER', DevicesController, 'listDevices')).toBe(true);
+    expect(allowed('RESTAURANT_MANAGER', DevicesController, 'unlockDevice')).toBe(true);
+    expect(allowed('RESTAURANT_MANAGER', DevicesController, 'createPairingCode')).toBe(false);
+    expect(allowed('RESTAURANT_MANAGER', DevicesController, 'approveDevice')).toBe(false);
+    expect(allowed('RESTAURANT_MANAGER', DevicesController, 'revokeDevice')).toBe(false);
+  });
+
+  it('custom role with device.manage can access all device management and unlock routes', () => {
+    for (const m of [
+      'createPairingCode',
+      'listDevices',
+      'approveDevice',
+      'revokeDevice',
+      'unlockDevice',
+    ]) {
+      expect(allowed(['device.manage'], DevicesController, m)).toBe(true);
+    }
+  });
+
+  it('settings.manage alone and WAITER are denied on all device endpoints', () => {
+    for (const m of [
+      'createPairingCode',
+      'listDevices',
+      'approveDevice',
+      'revokeDevice',
+      'unlockDevice',
+    ]) {
+      expect(allowed(['settings.manage'], DevicesController, m)).toBe(false);
+      expect(allowed('WAITER', DevicesController, m)).toBe(false);
+    }
   });
 });

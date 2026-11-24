@@ -39,16 +39,18 @@ export class PermissionsGuard implements CanActivate {
 
     if (this.cache && user.id) {
       const cached = this.cache.get(user.id);
-      if (
-        cached &&
-        user.permissionsVersion !== undefined &&
-        cached.version !== user.permissionsVersion
-      ) {
-        throw new ForbiddenException(
-          'Permissions have been modified. Please re-authenticate.',
-        );
-      }
-      if (!cached && user.permissionsVersion !== undefined) {
+      if (cached && user.permissionsVersion !== undefined) {
+        if (cached.version > user.permissionsVersion) {
+          throw new ForbiddenException(
+            'Permissions have been modified. Please re-authenticate.',
+          );
+        }
+        if (cached.version < user.permissionsVersion) {
+          // JwtStrategy already verified DB freshness; refresh stale cache entry
+          // rather than locking out a freshly re-authenticated user.
+          this.cache.set(user.id, user.permissionsVersion, user.permissions);
+        }
+      } else if (!cached && user.permissionsVersion !== undefined) {
         this.cache.set(user.id, user.permissionsVersion, user.permissions);
       }
     }

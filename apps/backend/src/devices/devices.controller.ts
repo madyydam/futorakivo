@@ -28,8 +28,7 @@ export class DevicesController {
   constructor(private readonly devices: DevicesService) {}
 
   @Post('pairing-code')
-  @Auth('settings.manage')
-  @AuditAction('create_pairing_code', 'device')
+  @Auth('device.manage')
   @UsePipes(new ZodValidationPipe(createPairingCodeSchema))
   createPairingCode(
     @CurrentUser() user: SessionUser,
@@ -50,13 +49,13 @@ export class DevicesController {
   }
 
   @Get()
-  @Auth('settings.manage')
+  @Auth('device.unlock')
   listDevices(@CurrentUser() user: SessionUser) {
     return this.devices.listDevices(user.restaurantId);
   }
 
   @Post(':id/approve')
-  @Auth('settings.manage')
+  @Auth('device.manage')
   @AuditAction('approve', 'device')
   approveDevice(
     @CurrentUser() user: SessionUser,
@@ -66,7 +65,7 @@ export class DevicesController {
   }
 
   @Post(':id/revoke')
-  @Auth('settings.manage')
+  @Auth('device.manage')
   @AuditAction('revoke', 'device')
   revokeDevice(
     @CurrentUser() user: SessionUser,
@@ -76,8 +75,7 @@ export class DevicesController {
   }
 
   @Post(':id/unlock')
-  @Auth('settings.manage')
-  @AuditAction('unlock', 'device')
+  @Auth('device.unlock')
   unlockDevice(
     @CurrentUser() user: SessionUser,
     @Param('id') deviceId: string,

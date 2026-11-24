@@ -10,19 +10,24 @@ export const loginSchema = z.object({
 export type LoginDto = z.infer<typeof loginSchema>;
 
 export const registerSchema = z.object({
-  restaurantName: z.string().min(1),
-  branchName: z.string().min(1).default("Main Branch"),
-  ownerName: z.string().min(1),
-  email: z.string().email(),
-  password: z.string().min(8),
+  restaurantName: z.string().trim().min(1),
+  branchName: z.string().trim().min(1).default("Main Branch"),
+  ownerName: z.string().trim().min(1),
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(8).max(200),
 });
 export type RegisterDto = z.infer<typeof registerSchema>;
 
 export const pinLoginSchema = z.object({
-  userId: z.string(),
-  pin: z.string().min(4).max(8),
+  userId: z.string().min(1),
+  pin: z.string().regex(/^\d{4,8}$/, "PIN must be between 4 and 8 digits"),
 });
 export type PinLoginDto = z.infer<typeof pinLoginSchema>;
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1).max(200),
+});
+export type DeleteAccountDto = z.infer<typeof deleteAccountSchema>;
 
 export const sessionUserSchema = z.object({
   id: z.string(),
@@ -37,6 +42,6 @@ export type SessionUser = z.infer<typeof sessionUserSchema>;
 
 export const twoFactorCodeSchema = z.object({ code: z.string().trim().min(6).max(20) });
 export const twoFactorDisableSchema = z.object({
-  password: z.string().min(1),
+  password: z.string().min(1).max(200),
   code: z.string().trim().min(6).max(20),
 });

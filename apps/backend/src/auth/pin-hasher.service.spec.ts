@@ -46,6 +46,35 @@ describe('PinHasherService', () => {
       const hash2 = service.computeLookup('rest-1', '654321');
       expect(hash1).not.toBe(hash2);
     });
+
+    it('throws on unknown or unconfigured pepper version', () => {
+      expect(() => service.computeLookup('rest-1', '123456', 'v2')).toThrow(
+        /Unknown or unconfigured PIN pepper version/,
+      );
+    });
+
+    it('resolves SERVER_PEPPER_V2 when configured', async () => {
+      const mod = await Test.createTestingModule({
+        providers: [
+          PinHasherService,
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((key: string, defaultVal?: string) =>
+                key === 'SERVER_PEPPER_V2'
+                  ? 'custom-v2-pepper-secret-32-bytes-minimum'
+                  : defaultVal,
+              ),
+            },
+          },
+        ],
+      }).compile();
+      const svcV2 = mod.get<PinHasherService>(PinHasherService);
+      const h1 = svcV2.computeLookup('rest-1', '123456', 'v1');
+      const h2 = svcV2.computeLookup('rest-1', '123456', 'v2');
+      expect(h2).toHaveLength(64);
+      expect(h2).not.toBe(h1);
+    });
   });
 
   describe('hashPin and verifyPin', () => {

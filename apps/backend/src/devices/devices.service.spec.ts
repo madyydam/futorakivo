@@ -3,11 +3,13 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DeviceStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 import { DevicesService } from './devices.service';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('DevicesService', () => {
   let service: DevicesService;
   let prisma: any;
+  let audit: { record: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -27,11 +29,13 @@ describe('DevicesService', () => {
         update: jest.fn(),
       },
     };
+    audit = { record: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DevicesService,
         { provide: PrismaService, useValue: prisma },
+        { provide: AuditService, useValue: audit },
       ],
     }).compile();
 
@@ -62,10 +66,26 @@ describe('DevicesService', () => {
       expect(result.code).toHaveLength(6);
       expect(result.outletId).toBe('branch-1');
       expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now());
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          action: 'create_pairing_code',
+          entity: 'device',
+          entityId: 'code-1',
+          metadata: { outletId: 'branch-1' },
+        }),
+      );
     });
   });
 
   describe('pairDevice', () => {
+    it('rejects codes shorter than 4 alphanumeric characters without querying DB', async () => {
+      await expect(
+        service.pairDevice({ code: '!@#$', label: 'POS Terminal 1' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.devicePairingCode.findFirst).not.toHaveBeenCalled();
+    });
+
     it('throws BadRequestException for invalid or expired code', async () => {
       prisma.devicePairingCode.findFirst.mockResolvedValue(null);
 
@@ -150,24 +170,90 @@ describe('DevicesService', () => {
     });
   });
 
-  describe('revokeDevice', () => {
-    it('marks device as REVOKED and wipes tokenHash', async () => {
-      prisma.deviceRegistration.findFirst.mockResolvedValue({ id: 'dev-1' });
+  describe('approveDevice / revokeDevice / unlockDevice', () => {
+    it('marks device as REVOKED, wipes tokenHash, and excludes tokenHash from select', async () => {
+      prisma.deviceRegistration.findFirst.mockResolvedValue({
+        id: 'dev-1',
+        status: DeviceStatus.APPROVED,
+      });
       prisma.deviceRegistration.update.mockResolvedValue({
         id: 'dev-1',
         status: DeviceStatus.REVOKED,
       });
 
-      await service.revokeDevice('rest-1', 'dev-1', 'admin-1');
+      const res = await service.revokeDevice('rest-1', 'dev-1', 'admin-1');
+      expect(res).not.toHaveProperty('tokenHash');
 
-      expect(prisma.deviceRegistration.update).toHaveBeenCalledWith({
-        where: { id: 'dev-1' },
-        data: expect.objectContaining({
-          status: DeviceStatus.REVOKED,
-          tokenHash: null,
-          revokedBy: 'admin-1',
+      const updateArg = prisma.deviceRegistration.update.mock.calls[0][0];
+      expect(updateArg).toEqual(
+        expect.objectContaining({
+          where: { id: 'dev-1' },
+          data: expect.objectContaining({
+            status: DeviceStatus.REVOKED,
+            tokenHash: null,
+            revokedBy: 'admin-1',
+          }),
         }),
+      );
+      expect(updateArg.select).toBeDefined();
+      expect(updateArg.select.tokenHash).toBeUndefined();
+    });
+
+    it('rejects re-approving a REVOKED device', async () => {
+      prisma.deviceRegistration.findFirst.mockResolvedValue({
+        id: 'dev-1',
+        status: DeviceStatus.REVOKED,
       });
+
+      await expect(
+        service.approveDevice('rest-1', 'dev-1', 'admin-1'),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.deviceRegistration.update).not.toHaveBeenCalled();
+    });
+
+    it('approves PENDING device without returning tokenHash', async () => {
+      prisma.deviceRegistration.findFirst.mockResolvedValue({
+        id: 'dev-1',
+        status: DeviceStatus.PENDING,
+      });
+      prisma.deviceRegistration.update.mockResolvedValue({
+        id: 'dev-1',
+        status: DeviceStatus.APPROVED,
+      });
+
+      const res = await service.approveDevice('rest-1', 'dev-1', 'admin-1');
+      expect(res).not.toHaveProperty('tokenHash');
+      const updateArg = prisma.deviceRegistration.update.mock.calls[0][0];
+      expect(updateArg.select).toBeDefined();
+      expect(updateArg.select.tokenHash).toBeUndefined();
+    });
+
+    it('unlocks device, excludes tokenHash, and records audit with outletId', async () => {
+      prisma.deviceRegistration.findFirst.mockResolvedValue({
+        id: 'dev-1',
+        outletId: 'branch-1',
+      });
+      prisma.deviceRegistration.update.mockResolvedValue({
+        id: 'dev-1',
+        outletId: 'branch-1',
+        failedAttempts: 0,
+        lockedUntil: null,
+      });
+
+      const res = await service.unlockDevice('rest-1', 'dev-1', 'mgr-1');
+      expect(res).not.toHaveProperty('tokenHash');
+      const updateArg = prisma.deviceRegistration.update.mock.calls[0][0];
+      expect(updateArg.select).toBeDefined();
+      expect(updateArg.select.tokenHash).toBeUndefined();
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'mgr-1',
+          action: 'unlock',
+          entity: 'device',
+          entityId: 'dev-1',
+          metadata: { outletId: 'branch-1' },
+        }),
+      );
     });
   });
 });

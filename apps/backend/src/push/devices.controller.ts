@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -51,6 +61,9 @@ export class DevicesController {
   @UseGuards(JwtAuthGuard)
   @Delete('devices/:token')
   async unregister(@CurrentUser() user: { id: string }, @Param('token') token: string) {
+    if (!token || token.length < 20 || token.length > 4096) {
+      throw new BadRequestException('Invalid push device token');
+    }
     await this.prisma.deviceToken.deleteMany({ where: { token, userId: user.id } });
     return { ok: true };
   }

@@ -2,11 +2,32 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { DeviceStatus } from '@prisma/client';
 import type { PairDeviceDto } from '@futora/types';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+
+const DEVICE_PUBLIC_SELECT = {
+  id: true,
+  restaurantId: true,
+  outletId: true,
+  outlet: { select: { id: true, name: true } },
+  label: true,
+  status: true,
+  userAgent: true,
+  lastSeenAt: true,
+  lastIp: true,
+  approvedBy: true,
+  approvedAt: true,
+  revokedBy: true,
+  revokedAt: true,
+  failedAttempts: true,
+  lockedUntil: true,
+  createdAt: true,
+} as const;
 
 export interface PairedDeviceResult {
   deviceId: string;
@@ -19,7 +40,10 @@ export interface PairedDeviceResult {
 
 @Injectable()
 export class DevicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly audit?: AuditService,
+  ) {}
 
   /**
    * Generates a 6-character random pairing code valid for 10 minutes.
@@ -58,6 +82,14 @@ export class DevicesService {
       }
     }
 
+    await this.audit?.record({
+      userId: createdBy,
+      action: 'create_pairing_code',
+      entity: 'device',
+      entityId: pairingCode.id,
+      metadata: { outletId: pairingCode.outletId },
+    });
+
     return {
       code: pairingCode.code,
       expiresAt: pairingCode.expiresAt,
@@ -73,6 +105,9 @@ export class DevicesService {
     ip = '127.0.0.1',
   ): Promise<PairedDeviceResult> {
     const sanitizedCode = dto.code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (sanitizedCode.length < 4) {
+      throw new BadRequestException('Invalid or expired device pairing code');
+    }
     const codeRecord = await this.prisma.devicePairingCode.findFirst({
       where: {
         code: sanitizedCode,
@@ -154,22 +189,7 @@ export class DevicesService {
   async listDevices(restaurantId: string) {
     return this.prisma.deviceRegistration.findMany({
       where: { restaurantId },
-      select: {
-        id: true,
-        restaurantId: true,
-        outletId: true,
-        outlet: { select: { id: true, name: true } },
-        label: true,
-        status: true,
-        userAgent: true,
-        lastSeenAt: true,
-        lastIp: true,
-        approvedBy: true,
-        approvedAt: true,
-        failedAttempts: true,
-        lockedUntil: true,
-        createdAt: true,
-      },
+      select: DEVICE_PUBLIC_SELECT,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -186,6 +206,11 @@ export class DevicesService {
       where: { id: deviceId, restaurantId },
     });
     if (!device) throw new NotFoundException('Device not found');
+    if (device.status === DeviceStatus.REVOKED) {
+      throw new BadRequestException(
+        'Revoked devices cannot be re-approved; generate a new pairing code',
+      );
+    }
 
     return this.prisma.deviceRegistration.update({
       where: { id: deviceId },
@@ -194,6 +219,7 @@ export class DevicesService {
         approvedBy: approverId,
         approvedAt: new Date(),
       },
+      select: DEVICE_PUBLIC_SELECT,
     });
   }
 
@@ -218,6 +244,7 @@ export class DevicesService {
         revokedAt: new Date(),
         tokenHash: null, // Wipe token to ensure immediate cryptographic invalidation
       },
+      select: DEVICE_PUBLIC_SELECT,
     });
   }
 
@@ -234,12 +261,23 @@ export class DevicesService {
     });
     if (!device) throw new NotFoundException('Device not found');
 
-    return this.prisma.deviceRegistration.update({
+    const updated = await this.prisma.deviceRegistration.update({
       where: { id: deviceId },
       data: {
         failedAttempts: 0,
         lockedUntil: null,
       },
+      select: DEVICE_PUBLIC_SELECT,
     });
+
+    await this.audit?.record({
+      userId: unlockedBy,
+      action: 'unlock',
+      entity: 'device',
+      entityId: deviceId,
+      metadata: { outletId: updated.outletId },
+    });
+
+    return updated;
   }
 }

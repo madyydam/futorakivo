@@ -1,5 +1,5 @@
 ﻿import { Injectable, Logger } from '@nestjs/common';
-import type { SessionUser } from '@futora/types';
+import { permissionSatisfied, type SessionUser } from '@futora/types';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   computeOrderTotals,
@@ -14,14 +14,10 @@ import type {
   OfflineSalesDto,
 } from './standalone.schema';
 
-// Owners and administrators are never capped; other roles need the explicit
-// discounts.unlimited grant (same rule as the checkout screen).
-function mayExceedDiscountCap(user: SessionUser): boolean {
-  return (
-    user.roleName === 'OWNER' ||
-    user.roleName === 'ADMINISTRATOR' ||
-    user.permissions.includes('discounts.unlimited')
-  );
+// Unlimited discounts are controlled solely by RBAC permission satisfaction
+// (respecting canonical/legacy keys and per-user DENY overrides).
+export function mayExceedDiscountCap(user: SessionUser): boolean {
+  return permissionSatisfied(user.permissions, 'discount.apply_any');
 }
 
 @Injectable()

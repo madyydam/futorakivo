@@ -73,8 +73,10 @@ export class PinHasherService {
     const custom = this.config.get<string>(
       `SERVER_PEPPER_${version.toUpperCase()}`,
     );
-    const resolved = custom || this.pepperV1;
-    this.pepperCache.set(version, resolved);
-    return resolved;
+    if (!custom) {
+      throw new Error(`Unknown or unconfigured PIN pepper version: ${version}`);
+    }
+    this.pepperCache.set(version, custom);
+    return custom;
   }
 }

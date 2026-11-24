@@ -1,14 +1,23 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import type { CreateRoleDto, UpdateRoleDto } from '@futora/types';
+import {
+  permissionSatisfied,
+  STAFF_ROLES,
+  type CreateRoleDto,
+  type SessionUser,
+  type UpdateRoleDto,
+} from '@futora/types';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PermissionsCacheService } from '../permissions/permissions-cache.service';
+
+const RESERVED_ROLE_NAMES = new Set<string>([...STAFF_ROLES, 'SUPER_ADMIN']);
 
 const SELECT = {
   id: true,
@@ -45,16 +54,39 @@ export class RolesService {
     });
   }
 
-  async create(restaurantId: string, actorId: string, dto: CreateRoleDto) {
+  async create(restaurantId: string, actor: SessionUser, dto: CreateRoleDto) {
+    const normalizedName = dto.name.trim();
+    const normalizedLabel = dto.label.trim();
+    if (RESERVED_ROLE_NAMES.has(normalizedName.toUpperCase())) {
+      throw new BadRequestException(
+        `Role name "${normalizedName}" is reserved`,
+      );
+    }
+
+    const existingSameName = await this.prisma.role.findFirst({
+      where: {
+        restaurantId,
+        name: { equals: normalizedName, mode: 'insensitive' },
+      },
+      select: { id: true },
+    });
+    if (existingSameName) {
+      throw new ConflictException('A role with this name already exists');
+    }
+
     const permissions = await this.assertPermissionKeysValid(
       dto.permissionKeys,
+    );
+    this.assertActorCanAssign(
+      actor,
+      permissions.map((p) => p.key),
     );
 
     const role = await this.prisma.role.create({
       data: {
         restaurantId,
-        name: dto.name,
-        label: dto.label,
+        name: normalizedName,
+        label: normalizedLabel,
         isSystem: false,
         permissions: {
           create: permissions.map((p) => ({ permissionId: p.id })),
@@ -64,7 +96,7 @@ export class RolesService {
     });
 
     await this.audit.record({
-      userId: actorId,
+      userId: actor.id,
       action: 'role.created',
       entity: 'Role',
       entityId: role.id,
@@ -80,21 +112,33 @@ export class RolesService {
 
   async update(
     restaurantId: string,
-    actorId: string,
+    actor: SessionUser,
     id: string,
     dto: UpdateRoleDto,
   ) {
     const existing = await this.getForRestaurant(restaurantId, id);
+    if (existing.isSystem) {
+      throw new BadRequestException(
+        'Seeded system roles cannot be modified — create a custom role or use per-user permission overrides',
+      );
+    }
+
+    const existingKeys = existing.permissions.map((p) => p.permission.key);
+    this.assertActorCanAssign(actor, existingKeys);
 
     const nextPermissions = dto.permissionKeys
       ? await this.assertPermissionKeysValid(dto.permissionKeys)
       : undefined;
+    if (nextPermissions) {
+      this.assertActorCanAssign(
+        actor,
+        nextPermissions.map((p) => p.key),
+      );
+    }
 
     const updated = await this.prisma.$transaction(async (tx) => {
       if (nextPermissions) {
-        const currentKeys = new Set(
-          existing.permissions.map((p) => p.permission.key),
-        );
+        const currentKeys = new Set(existingKeys);
         const nextKeys = new Set(nextPermissions.map((p) => p.key));
         const toAdd = nextPermissions.filter((p) => !currentKeys.has(p.key));
         const toRemoveKeys = [...currentKeys].filter(
@@ -120,7 +164,9 @@ export class RolesService {
 
       return tx.role.update({
         where: { id },
-        data: { label: dto.label },
+        data: {
+          ...(dto.label !== undefined ? { label: dto.label.trim() } : {}),
+        },
         select: SELECT,
       });
     });
@@ -134,7 +180,7 @@ export class RolesService {
     }
 
     await this.audit.record({
-      userId: actorId,
+      userId: actor.id,
       action: 'role.updated',
       entity: 'Role',
       entityId: id,
@@ -144,13 +190,17 @@ export class RolesService {
     return updated;
   }
 
-  async remove(restaurantId: string, actorId: string, id: string) {
+  async remove(restaurantId: string, actor: SessionUser, id: string) {
     const existing = await this.getForRestaurant(restaurantId, id);
     if (existing.isSystem) {
       throw new BadRequestException(
         'Seeded system roles cannot be deleted — create a custom role instead',
       );
     }
+    this.assertActorCanAssign(
+      actor,
+      existing.permissions.map((p) => p.permission.key),
+    );
 
     const assignedCount = await this.prisma.user.count({
       where: { roleId: id },
@@ -164,7 +214,7 @@ export class RolesService {
     await this.prisma.role.delete({ where: { id } });
 
     await this.audit.record({
-      userId: actorId,
+      userId: actor.id,
       action: 'role.deleted',
       entity: 'Role',
       entityId: id,
@@ -172,6 +222,17 @@ export class RolesService {
     });
 
     return { ok: true };
+  }
+
+  private assertActorCanAssign(actor: SessionUser, requestedKeys: string[]) {
+    const disallowed = requestedKeys.filter(
+      (k) => !permissionSatisfied(actor.permissions, k),
+    );
+    if (disallowed.length > 0) {
+      throw new ForbiddenException(
+        `Cannot grant or manage permissions you do not hold: ${disallowed.join(', ')}`,
+      );
+    }
   }
 
   private async getForRestaurant(restaurantId: string, id: string) {

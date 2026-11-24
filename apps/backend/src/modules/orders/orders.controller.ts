@@ -3,6 +3,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -250,9 +251,12 @@ export class OrdersController {
     @CurrentUser() user: SessionUser,
     @Query('branchId') branchId: string,
     @Body() body: unknown,
+    @Headers('x-client-request-id') clientRequestId?: string,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
-    return this.ordersService.createOrder(branchId, user.id, body as never);
+    return this.ordersService.createOrder(branchId, user.id, body as never, {
+      clientRequestId,
+    });
   }
 
   @Auth('orders.edit')

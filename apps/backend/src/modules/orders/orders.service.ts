@@ -246,6 +246,20 @@ export class OrdersService {
       historical?: { createdAt: Date };
     } = {},
   ) {
+    if (options.clientRequestId && !options.integrationKeyId) {
+      const existing = (this.prisma.order?.findFirst as any)
+        ? await this.prisma.order.findFirst({
+            where: {
+              branchId,
+              clientRequestId: options.clientRequestId,
+            },
+          })
+        : null;
+      if (existing) {
+        return this.getOrder(branchId, existing.id);
+      }
+    }
+
     const channel = options.channel ?? 'STAFF';
     // Online orders wait for a staff member to accept them unless this
     // branch is set to auto-confirm (Settings > Online orders).

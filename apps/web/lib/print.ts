@@ -4,7 +4,102 @@
 // and close. The OS print dialog still opens exactly as it would for any
 // other page (any printer, or "Save as PDF").
 import { canPrintOnDevice, printHtmlOnDevice } from "@/lib/device-print";
+import { getOutboxItems } from "@/lib/offline-outbox";
 import { toast } from "@/lib/toast";
+
+function generateOfflineReceiptHtml(orderId: string): string {
+  const items = getOutboxItems();
+  const item = items.find((i) => i.tempOrderId === orderId || i.id === orderId);
+  const orderNum = item?.orderSummary?.orderNumber || orderId;
+  const table = item?.orderSummary?.tableName || "Takeaway";
+  const total = item?.orderSummary?.totalAmount || "0.00";
+  const dateStr = item?.createdAt
+    ? new Date(item.createdAt).toLocaleString("en-IN")
+    : new Date().toLocaleString("en-IN");
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Offline Bill - ${orderNum}</title>
+  <style>
+    body { font-family: monospace; font-size: 13px; max-width: 300px; margin: 0 auto; padding: 12px; line-height: 1.4; color: #000; }
+    .offline-banner { border: 2px solid #000; padding: 4px; text-align: center; font-weight: bold; font-size: 11px; margin-bottom: 12px; }
+    .header { text-align: center; margin-bottom: 12px; }
+    .brand-title { font-size: 16px; font-weight: bold; }
+    .ticket-num { font-size: 14px; font-weight: bold; margin: 4px 0; }
+    .divider { border-top: 1px dashed #000; margin: 8px 0; }
+    .row { display: flex; justify-content: space-between; }
+    .total-row { font-size: 15px; font-weight: bold; margin-top: 6px; }
+    .footer { text-align: center; font-size: 10px; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="offline-banner">⚡ OFFLINE BILL (LOCAL COUNTER MODE)</div>
+  <div class="header">
+    <div class="brand-title">KIVO RESTAURANT</div>
+    <div class="ticket-num">Order #${orderNum}</div>
+    <div>${table}</div>
+    <div style="font-size: 10px;">${dateStr}</div>
+  </div>
+  <div class="divider"></div>
+  <div class="row" style="font-weight: bold;"><span>ITEMS</span><span>TOTAL</span></div>
+  <div class="row"><span>Bill Summary (${item?.orderSummary?.itemsCount || 1} items)</span><span>₹${total}</span></div>
+  <div class="divider"></div>
+  <div class="row total-row"><span>NET TOTAL:</span><span>₹${total}</span></div>
+  <div class="divider"></div>
+  <div class="footer">
+    Stored locally in counter outbox queue.<br>
+    Will automatically synchronize to cloud.<br>
+    Thank you for dining with us!
+  </div>
+  <script>window.onload = function() { window.print(); };</script>
+</body>
+</html>`;
+}
+
+function generateOfflineKotHtml(orderId: string): string {
+  const items = getOutboxItems();
+  const item = items.find((i) => i.tempOrderId === orderId || i.id === orderId);
+  const orderNum = item?.orderSummary?.orderNumber || orderId;
+  const table = item?.orderSummary?.tableName || "Takeaway";
+  const dateStr = item?.createdAt
+    ? new Date(item.createdAt).toLocaleTimeString("en-IN")
+    : new Date().toLocaleTimeString("en-IN");
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Offline KOT - ${orderNum}</title>
+  <style>
+    body { font-family: monospace; font-size: 14px; max-width: 300px; margin: 0 auto; padding: 12px; line-height: 1.4; color: #000; }
+    .kot-banner { border: 2px solid #000; padding: 4px; text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 8px; }
+    .header { text-align: center; margin-bottom: 8px; }
+    .ticket-num { font-size: 16px; font-weight: bold; }
+    .table-name { font-size: 15px; font-weight: bold; }
+    .divider { border-top: 1px dashed #000; margin: 8px 0; }
+    .row { display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <div class="kot-banner">⚡ KITCHEN ORDER TICKET (OFFLINE)</div>
+  <div class="header">
+    <div class="ticket-num">KOT #${orderNum}</div>
+    <div class="table-name">${table}</div>
+    <div style="font-size: 11px;">Time: ${dateStr}</div>
+  </div>
+  <div class="divider"></div>
+  <div class="row" style="font-weight: bold;"><span>ITEMS</span><span>QTY</span></div>
+  <div class="row"><span>Order Items</span><span>${item?.orderSummary?.itemsCount || 1}</span></div>
+  <div class="divider"></div>
+  <div style="text-align: center; font-size: 11px; margin-top: 8px;">
+    Sent from Offline Counter POS
+  </div>
+  <script>window.onload = function() { window.print(); };</script>
+</body>
+</html>`;
+}
 
 let printFrame: HTMLIFrameElement | null = null;
 
@@ -53,6 +148,17 @@ function printPageOnDevice(url: string, name: string) {
 
 /** Browser print of the bill (open order) or receipt (paid order). Read-only. */
 export function openReceiptPrint(orderId: string, branchId: string, adj: BillQuery = {}) {
+  if (orderId.startsWith("off_")) {
+    const html = generateOfflineReceiptHtml(orderId);
+    if (canPrintOnDevice()) {
+      printHtmlOnDevice(html, "Offline Bill");
+      return;
+    }
+    const frame = getPrintFrame();
+    frame.srcdoc = html;
+    return;
+  }
+
   if (canPrintOnDevice()) {
     printPageOnDevice(`/api/v1/orders/${orderId}/receipt?branchId=${branchId}${billQueryString(adj)}`, "Bill");
     return;
@@ -73,6 +179,17 @@ export function openReceiptPrint(orderId: string, branchId: string, adj: BillQue
 }
 
 export function openKotPrint(orderId: string, branchId: string) {
+  if (orderId.startsWith("off_")) {
+    const html = generateOfflineKotHtml(orderId);
+    if (canPrintOnDevice()) {
+      printHtmlOnDevice(html, "Offline KOT");
+      return;
+    }
+    const frame = getPrintFrame();
+    frame.srcdoc = html;
+    return;
+  }
+
   if (canPrintOnDevice()) {
     printPageOnDevice(`/api/v1/orders/${orderId}/kot?branchId=${branchId}`, "Kitchen ticket");
     return;

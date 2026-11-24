@@ -1,8 +1,8 @@
 "use client";
 
 import type { CheckoutDto, CreateOrderDto } from "@futora/types";
-import { api } from "@/lib/api";
-import { toast } from "@/lib/toast";
+import { api } from "./api.ts";
+import { toast } from "./toast.ts";
 
 export interface OutboxAction {
   id: string;
@@ -45,10 +45,17 @@ function notify() {
   });
 }
 
+function getStorage(): Storage | null {
+  if (typeof window !== "undefined" && window.localStorage) return window.localStorage;
+  if (typeof globalThis !== "undefined" && (globalThis as any).localStorage) return (globalThis as any).localStorage;
+  return null;
+}
+
 export function getOutboxItems(): OutboxAction[] {
-  if (typeof window === "undefined") return [];
+  const storage = getStorage();
+  if (!storage) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = storage.getItem(STORAGE_KEY);
     if (!raw) return [];
     return JSON.parse(raw) as OutboxAction[];
   } catch {
@@ -57,9 +64,10 @@ export function getOutboxItems(): OutboxAction[] {
 }
 
 function saveOutboxItems(items: OutboxAction[]) {
-  if (typeof window === "undefined") return;
+  const storage = getStorage();
+  if (!storage) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    storage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch (e) {
     console.error("Failed to save offline outbox:", e);
   }
@@ -79,8 +87,9 @@ export function isDeviceOnline(): boolean {
 }
 
 export function getLastSyncTime(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(LAST_SYNC_KEY);
+  const storage = getStorage();
+  if (!storage) return null;
+  return storage.getItem(LAST_SYNC_KEY);
 }
 
 /**
@@ -213,10 +222,11 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
 
       try {
         if (item.type === "CREATE_ORDER") {
-          // Send to server
+          // Send to server with x-client-request-id for strict idempotency
           const res = await api.post<{ id: string; orderNumber: string }>(
             `/orders?branchId=${item.branchId}`,
-            item.payload
+            item.payload,
+            { headers: { "x-client-request-id": item.tempOrderId } }
           );
 
           item.status = "SYNCED";
@@ -226,8 +236,16 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
         } else if (item.type === "CHECKOUT_ORDER") {
           // Resolve orderId if created in an earlier offline action
           const targetOrderId = tempToServerIdMap.get(item.tempOrderId) || item.tempOrderId;
+          const checkoutPayload = {
+            ...item.payload,
+            requestId: item.payload?.requestId || item.id,
+          };
 
-          await api.post(`/orders/${targetOrderId}/checkout?branchId=${item.branchId}`, item.payload);
+          await api.post(
+            `/orders/${targetOrderId}/checkout?branchId=${item.branchId}`,
+            checkoutPayload,
+            { headers: { "x-client-request-id": item.id } }
+          );
 
           item.status = "SYNCED";
           syncedCount++;
@@ -248,7 +266,7 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
       const remaining = items.filter((i) => i.status !== "SYNCED");
       saveOutboxItems(remaining);
 
-      localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
+      getStorage()?.setItem(LAST_SYNC_KEY, new Date().toISOString());
       toast.success(`☁️ Cloud Sync: ${syncedCount} offline bill(s) synced to server.`);
 
       if (qc && typeof qc.invalidateQueries === "function") {

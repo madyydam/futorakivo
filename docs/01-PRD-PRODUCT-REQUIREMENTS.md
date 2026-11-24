@@ -51,9 +51,9 @@ The modern food & beverage (HORECA) industry suffers from fragmented, clunky, an
 
 ---
 
-## 3. Product Scope: The 20 Functional Modules
+## 3. Product Scope: The 22 Functional Modules
 
-KIVOKO is architected around 20 modular domains:
+KIVOKO is architected around 22 modular domains:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -66,11 +66,12 @@ KIVOKO is architected around 20 modular domains:
 │ 3. Captain Ordering  │ 7. Token Calling     │ 11. Multi-Outlet Commissary   │
 │ 4. Dynamic QR Pay    │ 8. Waste Tracking    │ 12. India GST & Tax Engine    │
 ├──────────────────────┼──────────────────────┼───────────────────────────────┤
-│ CUSTOMER ENGAGEMENT  │ HARDWARE & DEV TOOLS │ PLATFORM SECURITY             │
+│ CUSTOMER ENGAGEMENT  │ HARDWARE & DEV TOOLS │ PLATFORM SECURITY & ONBOARDING│
 ├──────────────────────┼──────────────────────┼───────────────────────────────┤
 │ 13. Guest CRM & DPDP │ 16. ESC/POS Printing │ 19. Canonical 38-Key RBAC     │
 │ 14. Loyalty Ledger   │ 17. REST APIs & SDK  │ 20. In-Place Manager Approvals│
-│ 15. QR Self-Ordering │ 18. MCP AI Server    │                               │
+│ 15. QR Self-Ordering │ 18. MCP AI Server    │ 21. 11-Step Onboarding Wizard │
+│                      │                      │ 22. Super Admin SaaS Console  │
 └──────────────────────┴──────────────────────┴───────────────────────────────┘
 ```
 
@@ -104,6 +105,17 @@ KIVOKO is architected around 20 modular domains:
 - **DPDP Act 2023**: Explicit consent capture for phone numbers, masked display, mandatory retention periods, and right to erasure.
 - **Spain Veri*factu**: Cryptographic SHA-256 chained invoice hashing for tamper-proof auditing.
 
+#### Module 21: 11-Step Owner Onboarding Wizard (`/onboarding`)
+- **Interactive Setup Wizard**: Guided bilingual (English & Hindi) walkthrough taking a new restaurant from raw registration to live operation.
+- **Real-Time Materializer**: Automatically provisions primary branch, GSTIN tax regimes, menu categories, menu items with prices, dining tables, kitchen stations, UPI VPAs, and staff member PINs directly into PostgreSQL.
+- **Zero Data Loss Mirror**: Dual-layer state persistence synchronizing server-side draft updates and client-side `localStorage` backup with offline reconciliation.
+- **Test Order Lifecycle**: Built-in test order simulation verifying KOT dispatch, bill calculation, and settlement before tenant activation to `TRIAL` status.
+
+#### Module 22: Super Admin Platform Console (`/super-admin`)
+- **Multi-Tenant Administration**: Master administrative interface for platform owners to provision, freeze, suspend, or activate restaurant tenants.
+- **Subscription Management**: Subscription plan management (Starter, Pro, Enterprise) with trial management and quota overrides.
+- **Platform Telemetry**: Global audit log search, tenant-wide analytics, and real-time operational status monitoring.
+
 ---
 
 ## 4. Competitive Differentiation: KIVOKO vs Legacy POS
@@ -117,7 +129,7 @@ KIVOKO is architected around 20 modular domains:
 | **QR Self-Ordering** | Native Modes A & B with staff acceptance gate | Third-party or basic add-on | Add-on | Extra fee |
 | **AI Integration (MCP)**| Native Model Context Protocol server | None | None | None |
 | **Instant Live Demo** | Immediate browser demo (`/demo`) | Sales call & rep scheduling | Demo on request | Sales call required |
-| **Security Auditing** | 409 automated backend test suites (100% green) | Closed-source testing | Closed-source | Enterprise testing |
+| **Security Auditing** | 52 backend test suites (444 tests), 66 web tests (100% green) | Closed-source testing | Closed-source | Enterprise testing |
 
 ---
 

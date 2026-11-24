@@ -54,6 +54,8 @@ apps/web/app/
 │   ├── tables/                 ← Visual Floor Plan Canvas & Table Management
 │   ├── inventory/              ← Recipe Costing, Waste Logging & Stock Management
 │   └── settings/               ← Staff Roles, Hardware, Printers & QR Menu Controls
+├── onboarding/                 ← 11-Step Bilingual Owner Setup Wizard (Brand, Menu, Tables, Staff)
+├── super-admin/                ← Master SaaS Multi-Tenant Management Console
 ├── menu/                       ← Guest Mobile QR Self-Ordering Web App (Modes A & B)
 │   └── [slug]/                 ← Table-bound dynamic menu with cart & allergy filters
 ├── demo/                       ← Standalone Interactive Demo Sandbox
@@ -78,19 +80,21 @@ Every business domain is encapsulated in an independent NestJS module with its o
 
 ```
 apps/backend/src/
-├── approvals/                  ← In-place manager approvals, PIN verification, action locks, throttler
-├── devices/                    ← Atomic pairing code redemption, device session tokens, throttler
-├── auth/                       ← Dual-token sessions, bcrypt PIN hasher (10 rounds), staff login
-├── permissions/                ← 38-key RBAC catalog, permissions sync, cache & policy guards
+├── onboarding/                  ← 11-step onboarding service, progress tracker & database materializer
+├── super-admin/                 ← Multi-tenant platform administration, plan quotas & audit search
+├── approvals/                   ← In-place manager approvals, PIN verification, action locks, throttler
+├── devices/                     ← Atomic pairing code redemption, device session tokens, throttler
+├── auth/                        ← Dual-token sessions, bcrypt PIN hasher (10 rounds), staff login
+├── permissions/                 ← 38-key RBAC catalog, permissions sync, cache & policy guards
 ├── modules/
-│   ├── orders/                 ← Order lifecycle, split billing, refunds, loyalty clawback, KOT routing
-│   ├── public/                 ← Public QR menu, guest cart ordering, emergency pause, guest blocklist
-│   ├── tables/                 ← Floor plans, table state machines, billed order reservation locks
-│   ├── inventory/              ← Raw ingredients, recipe BOM, FIFO waste logs, supplier POs
-│   ├── printing/               ← Raw binary ESC/POS thermal printer network engine (port 9100)
-│   ├── verifactu/              ← Spain AEAT chained cryptographic invoicing (SHA-256)
-│   ├── customers/              ← CRM, loyalty point ledger, DPDP Act 2023 consent capture
-│   └── integrations/           ← External REST API keys, webhooks, and MCP AI assistant tools
+│   ├── orders/                  ← Order lifecycle, split billing, refunds, loyalty clawback, KOT routing
+│   ├── public/                  ← Public QR menu, guest cart ordering, emergency pause, guest blocklist
+│   ├── tables/                  ← Floor plans, table state machines, billed order reservation locks
+│   ├── inventory/               ← Raw ingredients, recipe BOM, FIFO waste logs, supplier POs
+│   ├── printing/                ← Raw binary ESC/POS thermal printer network engine (port 9100)
+│   ├── verifactu/               ← Spain AEAT chained cryptographic invoicing (SHA-256)
+│   ├── customers/               ← CRM, loyalty point ledger, DPDP Act 2023 consent capture
+│   └── integrations/            ← External REST API keys, webhooks, and MCP AI assistant tools
 ```
 
 ### 3.2 Real-Time Event Topology

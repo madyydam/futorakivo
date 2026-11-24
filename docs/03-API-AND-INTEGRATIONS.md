@@ -73,6 +73,25 @@ Content-Type: application/json
   *Body:* `{ "branchId": "brn_...", "actions": [ { "actionId": "...", "type": "ORDER_CREATE", "payload": {...}, "timestamp": "..." } ] }`  
   *Response:* `{ "processed": 4, "conflicts": [], "reconciledAt": "..." }`
 
+### 2.5 Owner Onboarding Wizard Endpoints
+- **Get Onboarding State**: `GET /v1/onboarding` (Requires `settings.manage`)  
+  *Response:* `{ "currentStep": 3, "completedSteps": [1, 2], "draftJson": {...}, "restaurant": {...} }`
+- **Save Step Progress (Autosave)**: `PUT /v1/onboarding/progress` (Throttled: 60/min, `AuditAction`)  
+  *Body:* `{ "currentStep": 4, "completedStep": 3, "draftJson": {...} }` (Cap: 500KB, prototype-sanitized)  
+  *Response:* Updated step & draft record.
+- **Complete Onboarding & Materialize**: `POST /v1/onboarding/complete` (Throttled: 10/min, `AuditAction`)  
+  *Operation:* Executes XSS sanitization, parallel Bcrypt staff hashing, transactional insertion of tables, menu items, kitchen stations, UPI configs, and transitions tenant status from `SETUP` to `TRIAL`.  
+  *Response:* `{ "success": true, "message": "Onboarding completed", "redirect": "/dashboard" }`
+
+### 2.6 Super Admin Multi-Tenant Endpoints
+- **List Tenants**: `GET /v1/super-admin/tenants` (Super Admin Auth only)  
+  *Response:* Paginated array of restaurants, subscription plan, tenant status (`SETUP`, `TRIAL`, `ACTIVE`, `FROZEN`), and branch counts.
+- **Freeze / Unfreeze Tenant**: `POST /v1/super-admin/tenants/:id/freeze`  
+  *Body:* `{ "reason": "Overdue invoice", "freezeBilling": true }`  
+  *Response:* Updated tenant state with audit log.
+- **Update Subscription Plan**: `POST /v1/super-admin/tenants/:id/plan`  
+  *Body:* `{ "planTier": "ENTERPRISE", "expiresAt": "2027-12-31T23:59:59Z" }`
+
 ---
 
 ## 3. Webhook Notifications & Signature Verification

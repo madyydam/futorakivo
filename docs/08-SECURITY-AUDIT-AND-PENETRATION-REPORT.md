@@ -39,6 +39,10 @@ A comprehensive multi-angle security audit was conducted simulating both offensi
 | **16** | **Table QR Collision on Billed Table**| Guest scans QR code on table that has an existing printed bill awaiting payment. | Created parallel order and overwrote table state. | **FIXED:** Rejected guest QR order creation if table has an active `BILLED` order. |
 | **17** | **Split Bill Premature Table Release**| Customer settles 1 of 3 split checks; table was prematurely released while 2 splits were unpaid. | Checked only single order status on table release. | **FIXED:** Prevented table release if any sibling split order remains unsettled or `BILLED`. |
 | **18** | **Loyalty Earn Division by Zero** | Branch config with `pointsPerCurrency = 0` triggers unhandled exception on order checkout. | Division by zero crashed checkout transaction. | **FIXED:** Added zero-guard returning 0 earned points when multiplier is 0 or negative. |
+| **19** | **Stored XSS in Onboarding Free-Text** | Attacker injects `<script>` or HTML event handlers in restaurant, outlet, dish, or staff names. | Raw strings persisted without sanitization could execute in receipts, KDS, and dashboards. | **FIXED:** Enforced `sanitizeText()` stripping `<[^>]*>` and trimming whitespace before DB insertion. |
+| **20** | **Prototype Pollution in Draft Autosave**| Attacker sends `__proto__`, `constructor`, or `prototype` keys inside `draftJson` payload. | Shallow object merge in `updateProgress` risked polluting global JavaScript prototypes. | **FIXED:** Implemented recursive `sanitizeDraftJson()` filtering prototype pollution keys prior to merge. |
+| **21** | **Unauthorized Onboarding Tenant Takeover**| Malicious actor calls onboarding endpoints targeting other restaurants. | Lack of tenant validation could allow cross-restaurant state tampering. | **FIXED:** Enforced `@Auth('settings.manage')`, strict `user.restaurantId` isolation, `@Throttle`, and `@AuditAction`. |
+| **22** | **Device Pairing Unvalidated Payloads**| Attacker injects malformed or oversized payloads into `/v1/devices/codes` or `/pair`. | Missing schema validation pipe allowed arbitrary JSON structures. | **FIXED:** Enforced `ZodValidationPipe` (`createPairingCodeSchema`, `pairDeviceSchema`) and audit logging. |
 
 ---
 
@@ -66,6 +70,6 @@ flowchart TD
 ## 4. Verification & Monorepo Test Results
 
 - **TypeScript Typecheck:** 0 errors across `@futora/types`, `@futora/backend`, and `web`.
-- **Web Test Suite:** **59 / 59 passed (100% green)**.
-- **Backend Test Suite:** **50 test suites passed, 409 / 409 tests passed (100% green)**.
-- **Security Assessment:** All 18 identified vulnerability vectors verified resolved with automated regression test cases.
+- **Web Test Suite:** **66 / 66 passed (100% green)**.
+- **Backend Test Suite:** **52 test suites passed, 444 / 444 tests passed (100% green)**.
+- **Security Assessment:** All 22 identified vulnerability vectors verified resolved with automated regression test cases.

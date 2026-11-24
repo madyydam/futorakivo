@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KIVO SaaS OS — 14-Day Production Launch Master Execution Sheet</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 4mm 5mm;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 8px;
+      line-height: 1.25;
+      color: #0f172a;
+      background: #ffffff;
+      height: 100%;
+      overflow: hidden;
+    }
+    .sheet {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+    }
+    
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 3px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-logo {
+      background: #2563eb;
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+    }
+    .brand-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: -0.2px;
+    }
+    .brand-subtitle {
+      font-size: 7.5px;
+      color: #94a3b8;
+      margin: 0;
+      font-weight: 500;
+    }
+    .badges {
+      display: flex;
+      gap: 5px;
+    }
+    .badge {
+      font-size: 7.2px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .badge-green { background: #16a34a; color: #ffffff; }
+    .badge-blue { background: #2563eb; color: #ffffff; }
+    .badge-white { background: #ffffff; color: #0f172a; }
+
+    /* Phase Progress Strip */
+    .phase-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+    .phase-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 3px 6px;
+      background: #f8fafc;
+      border-left-width: 4px;
+    }
+    .card-p1 { border-left-color: #2563eb; }
+    .card-p2 { border-left-color: #f59e0b; }
+    .card-p3 { border-left-color: #8b5cf6; }
+    .card-p4 { border-left-color: #10b981; }
+    .p-title {
+      font-size: 8px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1px;
+    }
+    .p-days {
+      font-size: 6.8px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .p-desc {
+      font-size: 7px;
+      color: #475569;
+      line-height: 1.2;
+    }
+
+    /* Main Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      flex-grow: 1;
+    }
+    thead th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: 7.8px;
+      font-weight: 800;
+      text-align: left;
+      padding: 3.5px 6px;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+      border-right: 1px solid #334155;
+    }
+    thead th:last-child {
+      border-right: none;
+    }
+    tbody td {
+      padding: 3px 6px;
+      border-bottom: 1px solid #cbd5e1;
+      border-right: 1px solid #e2e8f0;
+      vertical-align: middle;
+      font-size: 7.5px;
+    }
+    tbody td:last-child {
+      border-right: none;
+    }
+    tbody tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    /* Column Sizing */
+    .col-day {
+      width: 55px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .day-badge {
+      display: inline-block;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 1.5px 4px;
+      border-radius: 3px;
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+    .col-milestone {
+      width: 120px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .col-tasks {
+      width: auto;
+      color: #1e293b;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+    .task-bold {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .col-gate {
+      width: 230px;
+      color: #047857;
+      font-weight: 600;
+      line-height: 1.25;
+      background-color: #f0fdf4 !important;
+    }
+    .col-scale {
+      width: 140px;
+      color: #1e40af;
+      font-weight: 600;
+      line-height: 1.2;
+      background-color: #eff6ff !important;
+    }
+    .col-status {
+      width: 42px;
+      text-align: center;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .chkbox {
+      font-size: 10px;
+      color: #94a3b8;
+      font-family: monospace;
+    }
+
+    /* Footer */
+    .footer {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 3px 6px;
+      margin-top: 2px;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .footer-section {
+      font-size: 7px;
+      color: #334155;
+      line-height: 1.2;
+    }
+    .footer-header {
+      font-weight: 800;
+      font-size: 7.5px;
+      color: #0f172a;
+      text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+    .sign-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 7px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    
+    <!-- HEADER -->
+    <div class="header">
+      <div class="brand-group">
+        <span class="brand-logo">KIVO</span>
+        <div>
+          <h1 class="brand-title">RESTAURANT OS — MULTI-TENANT CLOUD SAAS 14-DAY PRODUCTION LAUNCH PLAN</h1>
+          <p class="brand-subtitle">Master Engineering & Product Release Matrix | Scalable to 10,000+ Concurrent Restaurants | Production Target: Hostinger Cloud VPS / AWS RDS</p>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-green">✓ 438 Backend Tests Pass</span>
+        <span class="badge badge-green">✓ 62 Web Tests Pass</span>
+        <span class="badge badge-blue">✓ 0 Type Errors</span>
+        <span class="badge badge-white">10K Scale Ready</span>
+      </div>
+    </div>
+
+    <!-- 4 SAAS RELEASE PHASES -->
+    <div class="phase-strip">
+      <div class="phase-card card-p1">
+        <div class="p-title"><span>Phase 1: Multi-Tenant Core & Billing</span> <span class="p-days">Days 1–4</span></div>
+        <div class="p-desc">Tenant isolation, optimistic concurrency, Indian GST tax engine, universal thermal printer drivers.</div>
+      </div>
+      <div class="phase-card card-p2">
+        <div class="p-title"><span>Phase 2: Offline Engine, KDS & Stress</span> <span class="p-days">Days 5–8</span></div>
+        <div class="p-desc">Terminal offline outbox fault isolation, Redis KDS pub/sub, zero-trust RBAC, 70-restaurant peak load.</div>
+      </div>
+      <div class="phase-card card-p3">
+        <div class="p-title"><span>Phase 3: Production Cloud & Super Admin</span> <span class="p-days">Days 9–11</span></div>
+        <div class="p-desc">Hostinger KVM 2 / Cloud Docker stack, Caddy wildcard SSL, Super Admin 12-digit licensing, automated S3 PITR.</div>
+      </div>
+      <div class="phase-card card-p4">
+        <div class="p-title"><span>Phase 4: Onboarding, Chaos & Launch</span> <span class="p-days">Days 12–14</span></div>
+        <div class="p-desc">Self-serve 11-step onboarding, cross-tenant IDOR penetration testing, commercial production go-live.</div>
+      </div>
+    </div>
+
+    <!-- MAIN 14-DAY SAAS LAUNCH TABLE -->
+    <table>
+      <thead>
+        <tr>
+          <th class="col-day">Day</th>
+          <th class="col-milestone">SaaS Module / Milestone</th>
+          <th class="col-tasks">Core Engineering & Architecture Execution Tasks</th>
+          <th class="col-gate">Mandatory Acceptance Gate & Quality Metrics</th>
+          <th class="col-scale">10K Scale SaaS Impact</th>
+          <th class="col-status">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 01</span></td>
+          <td class="col-milestone">Tenant Isolation & Baseline</td>
+          <td class="col-tasks"><span class="task-bold">Tenant Boundary Guard:</span> Enforce strict `restaurantId` query filtering across all Prisma models. Run additive database migrations. Verify 500+ unit/integration test suite baseline.</td>
+          <td class="col-gate">`tsc --noEmit` = 0 errors; 438 backend + 62 web tests pass 100%; zero queries execute without tenant partition key.</td>
+          <td class="col-scale">Guarantees zero data leaks between 10,000 tenants.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 02</span></td>
+          <td class="col-milestone">Concurrency & State Machine</td>
+          <td class="col-tasks"><span class="task-bold">Optimistic Locking & Audit Ledger:</span> Implement integer `version` checking in order service. Reject stale updates with 409 Conflict. Wire append-only immutable `order_events` ledger for every KOT and bill action.</td>
+          <td class="col-gate">Simultaneous order edits from multiple terminals reject dirty writes with HTTP 409; immutable ledger records all price/item modifications.</td>
+          <td class="col-scale">Prevents double-booking & split-second order collisions.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 03</span></td>
+          <td class="col-milestone">Indian GST & Billing Precision</td>
+          <td class="col-tasks"><span class="task-bold">Financial Calculation Engine:</span> Multi-slab GST calculation (CGST/SGST/IGST, inclusive vs exclusive, rounding to 2 decimals). Multi-payment settlement (Cash, Card, Split, UPI QR with server VPA decode).</td>
+          <td class="col-gate">Zero floating-point rounding drift across 10,000 line items; net totals match down to ₹0.01 paisa; Manager PIN required for discount &gt; 10%.</td>
+          <td class="col-scale">Eliminates tax miscalculations and merchant cash leaks.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 04</span></td>
+          <td class="col-milestone">Universal Hardware Drivers</td>
+          <td class="col-tasks"><span class="task-bold">ESC/POS Thermal Engine:</span> Pure JS ESC/POS byte generator supporting 80mm & 58mm printers across LAN/Ethernet, USB, and Bluetooth. Kitchen station routing (Kitchen, Bar, Desserts). Cash drawer kick.</td>
+          <td class="col-gate">Slip generation &lt; 50ms; Hindi & regional UTF-8 text rendered via bitmap stream; auto-cutter & buzzer triggers reliably.</td>
+          <td class="col-scale">Works out-of-the-box with any standard hardware fleet.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 05</span></td>
+          <td class="col-milestone">Offline PWA & Fault Isolation</td>
+          <td class="col-tasks"><span class="task-bold">Terminal Outbox Engine:</span> Local IndexedDB order queue. Local offline bill printing with `OFF-` prefix. Background idempotency sync with clientRequestId. Tenant network drop isolation.</td>
+          <td class="col-gate">Terminal operates offline seamlessly; 100% orders re-sync upon reconnection with zero duplicate orders; other tenants unaffected.</td>
+          <td class="col-scale">One restaurant's internet drop never impacts other tenants.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 06</span></td>
+          <td class="col-milestone">Redis KDS Pub/Sub & WebSockets</td>
+          <td class="col-tasks"><span class="task-bold">Real-Time Kitchen Streaming:</span> NestJS WebSockets + Redis Pub/Sub for instant KOT dispatch to Kitchen Display Systems. Station filtering, chime notifications, and automatic client reconnection with backoff.</td>
+          <td class="col-gate">KDS updates in &lt; 100ms from POS punch; Redis memory capped at 512MB LRU; handles 5,000 concurrent socket connections cleanly.</td>
+          <td class="col-scale">Sub-second KDS communication across thousands of kitchens.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 07</span></td>
+          <td class="col-milestone">Zero-Trust Security & RBAC</td>
+          <td class="col-tasks"><span class="task-bold">Cryptographic Auth & DPDP:</span> 38 canonical permissions with version-based Redis cache invalidation. Argon2id + HMAC pepper PIN hashing. 5-fail 15-minute device lockout. DPDP 2023 guest privacy compliance.</td>
+          <td class="col-gate">Zero IDOR across tenants; non-manager PIN cannot approve item voids/refunds; guest mobile consent logged with 90-day anonymization worker.</td>
+          <td class="col-scale">Prevents insider employee fraud and regulatory penalties.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 08</span></td>
+          <td class="col-milestone">10K High-Concurrency Stress</td>
+          <td class="col-tasks"><span class="task-bold">Load Simulation & Sizing:</span> Simulate 70 concurrent peak restaurants punching 50 orders/sec. Benchmark PgBouncer connection pooling (max 25 conns to Postgres). Optimize slow queries with DB indexes.</td>
+          <td class="col-gate">P99 response time &lt; 150ms; zero database connection timeouts; total container memory consumption &lt; 4.5 GB of 8 GB VPS limit.</td>
+          <td class="col-scale">Guarantees zero database crashing during Friday night rush.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 09</span></td>
+          <td class="col-milestone">Production Cloud VPS & SSL</td>
+          <td class="col-tasks"><span class="task-bold">Containerized Cloud Stack:</span> Deploy Hostinger KVM 2 VPS (Ubuntu 24.04). Configure `docker-compose.saas-cloud.yml`. Setup Caddy edge proxy with Let's Encrypt automated TLS and wildcard domain routing.</td>
+          <td class="col-gate">`https://kivoko.in/health` returns 200 OK; SSL Grade A+; HTTP automatically upgrades to HTTPS; container memory limits enforced.</td>
+          <td class="col-scale">High-availability deployment with automatic SSL certificate renewal.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 10</span></td>
+          <td class="col-milestone">Super Admin & Instant Licensing</td>
+          <td class="col-tasks"><span class="task-bold">Central SaaS Control Plane:</span> Deploy `/super-admin` with master credentials + TOTP 2FA. 12-digit license generator (`XXXX-XXXX-XXXX`). Tenant killswitch, audit logs, and multi-tenant telemetry dashboard.</td>
+          <td class="col-gate">Tenant provisioned in &lt; 60 seconds; killswitch revokes active JWT sessions immediately; audit log tracks all admin actions.</td>
+          <td class="col-scale">Allows instant commercial onboarding of any restaurant.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 11</span></td>
+          <td class="col-milestone">Disaster Recovery & S3 Backups</td>
+          <td class="col-tasks"><span class="task-bold">Automated Backup Pipeline:</span> BullMQ cron shipping hourly encrypted PostgreSQL dumps to AWS S3 / Cloudflare R2. Point-in-time recovery (PITR) test execution. Setup uptime monitoring & alert webhooks.</td>
+          <td class="col-gate">Automated database dump & restore test executes in &lt; 4 minutes with 0 data loss; S3 retention policy purges logs &gt; 30 days.</td>
+          <td class="col-scale">Enterprise DR guaranteeing business continuity for all merchants.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 12</span></td>
+          <td class="col-milestone">Self-Serve Onboarding Engine</td>
+          <td class="col-tasks"><span class="task-bold">Merchant 11-Step Wizard:</span> Multi-outlet profile, tax slabs, menu CSV bulk importer with dry-run error validator, table floor designer, 6-digit PIN generator, and QR device pairing flow.</td>
+          <td class="col-gate">500-item menu CSV imported with zero pricing corruptions in &lt; 3 seconds; device pairing approved via 10-minute cryptographic code.</td>
+          <td class="col-scale">Restaurants onboard themselves without developer hand-holding.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 13</span></td>
+          <td class="col-milestone">Chaos Engineering & Security Gate</td>
+          <td class="col-tasks"><span class="task-bold">Penetration & Chaos Gate:</span> Automated pen-testing for cross-tenant IDOR, SQL injection, token tampering, and brute-force lockouts. Simulate sudden container crash and verify auto-restart recovery.</td>
+          <td class="col-gate">Zero cross-tenant vulnerabilities; containers auto-heal in &lt; 15 seconds; all 500+ unit and integration tests remain 100% green.</td>
+          <td class="col-scale">Bulletproof security & resilience before opening to public merchants.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+        <tr>
+          <td class="col-day"><span class="day-badge">DAY 14</span></td>
+          <td class="col-milestone">COMMERCIAL SAAS GO-LIVE</td>
+          <td class="col-tasks"><span class="task-bold">Official Production Cutover:</span> Golden Master image tagged. Production environment opened for live merchant registrations. Enable live monitoring alerts, error telemetry, and Super Admin billing engine.</td>
+          <td class="col-gate"><strong>COMMERCIAL PRODUCTION GO-LIVE ACHIEVED:</strong> Platform fully operational, 0 known bugs, 10,000-tenant ready, live URLs accessible.</td>
+          <td class="col-scale">Official commercial launch of KIVO Cloud SaaS Restaurant OS.</td>
+          <td class="col-status"><span class="chkbox">[ &nbsp; ]</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- FOOTER & SIGN-OFF -->
+    <div class="footer">
+      <div class="footer-section">
+        <div class="footer-header">SaaS Architecture & Resource Guardrails</div>
+        <div>• <strong>Database:</strong> PostgreSQL 16 + PgBouncer (25-conn pool limit) • <strong>Cache/KDS:</strong> Redis 7 (512MB LRU maxmemory) • <strong>Proxy:</strong> Caddy 2 (Auto-HTTPS, Brotli, Rate Limiting) • <strong>Offline Outbox:</strong> IndexedDB AES-GCM encrypted.</div>
+      </div>
+      <div class="footer-section">
+        <div class="footer-header">Security, Privacy & Compliance</div>
+        <div>• <strong>Isolation:</strong> Hard Tenant Scoping • <strong>Compliance:</strong> DPDP Act 2023 & Indian GST • <strong>Auth:</strong> Argon2id + HMAC-SHA256 Pepper • <strong>Licensing:</strong> Super Admin 12-Digit (`4-4-4`).</div>
+      </div>
+      <div class="footer-section" style="border-left: 1px solid #cbd5e1; padding-left: 8px;">
+        <div class="footer-header">Launch Approval & Sign-off</div>
+        <div class="sign-row"><span>Lead Architect: ___________________</span> <span>Date: ___/___/2026</span></div>
+        <div class="sign-row"><span>Product Manager: ___________________</span> <span>Status: [ &nbsp; ] PRODUCTION READY</span></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Indian Regulations & DPDP Act 2023 - HORECA POS Compliance Manual</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+    body {
+      font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+      line-height: 1.6;
+      color: #1a202c;
+      background: #ffffff;
+      padding: 40px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      color: #0f172a;
+      border-bottom: 3px solid #0284c7;
+      padding-bottom: 12px;
+      font-size: 26px;
+      margin-bottom: 6px;
+    }
+    h2 {
+      color: #0369a1;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 8px;
+      margin-top: 32px;
+      font-size: 20px;
+    }
+    h3 {
+      color: #334155;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+      background: #e0f2fe;
+      color: #0369a1;
+      margin-bottom: 20px;
+    }
+    .callout {
+      background: #f8fafc;
+      border-left: 4px solid #0284c7;
+      padding: 14px 18px;
+      margin: 16px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .danger-callout {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 14px 18px;
+      margin: 16px 0;
+      border-radius: 0 6px 6px 0;
+      color: #991b1b;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+      font-size: 13px;
+      color: #0369a1;
+    }
+    ul, ol {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .footer {
+      margin-top: 50px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 14px;
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Indian Regulations & DPDP Act 2023 Compliance Manual</h1>
+  <div class="badge">Official Statutory & Technical Guide for KIVOKO Restaurant Management & POS SaaS</div>
+
+  <p><strong>Jurisdiction:</strong> Republic of India &bull; <strong>Enforcement:</strong> 2026 Enterprise Statutory Baseline</p>
+
+  <div class="callout">
+    <strong>Scope:</strong> This document outlines every mandatory legal, data protection, food safety, consumer protection, and fiscal tax compliance rule required to operate a Restaurant POS, Table QR self-ordering system, and customer CRM in India.
+  </div>
+
+  <h2>1. Digital Personal Data Protection Act, 2023 (DPDP Act)</h2>
+  <p>Under the DPDP Act 2023 (enacted by the Ministry of Electronics and Information Technology - MeitY):</p>
+  <ul>
+    <li><strong>Data Fiduciary:</strong> The Restaurant business entity collecting customer phone and name.</li>
+    <li><strong>Data Processor:</strong> KIVOKO (Futora) SaaS hosting and processing the multi-tenant data.</li>
+    <li><strong>Data Principal:</strong> The dining customer / guest scanning the QR code or providing contact details.</li>
+  </ul>
+
+  <h3>Section 6: Explicit, Unbundled Consent (Mandatory Unchecked Checkbox)</h3>
+  <p>Under Section 6(1), consent must be free, specific, informed, unconditional, and unambiguous with clear affirmative action.</p>
+  <div class="danger-callout">
+    <strong>STRICTLY PROHIBITED:</strong> Pre-checked boxes, bundled marketing opt-ins, or forcing customers to surrender personal data for dine-in service are illegal under Indian law.
+  </div>
+  <ul>
+    <li><strong>Checkbox State:</strong> The Terms & Conditions and Privacy Policy checkbox on the QR menu landing screen must be <strong>UNCHECKED by default</strong>.</li>
+    <li><strong>Proof of Consent:</strong> Every consent tick must record an immutable audit row: Customer ID, UTC Timestamp, Client IP Address, Browser User-Agent, and Terms Policy Version.</li>
+  </ul>
+
+  <h3>Statutory Penalties for DPDP Act Breaches (Section 33 & Schedule)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Violation Category</th>
+        <th>Governing Section</th>
+        <th>Maximum Penalty</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Failure to implement reasonable security safeguards against data breaches</td>
+        <td>Section 8(5) / Schedule 1</td>
+        <td><strong>Up to ₹250 Crores</strong></td>
+      </tr>
+      <tr>
+        <td>Failure to notify Data Protection Board of personal data breach</td>
+        <td>Section 8(6) / Schedule 2</td>
+        <td><strong>Up to ₹200 Crores</strong></td>
+      </tr>
+      <tr>
+        <td>Non-observance of obligations regarding children or vulnerable data</td>
+        <td>Section 9 / Schedule 3</td>
+        <td><strong>Up to ₹200 Crores</strong></td>
+      </tr>
+      <tr>
+        <td>Failure to fulfill general Fiduciary obligations (Consent, Notice, Erasure)</td>
+        <td>Schedule 4</td>
+        <td><strong>Up to ₹50 Crores</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3-Hour Customer Screen Auto-Expiry (Privacy Shield)</h3>
+  <p>To prevent subsequent guests or unauthorized third parties from viewing a previous party's order history, live order tracking on mobile web (<code>/m/:qrToken/status</code>) must automatically expire <strong>3 hours</strong> post-creation.</p>
+
+  <h2>2. Food Safety & Standards Authority of India (FSSAI)</h2>
+  <ul>
+    <li><strong>Mandatory 14-Digit License Display:</strong> FSSAI Order dated 8th June 2021 mandates printing the 14-digit FSSAI License Number on all physical printed bills, WhatsApp e-receipts, and the digital QR menu.</li>
+    <li><strong>Veg / Non-Veg Declarations:</strong> Green filled circle inside green square outline for Vegetarian food; Brown filled triangle inside brown square outline for Non-Vegetarian items containing meat/egg.</li>
+    <li><strong>Allergen Warnings:</strong> Display of the 8 statutory allergens (Gluten, Crustaceans, Eggs, Fish, Peanuts/Tree Nuts, Soya, Milk/Lactose, Sulphites).</li>
+  </ul>
+
+  <h2>3. Goods & Services Tax (GST) & Invoicing Compliance</h2>
+  <ul>
+    <li><strong>SAC Code 9963:</strong> Restaurant and food & beverage services.</li>
+    <li><strong>5% GST (No ITC):</strong> Standalone restaurants charge <strong>2.5% CGST + 2.5% SGST</strong> without Input Tax Credit.</li>
+    <li><strong>Mandatory Rule 46 Fields:</strong> Consecutive invoice numbering per financial year, Restaurant GSTIN, SAC code, customer B2B GSTIN (when requested), and itemized tax breakdown.</li>
+    <li><strong>Section 170 CGST Act:</strong> Total bill and tax rounding to the nearest Rupee.</li>
+  </ul>
+
+  <h2>4. CCPA Guidelines on Service Charges (2022)</h2>
+  <ul>
+    <li><strong>Zero Mandatory Service Charges:</strong> As per Central Consumer Protection Authority guidelines, restaurants cannot automatically add service charge by default.</li>
+    <li><strong>Strictly Voluntary:</strong> Any tip or gratuity must be explicit, voluntary, and easily removable by the guest.</li>
+  </ul>
+
+  <h2>5. TRAI / DLT Regulations for SMS & WhatsApp</h2>
+  <ul>
+    <li><strong>Distributed Ledger Technology (DLT):</strong> Principal Entity registration and 6-character Header (Sender ID) registration.</li>
+    <li><strong>Template Approval:</strong> All transactional order updates, OTPs, and bill PDF messages must use pre-approved telecom templates.</li>
+  </ul>
+
+  <div class="footer">
+    KIVOKO Restaurant Management & POS SaaS &bull; Indian Compliance Manual v1.0 &bull; Confidential & Proprietary
+  </div>
+
+</body>
+</html>

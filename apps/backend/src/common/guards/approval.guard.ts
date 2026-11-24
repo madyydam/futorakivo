@@ -50,7 +50,12 @@ export class ApprovalGuard implements CanActivate {
       );
     }
 
-    const rawTarget = request.params?.id || request.params?.orderId;
+    const rawTarget =
+      request.params?.id ||
+      request.params?.orderId ||
+      (request.body as any)?.orderId ||
+      (request.body as any)?.targetId ||
+      (request.query as any)?.orderId;
     const targetId = Array.isArray(rawTarget)
       ? rawTarget[0]
       : (rawTarget as string | undefined);

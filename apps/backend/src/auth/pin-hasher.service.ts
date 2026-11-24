@@ -12,6 +12,14 @@ export class PinHasherService {
       'SERVER_PEPPER_V1',
       'kivoko-default-secret-pepper-change-in-production-v1-min32bytes',
     );
+    if (
+      process.env.NODE_ENV === 'production' &&
+      (this.pepperV1.includes('change-in-production') || this.pepperV1.length < 32)
+    ) {
+      console.warn(
+        '⚠️ SECURITY WARNING: SERVER_PEPPER_V1 is using the default or insecure pepper. Set a strong 32+ byte secret in production.',
+      );
+    }
   }
 
   private static readonly DUMMY_HASH =

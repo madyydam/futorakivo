@@ -76,13 +76,16 @@ export class ApprovalsService {
 
     // Rate-limiting / brute-force lockout: 5 failed manager PIN attempts in 15 minutes locks approvals
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-    const recentFailedAttempts = this.prisma.approvalLog.count
+    const recentFailedAttempts = this.prisma.approvalLog?.count
       ? await this.prisma.approvalLog.count({
           where: {
             restaurantId,
             outcome: ApprovalOutcome.DENIED,
             createdAt: { gte: fifteenMinutesAgo },
-            ...(effectiveDeviceId ? { deviceId: effectiveDeviceId } : {}),
+            OR: [
+              { requesterId },
+              ...(effectiveDeviceId ? [{ deviceId: effectiveDeviceId }] : []),
+            ],
           },
         })
       : 0;

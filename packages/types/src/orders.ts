@@ -235,6 +235,7 @@ export const updateOrderSchema = z
     guestCount: z.number().int().min(1).max(100).nullable().optional(),
     notes: z.string().trim().max(500).nullable().optional(),
     customerId: z.string().min(1).nullable().optional(),
+    version: z.number().int().min(1).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "Nothing to change");
 export type UpdateOrderDto = z.infer<typeof updateOrderSchema>;

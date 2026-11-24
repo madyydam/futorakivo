@@ -36,18 +36,27 @@ export class DevicesService {
       throw new NotFoundException('Branch/outlet not found in this restaurant');
     }
 
-    const code = crypto.randomBytes(3).toString('hex').toUpperCase();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    const pairingCode = await this.prisma.devicePairingCode.create({
-      data: {
-        restaurantId,
-        outletId,
-        code,
-        expiresAt,
-        createdBy,
-      },
-    });
+    let pairingCode: any;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = crypto.randomBytes(3).toString('hex').toUpperCase();
+      try {
+        pairingCode = await this.prisma.devicePairingCode.create({
+          data: {
+            restaurantId,
+            outletId,
+            code,
+            expiresAt,
+            createdBy,
+          },
+        });
+        break;
+      } catch (err: any) {
+        if (err?.code === 'P2002' && attempt < 4) continue;
+        throw err;
+      }
+    }
 
     return {
       code: pairingCode.code,

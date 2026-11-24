@@ -89,6 +89,7 @@ export class OrdersService {
     order: {
       id: string;
       userId?: string | null;
+      createdById?: string | null;
       tableId?: string | null;
       branchId: string;
     },
@@ -102,20 +103,22 @@ export class OrdersService {
       return;
     }
 
-    if (order.userId && order.userId === user.id) {
+    const creatorId = order.createdById ?? order.userId;
+    if (creatorId && creatorId === user.id) {
       return;
     }
 
     if (order.tableId) {
-      const activeAssignment = await this.prisma.tableAssignment.findFirst({
-        where: {
-          tableId: order.tableId,
-          staffUserId: user.id,
-          releasedAt: null,
-        },
-      });
-      if (activeAssignment) {
-        return;
+      if ((this.prisma as any).tableAssignment) {
+        const activeAssignment = await (this.prisma as any).tableAssignment.findFirst({
+          where: {
+            tableId: order.tableId,
+            staffUserId: user.id,
+          },
+        });
+        if (activeAssignment) {
+          return;
+        }
       }
 
       const table = await this.prisma.table.findUnique({
@@ -1265,10 +1268,17 @@ export class OrdersService {
       }
     }
 
+    if (dto.version !== undefined && (order as any).version !== undefined && (order as any).version !== dto.version) {
+      throw new ConflictException(
+        'This order was modified by another user or terminal. Please refresh and try again.',
+      );
+    }
+
     await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id: orderId },
         data: {
+          version: { increment: 1 },
           ...(moving ? { tableId: dto.tableId } : {}),
           ...(dto.guestName !== undefined ? { guestName: dto.guestName } : {}),
           ...(dto.guestCount !== undefined

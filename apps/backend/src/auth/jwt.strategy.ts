@@ -75,6 +75,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
+    if (
+      payload.pv !== undefined &&
+      user.permissionsVersion !== undefined &&
+      payload.pv !== user.permissionsVersion
+    ) {
+      throw new UnauthorizedException(
+        'User permissions or credentials have been updated. Please sign in again.',
+      );
+    }
+
     return {
       id: user.id,
       restaurantId: user.restaurantId,

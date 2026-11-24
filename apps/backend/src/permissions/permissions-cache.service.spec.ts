@@ -45,6 +45,19 @@ describe('PermissionsCacheService & PermissionsGuard version invalidation', () =
       expect(cache.get('user-1')).toBeNull();
       expect(cache.get('user-2')).toBeNull();
     });
+
+    it('should evict expired entries when pruneExpired is called', () => {
+      jest.useFakeTimers();
+      cache.set('user-old', 1, ['menu.view']);
+      jest.advanceTimersByTime(65_000); // Past 60s TTL
+      cache.set('user-new', 1, ['menu.view']);
+
+      const pruned = cache.pruneExpired();
+      expect(pruned).toBe(1);
+      expect(cache.get('user-old')).toBeNull();
+      expect(cache.get('user-new')).not.toBeNull();
+      jest.useRealTimers();
+    });
   });
 
   describe('PermissionsGuard with cache', () => {

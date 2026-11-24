@@ -63,9 +63,10 @@ export class DevicesService {
     dto: PairDeviceDto,
     ip = '127.0.0.1',
   ): Promise<PairedDeviceResult> {
+    const sanitizedCode = dto.code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     const codeRecord = await this.prisma.devicePairingCode.findFirst({
       where: {
-        code: dto.code.trim().toUpperCase(),
+        code: sanitizedCode,
         usedAt: null,
         expiresAt: { gt: new Date() },
       },

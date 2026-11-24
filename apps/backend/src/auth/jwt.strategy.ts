@@ -1,4 +1,4 @@
-﻿import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import type { SessionUser } from '@futora/types';
@@ -11,6 +11,9 @@ import { PrismaService } from '../prisma/prisma.service';
 
 interface JwtPayload {
   sub: string;
+  deviceId?: string;
+  restaurantId?: string;
+  pv?: number;
 }
 
 const cookieExtractor = (req: {
@@ -26,13 +29,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly prisma: PrismaService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        cookieExtractor,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: config.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
   async validate(payload: JwtPayload): Promise<SessionUser> {
+    if (payload.deviceId) {
+      const device = await this.prisma.deviceRegistration.findUnique({
+        where: { id: payload.deviceId },
+        select: { status: true },
+      });
+      if (!device || device.status !== 'APPROVED') {
+        throw new UnauthorizedException('Terminal device has been revoked or is no longer approved');
+      }
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: permissionInclude,

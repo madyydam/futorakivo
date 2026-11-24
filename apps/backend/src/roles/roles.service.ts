@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -126,7 +126,11 @@ export class RolesService {
     });
 
     if (nextPermissions && this.cache) {
-      this.cache.clear();
+      const usersWithRole = await this.prisma.user.findMany({
+        where: { roleId: id },
+        select: { id: true },
+      });
+      this.cache.invalidateUsers(usersWithRole.map((u) => u.id));
     }
 
     await this.audit.record({

@@ -1,4 +1,4 @@
-﻿import {
+import {
   ForbiddenException,
   BadRequestException,
   ConflictException,
@@ -333,10 +333,7 @@ export class AuthService {
       include: permissionInclude,
     });
 
-    const isPinValid =
-      user && user.pinHash
-        ? await this.pinHasher.verifyPin(pin, user.pinHash)
-        : false;
+    const isPinValid = await this.pinHasher.verifyPin(pin, user?.pinHash);
 
     if (!isPinValid || !user) {
       // Record failed attempt
@@ -349,7 +346,12 @@ export class AuthService {
         },
       });
 
-      const failedAttempts = (device.failedAttempts ?? 0) + 1;
+      // If existing lockout has expired, reset failedAttempts baseline to 0
+      const currentFailures =
+        device.lockedUntil && device.lockedUntil <= new Date()
+          ? 0
+          : (device.failedAttempts ?? 0);
+      const failedAttempts = currentFailures + 1;
       let lockedUntil: Date | null = null;
       if (failedAttempts >= 5) {
         lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15-minute lockout

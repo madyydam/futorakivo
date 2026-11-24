@@ -3,6 +3,7 @@
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   CreateStaffDto,
@@ -14,6 +15,7 @@ import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { AuditService } from '../../audit/audit.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PermissionsCacheService } from '../../permissions/permissions-cache.service';
 
 const SELECT = {
   id: true,
@@ -42,6 +44,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    @Optional() private readonly cache?: PermissionsCacheService,
   ) {}
 
   list(restaurantId: string) {
@@ -148,6 +151,10 @@ export class UsersService {
       ? await bcrypt.hash(dto.password, 12)
       : undefined;
 
+    const roleOrStatusChanged =
+      (dto.roleId && dto.roleId !== existing.roleId) ||
+      (dto.isActive !== undefined && dto.isActive !== existing.isActive);
+
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
@@ -158,6 +165,7 @@ export class UsersService {
         departmentId: dto.departmentId,
         isActive: dto.isActive,
         passwordHash,
+        ...(roleOrStatusChanged ? { permissionsVersion: { increment: 1 } } : {}),
         ...(dto.branchIds
           ? {
               branches: {
@@ -169,6 +177,10 @@ export class UsersService {
       },
       select: SELECT,
     });
+
+    if (roleOrStatusChanged && this.cache) {
+      this.cache.invalidateUser(id);
+    }
 
     // Never log `dto.password`/`passwordHash` — only the fields it's safe
     // for an owner reviewing history to see. `passwordChanged` is a boolean
@@ -222,6 +234,9 @@ export class UsersService {
 
     try {
       await this.prisma.user.delete({ where: { id } });
+      if (this.cache) {
+        this.cache.invalidateUser(id);
+      }
     } catch (err) {
       // Order/Refund/PurchaseOrder/... all keep a required, non-cascading
       // reference to the staff member who created them, so history is never
@@ -412,7 +427,15 @@ export class UsersService {
           expiresAt: o.expiresAt ? new Date(o.expiresAt) : null,
         })),
       }),
+      this.prisma.user.update({
+        where: { id: targetId },
+        data: { permissionsVersion: { increment: 1 } },
+      }),
     ]);
+
+    if (this.cache) {
+      this.cache.invalidateUser(targetId);
+    }
 
     await this.audit.record({
       userId: actor.id,

@@ -145,6 +145,32 @@ describe('AuthService - Device PIN Login & Staff PIN Management', () => {
       );
     });
 
+    it('resets failed attempt counter when previous lockout has expired', async () => {
+      devices.verifyDeviceToken.mockResolvedValue({
+        id: 'dev-1',
+        restaurantId: 'rest-1',
+        status: DeviceStatus.APPROVED,
+        failedAttempts: 5,
+        lockedUntil: new Date(Date.now() - 1000), // lockout expired 1 second ago
+      });
+
+      prisma.user.findFirst.mockResolvedValue(null);
+
+      await expect(
+        authService.devicePinLogin('valid-token', 'wrong-pin', '127.0.0.1'),
+      ).rejects.toThrow(/Incorrect PIN/);
+
+      // Should reset failedAttempts to 1, NOT re-lock immediately
+      expect(prisma.deviceRegistration.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            failedAttempts: 1,
+            lockedUntil: null,
+          }),
+        }),
+      );
+    });
+
     it('successfully logs in with valid PIN, resets failures and returns token', async () => {
       devices.verifyDeviceToken.mockResolvedValue({
         id: 'dev-1',

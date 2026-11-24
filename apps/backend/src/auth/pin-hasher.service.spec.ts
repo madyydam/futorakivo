@@ -61,5 +61,13 @@ describe('PinHasherService', () => {
       const isValid = await service.verifyPin('111111', hash);
       expect(isValid).toBe(false);
     });
+
+    it('neutralizes timing attacks by running dummy comparison when pinHash is null or undefined', async () => {
+      const isValidNull = await service.verifyPin('123456', null);
+      expect(isValidNull).toBe(false);
+
+      const isValidUndef = await service.verifyPin('123456', undefined);
+      expect(isValidUndef).toBe(false);
+    });
   });
 });

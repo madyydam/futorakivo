@@ -22,13 +22,13 @@ import { OnboardingService } from './onboarding.service';
 export class OnboardingController {
   constructor(private readonly onboardingService: OnboardingService) {}
 
-  @Auth()
+  @Auth('settings.manage')
   @Get()
   async getProgress(@CurrentUser() user: SessionUser) {
     return this.onboardingService.getProgress(user.restaurantId);
   }
 
-  @Auth()
+  @Auth('settings.manage')
   @Put('progress')
   @UsePipes(new ZodValidationPipe(updateOnboardingProgressSchema))
   async updateProgress(
@@ -38,7 +38,7 @@ export class OnboardingController {
     return this.onboardingService.updateProgress(user.restaurantId, body);
   }
 
-  @Auth()
+  @Auth('settings.manage')
   @Post('complete')
   async completeOnboarding(@CurrentUser() user: SessionUser) {
     return this.onboardingService.completeOnboarding(user.restaurantId);

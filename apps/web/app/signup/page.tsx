@@ -27,10 +27,10 @@ export default function SignupPage() {
 
   const onSubmit = (dto: RegisterDto) => {
     register.mutate(dto, {
-      onSuccess: () => router.push("/dashboard"),
+      onSuccess: () => router.push("/onboarding"),
       onError: () => {
-        // Fallback directly to dashboard in demo mode
-        router.push("/dashboard");
+        // Fallback to onboarding in demo mode
+        router.push("/onboarding");
       },
     });
   };

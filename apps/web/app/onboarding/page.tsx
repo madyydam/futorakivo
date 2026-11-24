@@ -27,7 +27,7 @@ import { Step11GoLive } from "@/components/onboarding/steps/step11-go-live";
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { data: onboardingData, isLoading } = useOnboarding();
+  const { data: onboardingData, isLoading, isError, error } = useOnboarding();
   const updateMutation = useUpdateOnboardingProgress();
   const completeMutation = useCompleteOnboarding();
 
@@ -37,7 +37,7 @@ export default function OnboardingPage() {
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [initialized, setInitialized] = useState(false);
 
-  // Sync state once fetched from backend
+  // Sync state once fetched from backend, or handle 401 unauthorized
   useEffect(() => {
     if (onboardingData && !initialized) {
       if (onboardingData.currentStep) {
@@ -50,8 +50,16 @@ export default function OnboardingPage() {
         setDraft(onboardingData.draftJson);
       }
       setInitialized(true);
+    } else if (isError) {
+      const status = (error as any)?.status;
+      if (status === 401) {
+        router.push("/login?redirect=/onboarding");
+      } else {
+        // Fallback for offline demo preview
+        setInitialized(true);
+      }
     }
-  }, [onboardingData, initialized]);
+  }, [onboardingData, initialized, isError, error, router]);
 
   // Patch draft and optionally persist immediately
   const handleUpdateDraft = (patch: Record<string, any>) => {

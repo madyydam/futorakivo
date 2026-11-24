@@ -81,18 +81,29 @@ export function Step4Menu({ data, onChange, onNext, onBack, lang }: Step4Props) 
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const lines = text.split("\n").filter((l) => l.trim().length > 0);
+      const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length < 2) return;
+
       const parsed: MenuItemPreview[] = [];
+      const headerParts = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/["'\s_]/g, ""));
+      const nameIdx = headerParts.findIndex((h) => h.includes("name") || h.includes("item"));
+      const catIdx = headerParts.findIndex((h) => h.includes("cat"));
+      const priceIdx = headerParts.findIndex((h) => h.includes("price") || h.includes("rate") || h.includes("cost") || h.includes("mrp"));
+      const taxIdx = headerParts.findIndex((h) => h.includes("tax") || h.includes("gst"));
+      const vegIdx = headerParts.findIndex((h) => h.includes("veg") || h.includes("diet"));
 
       for (let i = 1; i < lines.length; i++) {
-        const parts = lines[i].split(",").map((p) => p.trim());
-        if (parts[0]) {
+        const rawParts = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(",");
+        const parts = rawParts.map((p) => p.replace(/^"|"$/g, "").trim());
+        const itemName = (nameIdx >= 0 ? parts[nameIdx] : parts[0]) || "";
+        if (itemName) {
+          const rawVeg = String(vegIdx >= 0 ? parts[vegIdx] : parts[4] || "").toLowerCase();
           parsed.push({
-            name: parts[0],
-            category: parts[1] || "General",
-            price: Number(parts[2]) || 100,
-            tax: Number(parts[3]) || 5,
-            isVeg: parts[4]?.toLowerCase() === "true",
+            name: itemName,
+            category: (catIdx >= 0 ? parts[catIdx] : parts[1]) || "General",
+            price: Math.max(0, Number(priceIdx >= 0 ? parts[priceIdx] : parts[2]) || 100),
+            tax: Math.max(0, Number(taxIdx >= 0 ? parts[taxIdx] : parts[3]) || 5),
+            isVeg: rawVeg === "true" || rawVeg === "veg" || rawVeg === "vegetarian" || rawVeg === "1",
           });
         }
       }

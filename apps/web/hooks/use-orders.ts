@@ -13,6 +13,8 @@ import type { Customer } from "@/hooks/use-customers";
 import { api } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import {
+  cancelOfflineOrder,
+  queueOfflineAddItems,
   queueOfflineCheckout,
   queueOfflineOrder,
   type OfflineOrderMetadata,
@@ -345,8 +347,16 @@ export function useOpenOrdersForTable(branchId: string | null, tableId: string |
 export function useAddOrderItems(branchId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, dto }: { orderId: string; dto: AddOrderItemsDto }) =>
-      api.post<CreatedOrder>(`/orders/${orderId}/items?branchId=${branchId}`, dto),
+    mutationFn: async ({ orderId, dto }: { orderId: string; dto: AddOrderItemsDto }) => {
+      if (orderId.startsWith("off_") || (typeof navigator !== "undefined" && !navigator.onLine)) {
+        const res = queueOfflineAddItems(branchId || "", orderId, dto.items);
+        if (res) {
+          toast.info("Added items to offline order");
+          return res as unknown as CreatedOrder;
+        }
+      }
+      return api.post<CreatedOrder>(`/orders/${orderId}/items?branchId=${branchId}`, dto);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["floors", branchId] });
@@ -378,7 +388,7 @@ function invalidateBillViews(queryClient: ReturnType<typeof useQueryClient>, bra
 export function useCancelOrder(branchId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       orderId,
       reason,
       source,
@@ -388,7 +398,18 @@ export function useCancelOrder(branchId: string | null) {
       reason: string;
       source?: "STAFF" | "CUSTOMER";
       confirmStarted?: boolean;
-    }) => api.post<CreatedOrder>(`/orders/${orderId}/cancel?branchId=${branchId}`, { reason, source, confirmStarted }),
+    }) => {
+      if (orderId.startsWith("off_")) {
+        const res = cancelOfflineOrder(orderId);
+        toast.info("Offline order cancelled and discarded from outbox");
+        return res as unknown as CreatedOrder;
+      }
+      return api.post<CreatedOrder>(`/orders/${orderId}/cancel?branchId=${branchId}`, {
+        reason,
+        source,
+        confirmStarted,
+      });
+    },
     onSuccess: () => invalidateBillViews(queryClient, branchId),
   });
 }

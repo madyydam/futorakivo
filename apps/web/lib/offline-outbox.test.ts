@@ -13,7 +13,9 @@ if (typeof globalThis.localStorage === "undefined") {
 }
 
 import {
+  cancelOfflineOrder,
   getOutboxItems,
+  queueOfflineAddItems,
   queueOfflineCheckout,
   queueOfflineOrder,
   removeItemFromOutbox,
@@ -123,4 +125,52 @@ test("removeItemFromOutbox removes action and resetOutboxItem resets status", ()
   removeItemFromOutbox(res.outboxId);
   items = getOutboxItems();
   assert.equal(items.length, 0);
+});
+
+test("queueOfflineAddItems appends items to existing offline order", () => {
+  const initial = queueOfflineOrder(
+    "branch-1",
+    {
+      type: "DINE_IN",
+      tableId: "table-1",
+      items: [{ menuItemId: "item-1", quantity: 1, modifierIds: [] }],
+    },
+    { estimatedTotal: 100 }
+  );
+
+  const updated = queueOfflineAddItems(
+    "branch-1",
+    initial.tempOrder.id,
+    [{ menuItemId: "item-2", quantity: 2, modifierIds: [] }],
+    { addedTotal: 200 }
+  );
+
+  assert.ok(updated);
+  assert.equal(updated.subtotal, "300.00");
+  assert.equal(updated.totalAmount, "300.00");
+
+  const items = getOutboxItems();
+  assert.equal(items.length, 1);
+  assert.equal(items[0].orderSummary.itemsCount, 3);
+  assert.equal(items[0].orderSummary.totalAmount, "300.00");
+  assert.equal(items[0].payload.items.length, 2);
+});
+
+test("cancelOfflineOrder removes offline order and pending checkouts from outbox", () => {
+  const initial = queueOfflineOrder("branch-1", {
+    type: "DINE_IN",
+    tableId: "table-1",
+    items: [{ menuItemId: "item-1", quantity: 1, modifierIds: [] }],
+  });
+
+  queueOfflineCheckout("branch-1", initial.tempOrder.id, {
+    payments: [{ method: "CASH", amount: 100 }],
+  });
+
+  assert.equal(getOutboxItems().length, 2);
+
+  const res = cancelOfflineOrder(initial.tempOrder.id);
+  assert.equal(res.status, "CANCELLED");
+
+  assert.equal(getOutboxItems().length, 0);
 });

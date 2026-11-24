@@ -552,54 +552,62 @@ export function CheckoutPanel({
         </div>
       </div>
 
-      {customer && customer.loyaltyPoints > 0 && !locked && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="points">Redeem loyalty points</Label>
-            <button
-              type="button"
-              className="text-xs font-medium text-primary hover:underline"
-              onClick={() =>
-                setPointsToRedeem(String(Math.min(customer.loyaltyPoints, Math.floor(bill?.totalDue ?? 0))))
-              }
-            >
-              Max ({customer.loyaltyPoints} available)
-            </button>
-          </div>
-          <Input
-            id="points"
-            type="number"
-            min="0"
-            max={customer.loyaltyPoints}
-            className="h-11"
-            value={pointsToRedeem}
-            onChange={(e) => setPointsToRedeem(e.target.value)}
-          />
+      {order.id.startsWith("off_") ? (
+        <div className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/30">
+          ⚡ Offline Mode: Loyalty points redemption and coupons require an active cloud connection to prevent duplicate redemption. Manual cash/percent discounts remain available.
         </div>
-      )}
+      ) : (
+        <>
+          {customer && customer.loyaltyPoints > 0 && !locked && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="points">Redeem loyalty points</Label>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline"
+                  onClick={() =>
+                    setPointsToRedeem(String(Math.min(customer.loyaltyPoints, Math.floor(bill?.totalDue ?? 0))))
+                  }
+                >
+                  Max ({customer.loyaltyPoints} available)
+                </button>
+              </div>
+              <Input
+                id="points"
+                type="number"
+                min="0"
+                max={customer.loyaltyPoints}
+                className="h-11"
+                value={pointsToRedeem}
+                onChange={(e) => setPointsToRedeem(e.target.value)}
+              />
+            </div>
+          )}
 
-      {canDiscount && !locked && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="coupon">Coupon code (optional)</Label>
-          <div className="flex gap-2">
-            <Input
-              id="coupon"
-              className="h-11"
-              value={couponInput}
-              onChange={(e) => setCouponInput(e.target.value)}
-              placeholder="e.g. SAVE10"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11"
-              disabled={!couponInput.trim() && !appliedCoupon}
-              onClick={applyCoupon}
-            >
-              Apply
-            </Button>
-          </div>
-        </div>
+          {canDiscount && !locked && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="coupon">Coupon code (optional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="coupon"
+                  className="h-11"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                  placeholder="e.g. SAVE10"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  disabled={!couponInput.trim() && !appliedCoupon}
+                  onClick={applyCoupon}
+                >
+                  Apply
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {!locked && (

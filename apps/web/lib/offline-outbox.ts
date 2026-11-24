@@ -292,11 +292,16 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
 
       try {
         if (item.type === "CREATE_ORDER") {
-          // Send to server with x-client-request-id for strict idempotency
+          // Send to server with x-client-request-id for strict idempotency and historical timestamp
           const res = await api.post<{ id: string; orderNumber: string }>(
             `/orders?branchId=${item.branchId}`,
             item.payload,
-            { headers: { "x-client-request-id": item.tempOrderId } }
+            {
+              headers: {
+                "x-client-request-id": item.tempOrderId,
+                "x-offline-created-at": new Date(item.createdAt).toISOString(),
+              },
+            }
           );
 
           item.status = "SYNCED";
@@ -327,6 +332,7 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
           const checkoutPayload = {
             ...item.payload,
             requestId: item.payload?.requestId || item.id,
+            allowPartial: true,
           };
 
           await api.post(
@@ -340,6 +346,13 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
         }
       } catch (err: any) {
         console.warn(`Sync failed for action ${item.id}:`, err);
+        if (err?.status === 401) {
+          console.warn("Outbox sync paused: Session expired / unauthorized.");
+          toast.warning("🔒 Please sign in to resume synchronizing offline orders.");
+          item.status = "PENDING";
+          saveOutboxItems(items);
+          break;
+        }
         item.status = "FAILED";
         item.error = err?.message || "Sync failed";
         item.retries += 1;
@@ -400,6 +413,63 @@ export function resetOutboxItem(id: string) {
 export async function retryOutboxItem(id: string) {
   resetOutboxItem(id);
   return flushOutbox();
+}
+
+/**
+ * Append additional items to an offline order (multi-round table ordering)
+ */
+export function queueOfflineAddItems(
+  branchId: string,
+  orderId: string,
+  items: any[],
+  metadata?: { itemsSummary?: OfflineItemSummary[]; addedTotal?: number }
+) {
+  const allActions = getOutboxItems();
+  const orderAction = allActions.find((a) => a.tempOrderId === orderId && a.type === "CREATE_ORDER");
+  if (orderAction) {
+    if (Array.isArray(orderAction.payload.items)) {
+      orderAction.payload.items.push(...items);
+    }
+    const addedCount = items.reduce((acc, i) => acc + (Number(i.quantity) || 1), 0);
+    orderAction.orderSummary.itemsCount += addedCount;
+    if (metadata?.addedTotal) {
+      const currentTotal = Number(orderAction.orderSummary.totalAmount) || 0;
+      orderAction.orderSummary.totalAmount = (currentTotal + metadata.addedTotal).toFixed(2);
+    }
+    if (metadata?.itemsSummary) {
+      orderAction.orderSummary.items = [
+        ...(orderAction.orderSummary.items || []),
+        ...metadata.itemsSummary,
+      ];
+    }
+    saveOutboxItems(allActions);
+    return {
+      id: orderId,
+      orderNumber: orderAction.orderSummary.orderNumber,
+      subtotal: orderAction.orderSummary.totalAmount,
+      taxAmount: "0.00",
+      discountAmount: "0.00",
+      tipAmount: "0.00",
+      loyaltyPointsRedeemed: 0,
+      loyaltyDiscountAmount: "0.00",
+      totalAmount: orderAction.orderSummary.totalAmount,
+      status: "OPEN",
+    };
+  }
+  return null;
+}
+
+/**
+ * Cancel an offline order before it reaches the cloud
+ */
+export function cancelOfflineOrder(orderId: string) {
+  const allActions = getOutboxItems();
+  const remaining = allActions.filter((a) => a.tempOrderId !== orderId && a.id !== orderId);
+  saveOutboxItems(remaining);
+  return {
+    id: orderId,
+    status: "CANCELLED",
+  };
 }
 
 /**

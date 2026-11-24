@@ -252,10 +252,16 @@ export class OrdersController {
     @Query('branchId') branchId: string,
     @Body() body: unknown,
     @Headers('x-client-request-id') clientRequestId?: string,
+    @Headers('x-offline-created-at') offlineCreatedAt?: string,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
+    let historical: { createdAt: Date } | undefined;
+    if (offlineCreatedAt && !Number.isNaN(Date.parse(offlineCreatedAt))) {
+      historical = { createdAt: new Date(offlineCreatedAt) };
+    }
     return this.ordersService.createOrder(branchId, user.id, body as never, {
       clientRequestId,
+      historical,
     });
   }
 

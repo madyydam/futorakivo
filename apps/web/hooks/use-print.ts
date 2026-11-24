@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { billQueryString, type BillQuery } from "@/lib/print";
+import { billQueryString, openKotPrint, openReceiptPrint, type BillQuery } from "@/lib/print";
 import { canPrintOnDevice, printEscposOnDevice } from "@/lib/device-print";
 
 export interface PrinterDiagnostics {
@@ -51,6 +51,10 @@ export function usePrintTestSlip(branchId?: string | null, kind?: "kot") {
 export function usePrintOrderUsb(branchId: string | null) {
   return useMutation({
     mutationFn: async ({ orderId, drawer, adjustments }: { orderId: string; drawer?: boolean; adjustments?: BillQuery }) => {
+      if (orderId.startsWith("off_")) {
+        openReceiptPrint(orderId, branchId || "", adjustments || {});
+        return { ok: true as const, unsupportedChars: [] };
+      }
       // In the phone app the bill goes to the phone's own Bluetooth printer;
       // everywhere else to the printer attached to the restaurant computer.
       const onDevice = canPrintOnDevice();
@@ -75,6 +79,14 @@ export interface KotPrintResult extends PrintJobResult {
 export function usePrintKot(branchId: string | null) {
   return useMutation({
     mutationFn: async ({ orderId, reprint }: { orderId: string; reprint?: boolean }) => {
+      if (orderId.startsWith("off_")) {
+        openKotPrint(orderId, branchId || "");
+        return {
+          ok: true as const,
+          unsupportedChars: [],
+          printed: [{ id: orderId, ticketNumber: orderId, reprint: 0 }],
+        } as KotPrintResult;
+      }
       const onDevice = canPrintOnDevice();
       const r = await api.post<KotPrintResult & { escpos?: string[] }>(
         `/orders/${orderId}/print/kot?branchId=${branchId}${reprint ? "&reprint=true" : ""}${onDevice ? "&via=device" : ""}`,

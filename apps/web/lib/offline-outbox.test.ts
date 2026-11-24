@@ -177,3 +177,26 @@ test("cancelOfflineOrder removes offline order and pending checkouts from outbox
 
   assert.equal(getOutboxItems().length, 0);
 });
+
+test("queueOfflineAddItems queues ADD_ITEMS action for an existing server order when offline", () => {
+  const result = queueOfflineAddItems(
+    "branch-1",
+    "ord_server_999",
+    [{ menuItemId: "item-3", quantity: 2, modifierIds: [] }],
+    {
+      addedTotal: 150,
+      itemsSummary: [{ name: "Cold Coffee", quantity: 2, price: "150.00" }],
+    }
+  );
+
+  assert.ok(result);
+  assert.equal(result.id, "ord_server_999");
+  assert.equal(result.totalAmount, "150.00");
+
+  const items = getOutboxItems();
+  assert.equal(items.length, 1);
+  assert.equal(items[0].type, "ADD_ITEMS");
+  assert.equal(items[0].tempOrderId, "ord_server_999");
+  assert.equal(items[0].orderSummary.itemsCount, 2);
+  assert.equal(items[0].orderSummary.items?.[0].name, "Cold Coffee");
+});

@@ -239,6 +239,11 @@ export class OrdersService {
       /** Website pricing change from Settings (cheaper / costlier). */
       priceAdjust?: OnlinePriceAdjust | null;
       /**
+       * Original creation timestamp for an offline-created order that synced later.
+       * Preserves accurate sales-hour reporting without skipping normal order lifecycle.
+       */
+      offlineCreatedAt?: Date;
+      /**
        * A sale that already happened (taken on a phone with no connection and
        * sent later): stamped with when it was sold, and it never reaches the
        * kitchen, occupies a table or raises a "new order" alert.
@@ -434,89 +439,106 @@ export class OrdersService {
 
     const orderNumber = await this.nextOrderNumber(branchId);
 
-    const order = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.order.create({
-        data: {
-          branchId,
-          orderNumber,
-          type: dto.type,
-          channel,
-          acceptance,
-          tableId: dto.tableId,
-          guestCount: dto.guestCount,
-          customerId: dto.customerId,
-          guestName: dto.guestName,
-          notes: dto.notes,
-          clientRequestId: options.clientRequestId,
-          ...(options.historical ? { createdAt: options.historical.createdAt } : {}),
-          integrationKeyId: options.integrationKeyId,
-          clientRequestHash: options.clientRequestHash,
-          externalSource: options.externalSource,
-          externalOrderId: options.externalOrderId,
-          externalCustomerRef: options.externalCustomerRef,
-          createdById: userId,
-          subtotal: totals.subtotal,
-          taxAmount: totals.taxAmount,
-          discountAmount: 0,
-          totalAmount: totals.subtotal,
-          scheduledFor,
-          ...(delivery
-            ? {
-                deliveryZoneId: delivery.deliveryZoneId,
-                deliveryFee: delivery.deliveryFee,
-                deliveryAddress: delivery.deliveryAddress,
-                deliveryPincode: delivery.deliveryPincode,
-                deliveryPhone: delivery.deliveryPhone,
-                deliveryLat: delivery.deliveryLat,
-                deliveryLng: delivery.deliveryLng,
-                deliveryPlace: delivery.deliveryPlace,
-                deliveryStatus: delivery.deliveryStatus,
-                deliveryEtaAt: delivery.deliveryEtaAt,
-              }
-            : {}),
-          items: {
-            create: lineInputs.map((line) => ({
-              menuItem: { connect: { id: line.menuItem.id } },
-              nameSnapshot: line.menuItem.name,
-              unitPriceSnapshot: line.menuItem.price,
-              taxRateSnapshot: line.menuItem.taxRatePercent,
-              quantity: line.cartItem.quantity,
-              lineTotal: line.priced.lineTotal,
-              kitchenNote: line.cartItem.kitchenNote,
-              modifiers: {
-                create: line.selectedModifiers.map((m) => ({
-                  modifier: { connect: { id: m.id } },
-                  nameSnapshot: m.name,
-                  priceAdjSnapshot: m.priceAdjustment,
-                })),
-              },
-            })),
+    let order: any;
+    try {
+      order = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.order.create({
+          data: {
+            branchId,
+            orderNumber,
+            type: dto.type,
+            channel,
+            acceptance,
+            tableId: dto.tableId,
+            guestCount: dto.guestCount,
+            customerId: dto.customerId,
+            guestName: dto.guestName,
+            notes: dto.notes,
+            clientRequestId: options.clientRequestId,
+            ...(options.offlineCreatedAt
+              ? { createdAt: options.offlineCreatedAt }
+              : options.historical
+                ? { createdAt: options.historical.createdAt }
+                : {}),
+            integrationKeyId: options.integrationKeyId,
+            clientRequestHash: options.clientRequestHash,
+            externalSource: options.externalSource,
+            externalOrderId: options.externalOrderId,
+            externalCustomerRef: options.externalCustomerRef,
+            createdById: userId,
+            subtotal: totals.subtotal,
+            taxAmount: totals.taxAmount,
+            discountAmount: 0,
+            totalAmount: totals.subtotal,
+            scheduledFor,
+            ...(delivery
+              ? {
+                  deliveryZoneId: delivery.deliveryZoneId,
+                  deliveryFee: delivery.deliveryFee,
+                  deliveryAddress: delivery.deliveryAddress,
+                  deliveryPincode: delivery.deliveryPincode,
+                  deliveryPhone: delivery.deliveryPhone,
+                  deliveryLat: delivery.deliveryLat,
+                  deliveryLng: delivery.deliveryLng,
+                  deliveryPlace: delivery.deliveryPlace,
+                  deliveryStatus: delivery.deliveryStatus,
+                  deliveryEtaAt: delivery.deliveryEtaAt,
+                }
+              : {}),
+            items: {
+              create: lineInputs.map((line) => ({
+                menuItem: { connect: { id: line.menuItem.id } },
+                nameSnapshot: line.menuItem.name,
+                unitPriceSnapshot: line.menuItem.price,
+                taxRateSnapshot: line.menuItem.taxRatePercent,
+                quantity: line.cartItem.quantity,
+                lineTotal: line.priced.lineTotal,
+                kitchenNote: line.cartItem.kitchenNote,
+                modifiers: {
+                  create: line.selectedModifiers.map((m) => ({
+                    modifier: { connect: { id: m.id } },
+                    nameSnapshot: m.name,
+                    priceAdjSnapshot: m.priceAdjustment,
+                  })),
+                },
+              })),
+            },
           },
-        },
-        include: { items: true },
-      });
-
-      if (dto.tableId && !options.historical) {
-        await tx.table.update({
-          where: { id: dto.tableId },
-          data: { status: 'OCCUPIED', statusSince: new Date() },
+          include: { items: true },
         });
-      }
 
-      // A pending online order must not reach the kitchen until accepted
-      // (acceptOrder() generates the tickets then).
-      // A scheduled order also waits: releaseDueScheduledOrders() sends it to
-      // the kitchen shortly before its time.
-      if (
-        acceptance !== 'PENDING' &&
-        !this.isDeferred(scheduledFor) &&
-        !options.historical
-      ) {
-        await this.generateKots(tx, created.id, branchId, created.items);
-      }
+        if (dto.tableId && !options.historical) {
+          await tx.table.update({
+            where: { id: dto.tableId },
+            data: { status: 'OCCUPIED', statusSince: new Date() },
+          });
+        }
 
-      return created;
-    });
+        // A pending online order must not reach the kitchen until accepted
+        // (acceptOrder() generates the tickets then).
+        // A scheduled order also waits: releaseDueScheduledOrders() sends it to
+        // the kitchen shortly before its time.
+        if (
+          acceptance !== 'PENDING' &&
+          !this.isDeferred(scheduledFor) &&
+          !options.historical
+        ) {
+          await this.generateKots(tx, created.id, branchId, created.items);
+        }
+
+        return created;
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2002' && options.clientRequestId) {
+        const existing = await this.prisma.order.findFirst({
+          where: { branchId, clientRequestId: options.clientRequestId },
+        });
+        if (existing) {
+          return this.getOrder(branchId, existing.id);
+        }
+      }
+      throw err;
+    }
 
     if (options.historical) return this.getOrder(branchId, order.id);
 

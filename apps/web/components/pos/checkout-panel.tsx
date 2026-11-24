@@ -164,7 +164,45 @@ export function CheckoutPanel({
     hasPayments ? {} : settled,
     order.status === "OPEN",
   );
-  const bill: BillPreview | undefined = billQuery.data;
+
+  const offlineBill = useMemo<BillPreview | undefined>(() => {
+    if (billQuery.data) return billQuery.data;
+    if (order.id.startsWith("off_") || (typeof navigator !== "undefined" && !navigator.onLine)) {
+      const subtotal = Number(order.subtotal || order.totalAmount) || 0;
+      const discountPercent = "discountPercent" in settled ? settled.discountPercent : 0;
+      const discountFlat = "discountFlat" in settled ? settled.discountFlat : 0;
+      let discountAmount = 0;
+      if (discountPercent) {
+        discountAmount = round2((subtotal * discountPercent) / 100);
+      } else if (discountFlat) {
+        discountAmount = Math.min(subtotal, discountFlat);
+      }
+      const tip = settled.tipAmount || 0;
+      const totalDue = round2(Math.max(0, subtotal - discountAmount + tip));
+      return {
+        locked: false,
+        status: order.status || "OPEN",
+        subtotal,
+        discountAmount,
+        discountPercent,
+        discountType: discountPercent ? "PERCENT" : discountFlat ? "FIXED" : null,
+        discountValue: discountPercent || discountFlat || null,
+        couponCode: null,
+        promotionName: null,
+        taxAmount: Number(order.taxAmount) || 0,
+        loyaltyPointsRedeemed: 0,
+        loyaltyDiscountAmount: 0,
+        tipAmount: tip,
+        deliveryFee: Number(order.deliveryFee) || 0,
+        totalDue,
+        amountPaid: 0,
+        balanceDue: totalDue,
+      };
+    }
+    return undefined;
+  }, [billQuery.data, order, settled]);
+
+  const bill: BillPreview | undefined = billQuery.data ?? offlineBill;
   const locked = (bill?.locked ?? false) || hasPayments;
   const repricing = adjustments !== settled;
 

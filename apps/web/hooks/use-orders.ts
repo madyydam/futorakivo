@@ -17,6 +17,7 @@ import {
   queueOfflineAddItems,
   queueOfflineCheckout,
   queueOfflineOrder,
+  type OfflineItemSummary,
   type OfflineOrderMetadata,
 } from "@/lib/offline-outbox";
 
@@ -347,15 +348,40 @@ export function useOpenOrdersForTable(branchId: string | null, tableId: string |
 export function useAddOrderItems(branchId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ orderId, dto }: { orderId: string; dto: AddOrderItemsDto }) => {
+    mutationFn: async ({
+      orderId,
+      dto,
+      metadata,
+    }: {
+      orderId: string;
+      dto: AddOrderItemsDto;
+      metadata?: { itemsSummary?: OfflineItemSummary[]; addedTotal?: number };
+    }) => {
       if (orderId.startsWith("off_") || (typeof navigator !== "undefined" && !navigator.onLine)) {
-        const res = queueOfflineAddItems(branchId || "", orderId, dto.items);
+        const res = queueOfflineAddItems(branchId || "", orderId, dto.items, metadata);
         if (res) {
           toast.info("Added items to offline order");
           return res as unknown as CreatedOrder;
         }
       }
-      return api.post<CreatedOrder>(`/orders/${orderId}/items?branchId=${branchId}`, dto);
+      try {
+        return await api.post<CreatedOrder>(`/orders/${orderId}/items?branchId=${branchId}`, dto);
+      } catch (err: any) {
+        const isNetworkFailure =
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          err?.message?.includes("fetch") ||
+          err?.message?.includes("NetworkError") ||
+          err?.message?.includes("Failed to fetch") ||
+          err?.status === 0;
+        if (isNetworkFailure) {
+          const res = queueOfflineAddItems(branchId || "", orderId, dto.items, metadata);
+          if (res) {
+            toast.warning("⚡ Network offline: Items saved to local queue");
+            return res as unknown as CreatedOrder;
+          }
+        }
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });

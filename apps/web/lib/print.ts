@@ -16,24 +16,38 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
-function generateOfflineReceiptHtml(orderId: string): string {
+function getOfflineOrderData(orderId: string) {
   const items = getOutboxItems();
-  const item = items.find((i) => i.tempOrderId === orderId || i.id === orderId);
-  const orderNum = escapeHtml(item?.orderSummary?.orderNumber || orderId);
-  const table = escapeHtml(item?.orderSummary?.tableName || "Takeaway");
-  const total = escapeHtml(item?.orderSummary?.totalAmount || "0.00");
+  const checkoutAction = items.find((i) => (i.tempOrderId === orderId || i.id === orderId) && i.type === "CHECKOUT_ORDER");
+  const createAction = items.find((i) => (i.tempOrderId === orderId || i.id === orderId) && i.type === "CREATE_ORDER");
+  const primary = checkoutAction || createAction || items.find((i) => i.tempOrderId === orderId || i.id === orderId);
+  return { checkoutAction, createAction, primary };
+}
+
+function generateOfflineReceiptHtml(orderId: string): string {
+  const { checkoutAction, createAction, primary } = getOfflineOrderData(orderId);
+  const orderNum = escapeHtml(primary?.orderSummary?.orderNumber || (orderId.startsWith("off_") ? `OFF-${orderId.slice(-4)}` : orderId.slice(-4)));
+  const table = escapeHtml(createAction?.orderSummary?.tableName || primary?.orderSummary?.tableName || "Takeaway");
+  const total = escapeHtml(checkoutAction?.orderSummary?.totalAmount || primary?.orderSummary?.totalAmount || "0.00");
   const dateStr = escapeHtml(
-    item?.createdAt
-      ? new Date(item.createdAt).toLocaleString("en-IN")
+    primary?.createdAt
+      ? new Date(primary.createdAt).toLocaleString("en-IN")
       : new Date().toLocaleString("en-IN")
   );
 
-  const customerName = item?.orderSummary?.customerName ? escapeHtml(item.orderSummary.customerName) : null;
-  const customerPhone = item?.orderSummary?.customerPhone ? escapeHtml(item.orderSummary.customerPhone) : null;
-  const deliveryAddr = item?.orderSummary?.deliveryAddress ? escapeHtml(item.orderSummary.deliveryAddress) : null;
+  const customerName = (primary?.orderSummary?.customerName || createAction?.orderSummary?.customerName)
+    ? escapeHtml((primary?.orderSummary?.customerName || createAction?.orderSummary?.customerName)!)
+    : null;
+  const customerPhone = (primary?.orderSummary?.customerPhone || createAction?.orderSummary?.customerPhone)
+    ? escapeHtml((primary?.orderSummary?.customerPhone || createAction?.orderSummary?.customerPhone)!)
+    : null;
+  const deliveryAddr = (primary?.orderSummary?.deliveryAddress || createAction?.orderSummary?.deliveryAddress)
+    ? escapeHtml((primary?.orderSummary?.deliveryAddress || createAction?.orderSummary?.deliveryAddress)!)
+    : null;
 
-  const itemRows = item?.orderSummary?.items?.length
-    ? item.orderSummary.items
+  const lineItems = checkoutAction?.orderSummary?.items || createAction?.orderSummary?.items || primary?.orderSummary?.items;
+  const itemRows = lineItems?.length
+    ? lineItems
         .map(
           (it) => `
     <div class="row">
@@ -44,12 +58,13 @@ function generateOfflineReceiptHtml(orderId: string): string {
         .join("")
     : `
     <div class="row">
-      <span>Bill Summary (${Number(item?.orderSummary?.itemsCount) || 1} items)</span>
+      <span>Bill Summary (${Number(primary?.orderSummary?.itemsCount) || 1} items)</span>
       <span>₹${total}</span>
     </div>`;
 
-  const paymentRows = item?.orderSummary?.payments?.length
-    ? item.orderSummary.payments
+  const payments = checkoutAction?.orderSummary?.payments || primary?.orderSummary?.payments;
+  const paymentRows = payments?.length
+    ? payments
         .map(
           (p) => `
     <div class="row" style="font-size: 11px;">
@@ -108,22 +123,28 @@ function generateOfflineReceiptHtml(orderId: string): string {
 }
 
 function generateOfflineKotHtml(orderId: string): string {
-  const items = getOutboxItems();
-  const item = items.find((i) => i.tempOrderId === orderId || i.id === orderId);
-  const orderNum = escapeHtml(item?.orderSummary?.orderNumber || orderId);
-  const table = escapeHtml(item?.orderSummary?.tableName || "Takeaway");
+  const { createAction, primary } = getOfflineOrderData(orderId);
+  const orderNum = escapeHtml(primary?.orderSummary?.orderNumber || (orderId.startsWith("off_") ? `OFF-${orderId.slice(-4)}` : orderId.slice(-4)));
+  const table = escapeHtml(createAction?.orderSummary?.tableName || primary?.orderSummary?.tableName || "Takeaway");
   const dateStr = escapeHtml(
-    item?.createdAt
-      ? new Date(item.createdAt).toLocaleTimeString("en-IN")
+    primary?.createdAt
+      ? new Date(primary.createdAt).toLocaleTimeString("en-IN")
       : new Date().toLocaleTimeString("en-IN")
   );
 
-  const customerName = item?.orderSummary?.customerName ? escapeHtml(item.orderSummary.customerName) : null;
-  const customerPhone = item?.orderSummary?.customerPhone ? escapeHtml(item.orderSummary.customerPhone) : null;
-  const deliveryAddr = item?.orderSummary?.deliveryAddress ? escapeHtml(item.orderSummary.deliveryAddress) : null;
+  const customerName = (primary?.orderSummary?.customerName || createAction?.orderSummary?.customerName)
+    ? escapeHtml((primary?.orderSummary?.customerName || createAction?.orderSummary?.customerName)!)
+    : null;
+  const customerPhone = (primary?.orderSummary?.customerPhone || createAction?.orderSummary?.customerPhone)
+    ? escapeHtml((primary?.orderSummary?.customerPhone || createAction?.orderSummary?.customerPhone)!)
+    : null;
+  const deliveryAddr = (primary?.orderSummary?.deliveryAddress || createAction?.orderSummary?.deliveryAddress)
+    ? escapeHtml((primary?.orderSummary?.deliveryAddress || createAction?.orderSummary?.deliveryAddress)!)
+    : null;
 
-  const itemRows = item?.orderSummary?.items?.length
-    ? item.orderSummary.items
+  const lineItems = createAction?.orderSummary?.items || primary?.orderSummary?.items;
+  const itemRows = lineItems?.length
+    ? lineItems
         .map(
           (it) => `
     <div class="row" style="font-size: 15px; font-weight: bold; margin-bottom: 2px;">
@@ -135,7 +156,7 @@ function generateOfflineKotHtml(orderId: string): string {
     : `
     <div class="row">
       <span>Order Items</span>
-      <span>${Number(item?.orderSummary?.itemsCount) || 1}</span>
+      <span>${Number(primary?.orderSummary?.itemsCount) || 1}</span>
     </div>`;
 
   return `<!DOCTYPE html>
@@ -222,13 +243,25 @@ function printPageOnDevice(url: string, name: string) {
 
 /** Browser print of the bill (open order) or receipt (paid order). Read-only. */
 export function openReceiptPrint(orderId: string, branchId: string, adj: BillQuery = {}) {
-  if (orderId.startsWith("off_")) {
+  const isOffline =
+    orderId.startsWith("off_") ||
+    (typeof navigator !== "undefined" &&
+      !navigator.onLine &&
+      getOutboxItems().some((i) => i.tempOrderId === orderId || i.id === orderId));
+
+  if (isOffline) {
     const html = generateOfflineReceiptHtml(orderId);
     if (canPrintOnDevice()) {
       printHtmlOnDevice(html, "Offline Bill");
       return;
     }
     const frame = getPrintFrame();
+    frame.onload = () => {
+      try {
+        frame.contentWindow?.focus();
+        frame.contentWindow?.print();
+      } catch {}
+    };
     frame.srcdoc = html;
     return;
   }
@@ -253,13 +286,25 @@ export function openReceiptPrint(orderId: string, branchId: string, adj: BillQue
 }
 
 export function openKotPrint(orderId: string, branchId: string) {
-  if (orderId.startsWith("off_")) {
+  const isOffline =
+    orderId.startsWith("off_") ||
+    (typeof navigator !== "undefined" &&
+      !navigator.onLine &&
+      getOutboxItems().some((i) => i.tempOrderId === orderId || i.id === orderId));
+
+  if (isOffline) {
     const html = generateOfflineKotHtml(orderId);
     if (canPrintOnDevice()) {
       printHtmlOnDevice(html, "Offline KOT");
       return;
     }
     const frame = getPrintFrame();
+    frame.onload = () => {
+      try {
+        frame.contentWindow?.focus();
+        frame.contentWindow?.print();
+      } catch {}
+    };
     frame.srcdoc = html;
     return;
   }

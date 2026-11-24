@@ -104,8 +104,17 @@ function PosPageInner() {
   const offlineOrdersForTable = useMemo(() => {
     if (!tableId || orderType !== "DINE_IN") return [];
     const outbox = getOutboxItems();
+    const paidTempIds = new Set(
+      outbox.filter((i) => i.type === "CHECKOUT_ORDER").map((i) => i.tempOrderId)
+    );
     return outbox
-      .filter((i) => i.type === "CREATE_ORDER" && i.orderSummary.tableId === tableId && i.status !== "SYNCED")
+      .filter(
+        (i) =>
+          i.type === "CREATE_ORDER" &&
+          i.orderSummary.tableId === tableId &&
+          i.status !== "SYNCED" &&
+          !paidTempIds.has(i.tempOrderId)
+      )
       .map((i) => ({
         id: i.tempOrderId,
         orderNumber: i.orderSummary.orderNumber,
@@ -209,9 +218,16 @@ function PosPageInner() {
         : {}),
     }));
 
+    const estimatedTotal = lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+    const itemsSummary = lines.map((l) => ({
+      name: l.name,
+      quantity: l.quantity,
+      price: (l.unitPrice * l.quantity).toFixed(2),
+    }));
+
     if (existingOrder) {
       addOrderItems.mutate(
-        { orderId: existingOrder.id, dto: { items } },
+        { orderId: existingOrder.id, dto: { items }, metadata: { itemsSummary, addedTotal: estimatedTotal } },
         {
           onSuccess: (order) => {
             setDrafts((d) => clearDraft(d, sentTableId));
@@ -224,13 +240,6 @@ function PosPageInner() {
       );
       return;
     }
-
-    const estimatedTotal = lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
-    const itemsSummary = lines.map((l) => ({
-      name: l.name,
-      quantity: l.quantity,
-      price: (l.unitPrice * l.quantity).toFixed(2),
-    }));
 
     createOrder.mutate(
       {

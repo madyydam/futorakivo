@@ -17,7 +17,7 @@ export interface OfflineOrderMetadata {
 
 export interface OutboxAction {
   id: string;
-  type: "CREATE_ORDER" | "CHECKOUT_ORDER";
+  type: "CREATE_ORDER" | "CHECKOUT_ORDER" | "ADD_ITEMS";
   branchId: string;
   tempOrderId: string;
   serverOrderId?: string;
@@ -363,6 +363,22 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
 
           item.status = "SYNCED";
           syncedCount++;
+        } else if (item.type === "ADD_ITEMS") {
+          const targetOrderId = idMap[item.tempOrderId] || item.tempOrderId;
+          if (targetOrderId.startsWith("off_")) {
+            console.warn(`Postponing add items for unsynced offline order ${targetOrderId}`);
+            item.status = "PENDING";
+            continue;
+          }
+
+          await api.post(
+            `/orders/${targetOrderId}/items?branchId=${item.branchId}`,
+            item.payload,
+            { headers: { "x-client-request-id": item.id } }
+          );
+
+          item.status = "SYNCED";
+          syncedCount++;
         }
       } catch (err: any) {
         console.warn(`Sync failed for action ${item.id}:`, err);
@@ -491,7 +507,42 @@ export function queueOfflineAddItems(
       status: "OPEN",
     };
   }
-  return null;
+
+  // If adding items to a server order while offline, queue an ADD_ITEMS outbox action
+  const addedCount = items.reduce((acc, i) => acc + (Number(i.quantity) || 1), 0);
+  const action: OutboxAction = {
+    id: `act_add_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    type: "ADD_ITEMS",
+    branchId,
+    tempOrderId: orderId,
+    payload: { items },
+    orderSummary: {
+      totalAmount: metadata?.addedTotal ? metadata.addedTotal.toFixed(2) : "0.00",
+      itemsCount: addedCount,
+      orderNumber: orderId.slice(-4),
+      createdAt: new Date().toISOString(),
+      items: metadata?.itemsSummary,
+    },
+    status: "PENDING",
+    retries: 0,
+    createdAt: Date.now(),
+  };
+
+  allActions.push(action);
+  saveOutboxItems(allActions);
+
+  return {
+    id: orderId,
+    orderNumber: action.orderSummary.orderNumber,
+    subtotal: action.orderSummary.totalAmount,
+    taxAmount: "0.00",
+    discountAmount: "0.00",
+    tipAmount: "0.00",
+    loyaltyPointsRedeemed: 0,
+    loyaltyDiscountAmount: "0.00",
+    totalAmount: action.orderSummary.totalAmount,
+    status: "OPEN",
+  };
 }
 
 /**

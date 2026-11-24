@@ -51,7 +51,10 @@ export function usePrintTestSlip(branchId?: string | null, kind?: "kot") {
 export function usePrintOrderUsb(branchId: string | null) {
   return useMutation({
     mutationFn: async ({ orderId, drawer, adjustments }: { orderId: string; drawer?: boolean; adjustments?: BillQuery }) => {
-      if (orderId.startsWith("off_")) {
+      const isOffline =
+        orderId.startsWith("off_") ||
+        (typeof navigator !== "undefined" && !navigator.onLine);
+      if (isOffline) {
         openReceiptPrint(orderId, branchId || "", adjustments || {});
         return { ok: true as const, unsupportedChars: [] };
       }
@@ -79,7 +82,10 @@ export interface KotPrintResult extends PrintJobResult {
 export function usePrintKot(branchId: string | null) {
   return useMutation({
     mutationFn: async ({ orderId, reprint }: { orderId: string; reprint?: boolean }) => {
-      if (orderId.startsWith("off_")) {
+      const isOffline =
+        orderId.startsWith("off_") ||
+        (typeof navigator !== "undefined" && !navigator.onLine);
+      if (isOffline) {
         openKotPrint(orderId, branchId || "");
         return {
           ok: true as const,

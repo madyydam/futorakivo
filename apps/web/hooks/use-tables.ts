@@ -49,16 +49,39 @@ export const DEMO_FLOORS: Floor[] = [
   },
 ];
 
+function getCached<T>(key: string): T | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCached(key: string, data: unknown) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(data));
+  } catch {}
+}
+
 export function useFloors(branchId: string | null) {
   return useQuery({
     queryKey: ["floors", branchId],
     queryFn: async () => {
+      const cacheKey = `kivo.pos.cache.floors.${branchId || "all"}`;
       try {
         const res = await api.get<Floor[]>(`/tables/floors?branchId=${branchId}`);
-        if (Array.isArray(res) && res.length > 0) return res;
+        if (Array.isArray(res) && res.length > 0) {
+          setCached(cacheKey, res);
+          return res;
+        }
       } catch {
-        // Fallback to demo floors
+        // Fallback to cached floors
       }
+      const cached = getCached<Floor[]>(cacheKey);
+      if (cached && cached.length > 0) return cached;
       return DEMO_FLOORS;
     },
     enabled: true,

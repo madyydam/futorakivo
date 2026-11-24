@@ -67,16 +67,39 @@ export const DEMO_MENU_ITEMS: MenuItem[] = [
   { id: "item-7", categoryId: "cat-3", stationId: null, name: "Fresh Lime Soda", imageUrl: null, price: "80", halfPrice: null, taxRatePercent: "5", isVeg: true, isActive: true, isCombo: false, category: { id: "cat-3", name: "Beverages" }, station: null, modifierGroups: [] },
 ];
 
+function getCached<T>(key: string): T | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCached(key: string, data: unknown) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(data));
+  } catch {}
+}
+
 export function useCategories(branchId: string | null) {
   return useQuery({
     queryKey: ["menu", "categories", branchId],
     queryFn: async () => {
+      const cacheKey = `kivo.pos.cache.categories.${branchId || "all"}`;
       try {
         const res = await api.get<MenuCategory[]>(`/menu/categories?branchId=${branchId}`);
-        if (Array.isArray(res) && res.length > 0) return res;
+        if (Array.isArray(res) && res.length > 0) {
+          setCached(cacheKey, res);
+          return res;
+        }
       } catch {
-        // Fallback to demo categories
+        // Fallback to cached categories or demo
       }
+      const cached = getCached<MenuCategory[]>(cacheKey);
+      if (cached && cached.length > 0) return cached;
       return DEMO_CATEGORIES;
     },
     enabled: true,
@@ -103,13 +126,21 @@ export function useMenuItems(branchId: string | null, categoryId?: string) {
   return useQuery({
     queryKey: ["menu", "items", branchId, categoryId],
     queryFn: async () => {
+      const cacheKey = `kivo.pos.cache.items.${branchId || "all"}`;
       try {
         const res = await api.get<MenuItem[]>(
           `/menu/items?branchId=${branchId}${categoryId ? `&categoryId=${categoryId}` : ""}`,
         );
-        if (Array.isArray(res) && res.length > 0) return res;
+        if (Array.isArray(res) && res.length > 0) {
+          if (!categoryId) setCached(cacheKey, res);
+          return res;
+        }
       } catch {
-        // Fallback to demo items
+        // Fallback to cached items
+      }
+      const cachedAll = getCached<MenuItem[]>(cacheKey);
+      if (cachedAll && cachedAll.length > 0) {
+        return categoryId ? cachedAll.filter((i) => i.categoryId === categoryId) : cachedAll;
       }
       if (categoryId) {
         return DEMO_MENU_ITEMS.filter((i) => i.categoryId === categoryId);

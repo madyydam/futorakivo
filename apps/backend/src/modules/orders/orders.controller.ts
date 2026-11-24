@@ -255,13 +255,13 @@ export class OrdersController {
     @Headers('x-offline-created-at') offlineCreatedAt?: string,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
-    let historical: { createdAt: Date } | undefined;
+    let offlineCreatedDate: Date | undefined;
     if (offlineCreatedAt && !Number.isNaN(Date.parse(offlineCreatedAt))) {
-      historical = { createdAt: new Date(offlineCreatedAt) };
+      offlineCreatedDate = new Date(offlineCreatedAt);
     }
     return this.ordersService.createOrder(branchId, user.id, body as never, {
       clientRequestId,
-      historical,
+      offlineCreatedAt: offlineCreatedDate,
     });
   }
 

@@ -25,6 +25,20 @@ export interface IssueApprovalResult {
   expiresAt: Date;
 }
 
+/** Deterministic key-sorted JSON serialization so property-order differences don't break changeHash matching. */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => stableStringify(v)).join(',')}]`;
+  }
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  return `{${keys
+    .map((k) => `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`)
+    .join(',')}}`;
+}
+
 @Injectable()
 export class ApprovalsService {
   constructor(
@@ -170,7 +184,7 @@ export class ApprovalsService {
     const changeHash = dto.changePayload
       ? crypto
           .createHash('sha256')
-          .update(JSON.stringify(dto.changePayload))
+          .update(stableStringify(dto.changePayload))
           .digest('hex')
       : '';
 
@@ -277,7 +291,7 @@ export class ApprovalsService {
       if (record.changeHash && changePayload !== undefined && changePayload !== null) {
         const computedPayloadHash = crypto
           .createHash('sha256')
-          .update(JSON.stringify(changePayload))
+          .update(stableStringify(changePayload))
           .digest('hex');
         if (computedPayloadHash !== record.changeHash) {
           throw new ForbiddenException(
@@ -286,11 +300,18 @@ export class ApprovalsService {
         }
       }
 
-      // Mark token as consumed
-      const updatedToken = await tx.approvalToken.update({
-        where: { id: record.id },
-        data: { consumedAt: new Date() },
+      // Atomically claim the single-use token inside the transaction so concurrent
+      // requests carrying the same token cannot both observe consumedAt=null.
+      const consumedAt = new Date();
+      const claimed = await tx.approvalToken.updateMany({
+        where: { id: record.id, consumedAt: null },
+        data: { consumedAt },
       });
+      if (claimed.count === 0) {
+        throw new ForbiddenException(
+          'Manager approval token has already been consumed (single-use only)',
+        );
+      }
 
       // Update approval log outcome to USED
       await tx.approvalLog.updateMany({
@@ -305,7 +326,7 @@ export class ApprovalsService {
         data: { outcome: ApprovalOutcome.USED },
       });
 
-      return updatedToken;
+      return { ...record, consumedAt };
     });
   }
 }

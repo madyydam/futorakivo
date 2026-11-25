@@ -73,11 +73,50 @@ export class RealtimeGateway
       const token = this.extractSessionCookie(client);
       if (!token) throw new Error('No session cookie');
 
-      const payload = this.jwt.verify<{ sub: string }>(token);
+      const payload = this.jwt.verify<{
+        sub: string;
+        pv?: number;
+        isImpersonating?: boolean;
+      }>(token);
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
+        include: {
+          restaurant: {
+            select: {
+              status: true,
+              isActivated: true,
+              subscriptionExpiresAt: true,
+            },
+          },
+        },
       });
       if (!user || !user.isActive) throw new Error('Session no longer valid');
+      if (
+        payload.pv !== undefined &&
+        user.permissionsVersion !== undefined &&
+        payload.pv !== user.permissionsVersion
+      ) {
+        throw new Error('Permissions or credentials rotated');
+      }
+      const r = user.restaurant;
+      if (r) {
+        if (r.status === 'SUSPENDED' && !payload.isImpersonating) {
+          throw new Error('Restaurant account suspended');
+        }
+        if (
+          r.status === 'PENDING_APPROVAL' ||
+          (r.status === 'APPROVED' && !r.isActivated)
+        ) {
+          throw new Error('Restaurant activation incomplete');
+        }
+        if (
+          r.subscriptionExpiresAt &&
+          r.subscriptionExpiresAt < new Date() &&
+          r.status === 'ACTIVE'
+        ) {
+          throw new Error('Restaurant subscription expired');
+        }
+      }
 
       const branchId = client.handshake.query.branchId;
       if (typeof branchId !== 'string' || !branchId) {

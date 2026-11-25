@@ -119,13 +119,28 @@ export class PublicMenuService {
 
     // Automatic CRM capture: create or link customer profile by phone number (master key)
     const cleanPhone = guestPhone.trim();
+    const digitsOnly = cleanPhone.replace(/\D/g, '');
+    const phoneVariants = new Set<string>([cleanPhone]);
+    if (digitsOnly.length >= 6) {
+      phoneVariants.add(digitsOnly);
+    }
+    if (digitsOnly.length > 10) {
+      const last10 = digitsOnly.slice(-10);
+      phoneVariants.add(last10);
+      phoneVariants.add(`+${digitsOnly}`);
+    } else if (digitsOnly.length === 10) {
+      phoneVariants.add(`91${digitsOnly}`);
+      phoneVariants.add(`+91${digitsOnly}`);
+    }
+    const candidateHashes = [...phoneVariants].map((variant) =>
+      createHash('sha256').update(variant).digest('hex'),
+    );
 
-    // 1. Anti-Abuse Shield: Check if phone number is blocked by outlet management
-    const phoneHash = createHash('sha256').update(cleanPhone).digest('hex');
+    // 1. Anti-Abuse Shield: Check if phone number (or formatted variant) is blocked
     const blockedGuest = await this.prisma.guestBlock.findFirst({
       where: {
         outletId: branchId,
-        phoneHash,
+        phoneHash: { in: candidateHashes },
         OR: [{ blockedUntil: null }, { blockedUntil: { gt: new Date() } }],
       },
     });

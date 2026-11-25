@@ -2,9 +2,10 @@
 
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusNote, useNoteToast } from "@/components/ui/status-note";
 import {
   useCompleteOnboarding,
   useOnboarding,
@@ -39,6 +40,14 @@ export default function OnboardingPage() {
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [initialized, setInitialized] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const { note, clear, toast } = useNoteToast();
+
+  const draftRef = useRef<Record<string, any>>(draft);
+  const currentStepRef = useRef<number>(currentStep);
+  const updateMutateRef = useRef(updateMutation.mutate);
+  draftRef.current = draft;
+  currentStepRef.current = currentStep;
+  updateMutateRef.current = updateMutation.mutate;
 
   // Sync state once fetched from backend, or handle 401 unauthorized & local recovery
   useEffect(() => {
@@ -48,19 +57,24 @@ export default function OnboardingPage() {
 
     if (onboardingData && !initialized) {
       if (onboardingData.currentStep) {
+        currentStepRef.current = onboardingData.currentStep;
         setCurrentStep(onboardingData.currentStep);
       }
       if (onboardingData.completedSteps) {
         setCompletedSteps(onboardingData.completedSteps);
       }
       if (onboardingData.draftJson && Object.keys(onboardingData.draftJson).length > 0) {
+        draftRef.current = onboardingData.draftJson;
         setDraft(onboardingData.draftJson);
       } else if (typeof window !== "undefined") {
         const local = localStorage.getItem(LOCAL_BACKUP_KEY);
         if (local) {
           try {
             const parsed = JSON.parse(local);
-            if (parsed.draft) setDraft(parsed.draft);
+            if (parsed.draft) {
+              draftRef.current = parsed.draft;
+              setDraft(parsed.draft);
+            }
           } catch {}
         }
       }
@@ -76,8 +90,14 @@ export default function OnboardingPage() {
           if (local) {
             try {
               const parsed = JSON.parse(local);
-              if (parsed.draft) setDraft(parsed.draft);
-              if (parsed.currentStep) setCurrentStep(parsed.currentStep);
+              if (parsed.draft) {
+                draftRef.current = parsed.draft;
+                setDraft(parsed.draft);
+              }
+              if (parsed.currentStep) {
+                currentStepRef.current = parsed.currentStep;
+                setCurrentStep(parsed.currentStep);
+              }
               if (parsed.completedSteps) setCompletedSteps(parsed.completedSteps);
             } catch {}
           }
@@ -87,7 +107,7 @@ export default function OnboardingPage() {
     }
   }, [onboardingData, initialized, isError, error, router]);
 
-  // Online / Offline recovery event listeners
+  // Online / Offline recovery event listeners (bound once using refs)
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -97,8 +117,8 @@ export default function OnboardingPage() {
           try {
             const parsed = JSON.parse(local);
             if (parsed.draft) {
-              updateMutation.mutate({
-                currentStep: parsed.currentStep || currentStep,
+              updateMutateRef.current({
+                currentStep: parsed.currentStep || currentStepRef.current,
                 draftJson: parsed.draft,
               });
             }
@@ -114,7 +134,7 @@ export default function OnboardingPage() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [currentStep, updateMutation]);
+  }, []);
 
   // Synchronize local storage backup outside render cycle
   useEffect(() => {
@@ -127,56 +147,60 @@ export default function OnboardingPage() {
     } catch {}
   }, [draft, currentStep, completedSteps, initialized]);
 
-  // Patch draft in a pure state updater
+  // Patch draft synchronously on draftRef so immediate onNext calls never drop fields
   const handleUpdateDraft = useCallback((patch: Record<string, any>) => {
-    setDraft((prev) => ({ ...prev, ...patch }));
+    setDraft((prev) => {
+      const next = { ...prev, ...patch };
+      draftRef.current = next;
+      return next;
+    });
   }, []);
 
-  const handleNextStep = useCallback(
-    (stepNumber: number) => {
-      const nextStep = Math.min(11, stepNumber + 1);
-      setCompletedSteps((prevCompleted) => {
-        const newCompleted = Array.from(new Set([...prevCompleted, stepNumber])).sort(
-          (a, b) => a - b,
-        );
-        return newCompleted;
-      });
-      setCurrentStep(nextStep);
+  const handleNextStep = useCallback((stepNumber: number) => {
+    const nextStep = Math.min(11, stepNumber + 1);
+    setCompletedSteps((prevCompleted) => {
+      const newCompleted = Array.from(new Set([...prevCompleted, stepNumber])).sort(
+        (a, b) => a - b,
+      );
+      return newCompleted;
+    });
+    currentStepRef.current = nextStep;
+    setCurrentStep(nextStep);
 
-      // Autosave progress to server
-      updateMutation.mutate({
-        currentStep: nextStep,
-        completedStep: stepNumber,
-        draftJson: draft,
-      });
-    },
-    [draft, updateMutation],
-  );
+    updateMutateRef.current({
+      currentStep: nextStep,
+      completedStep: stepNumber,
+      draftJson: draftRef.current,
+    });
+  }, []);
 
-  const handleSelectStep = useCallback(
-    (step: number) => {
-      setCurrentStep(step);
-      updateMutation.mutate({
-        currentStep: step,
-        draftJson: draft,
-      });
-    },
-    [draft, updateMutation],
-  );
+  const handleSelectStep = useCallback((step: number) => {
+    currentStepRef.current = step;
+    setCurrentStep(step);
+    updateMutateRef.current({
+      currentStep: step,
+      draftJson: draftRef.current,
+    });
+  }, []);
 
   const handleFinish = async () => {
+    clear();
     try {
+      await completeMutation.mutateAsync();
       if (typeof window !== "undefined") {
-        const restName = draft.name || "KIVO Bistro & Lounge";
-        const branchName = draft.outletName || "Main Flagship Branch";
+        const restName = draftRef.current.name || "KIVO Bistro & Lounge";
+        const branchName = draftRef.current.outletName || "Main Flagship Branch";
         localStorage.setItem("FUTORA group_restaurant_name", restName);
         localStorage.setItem("FUTORA group_branch_name", branchName);
+        localStorage.removeItem(LOCAL_BACKUP_KEY);
       }
-      await completeMutation.mutateAsync();
-    } catch (err) {
-      console.warn("Onboarding finalization fallback:", err);
-    } finally {
       router.push("/dashboard");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Could not complete onboarding setup. Please review your details and retry.",
+      );
     }
   };
 
@@ -200,6 +224,7 @@ export default function OnboardingPage() {
           </div>
         ) : (
           <>
+            <StatusNote note={note} onClear={clear} />
             {/* 11-Step Stepper Progress Bar */}
             <OnboardingStepper
               currentStep={currentStep}

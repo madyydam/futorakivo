@@ -152,7 +152,7 @@ const INITIAL_ADMINS: RestaurantAdmin[] = [
   },
   {
     id: "rest-3",
-    restaurantName: "Brew &amp; Bite Cafe",
+    restaurantName: "Brew & Bite Cafe",
     ownerName: "Ananya Verma",
     email: "ananya@brewbite.in",
     phone: "+91 97410 88990",
@@ -387,9 +387,8 @@ export default function SuperAdminPage() {
           setIsAuthenticated(false);
         }
       } catch {
-        // Fallback for dev / offline
-        setIsAuthenticated(true);
-        loadData(token);
+        setLoginError("Unable to reach Super Admin server to verify session.");
+        setIsAuthenticated(false);
       }
     }
 
@@ -439,24 +438,35 @@ export default function SuperAdminPage() {
   const toggleAdminStatus = async (id: string) => {
     const admin = admins.find((a) => a.id === id);
     if (!admin) return;
-    const nextStatus = admin.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+    const prevStatus = admin.status;
+    const nextStatus = prevStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
 
     setAdmins((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: nextStatus } : a))
     );
 
     try {
-      await fetch(`/api/v1/super-admin/tenants/${id}/status`, {
+      const res = await fetch(`/api/v1/super-admin/tenants/${id}/status`, {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ status: nextStatus }),
       });
-    } catch {
-      // Revert if error
+      if (!res.ok) {
+        throw new Error("Failed to update tenant status");
+      }
+    } catch (err: any) {
+      setAdmins((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: prevStatus } : a))
+      );
+      toast.error(err?.message || "Could not update tenant status");
     }
   };
 
   const handlePlanChange = async (id: string, plan: "Starter" | "Growth" | "Enterprise") => {
+    const prevAdmin = admins.find((a) => a.id === id);
+    const prevPlan = prevAdmin?.plan;
+    const prevSelected = selectedAdmin;
+
     setAdmins((prev) =>
       prev.map((a) => (a.id === id ? { ...a, plan } : a))
     );
@@ -465,17 +475,32 @@ export default function SuperAdminPage() {
     }
 
     try {
-      await fetch(`/api/v1/super-admin/tenants/${id}/plan`, {
+      const res = await fetch(`/api/v1/super-admin/tenants/${id}/plan`, {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ plan }),
       });
-    } catch {
-      // Silently continue
+      if (!res.ok) {
+        throw new Error("Failed to update tenant plan");
+      }
+    } catch (err: any) {
+      if (prevPlan) {
+        setAdmins((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, plan: prevPlan } : a))
+        );
+      }
+      if (prevSelected && prevSelected.id === id) {
+        setSelectedAdmin(prevSelected);
+      }
+      toast.error(err?.message || "Could not update tenant plan");
     }
   };
 
   const handleExtendTrial = async (id: string, days: number) => {
+    const prevAdmin = admins.find((a) => a.id === id);
+    const prevStatus = prevAdmin?.status;
+    const prevSelected = selectedAdmin;
+
     setAdmins((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "TRIAL" } : a))
     );
@@ -484,13 +509,24 @@ export default function SuperAdminPage() {
     }
 
     try {
-      await fetch(`/api/v1/super-admin/tenants/${id}/extend-trial`, {
+      const res = await fetch(`/api/v1/super-admin/tenants/${id}/extend-trial`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ days }),
       });
-    } catch {
-      // Silently continue
+      if (!res.ok) {
+        throw new Error("Failed to extend trial");
+      }
+    } catch (err: any) {
+      if (prevStatus) {
+        setAdmins((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: prevStatus } : a))
+        );
+      }
+      if (prevSelected && prevSelected.id === id) {
+        setSelectedAdmin(prevSelected);
+      }
+      toast.error(err?.message || "Could not extend trial");
     }
   };
 
@@ -586,13 +622,17 @@ export default function SuperAdminPage() {
     setOpenBroadcastModal(false);
 
     try {
-      await fetch("/api/v1/super-admin/broadcasts", {
+      const res = await fetch("/api/v1/super-admin/broadcasts", {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(newBc),
       });
-    } catch {
-      // Pass
+      if (!res.ok) {
+        throw new Error("Failed to dispatch platform broadcast");
+      }
+    } catch (err: any) {
+      setBroadcasts((prev) => prev.filter((b) => b.id !== newBc.id));
+      toast.error(err?.message || "Could not send broadcast");
     }
   };
 
@@ -602,48 +642,22 @@ export default function SuperAdminPage() {
         method: "POST",
         headers: getAuthHeaders(),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (typeof window !== "undefined") {
-          const fullPermissions = PERMISSIONS.map((p) => p.key);
-          const impersonatedUser = {
-            id: "impersonated-" + admin.id,
-            restaurantId: admin.id,
-            name: admin.ownerName,
-            token: data.token,
-            roleId: "role-owner",
-            roleName: "OWNER",
-            permissions: fullPermissions,
-          };
-          document.cookie = `nodedr_session=${data.token}; path=/; SameSite=Lax; max-age=900`;
-          localStorage.setItem("kivo_impersonated_user", JSON.stringify(impersonatedUser));
-          localStorage.setItem("FUTORA group_demo_user", JSON.stringify(impersonatedUser));
-          localStorage.setItem("FUTORA group_restaurant_name", data.restaurantName || admin.restaurantName);
-          localStorage.setItem("FUTORA group_branch_name", admin.branches?.[0]?.name || "Main Outlet");
-        }
-        router.push("/dashboard");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.message || "Impersonation request was rejected by server.");
         return;
       }
+      const data = await res.json();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("kivo_impersonated_user");
+        localStorage.removeItem("FUTORA group_demo_user");
+        localStorage.setItem("FUTORA group_restaurant_name", data.restaurantName || admin.restaurantName);
+        localStorage.setItem("FUTORA group_branch_name", admin.branches?.[0]?.name || "Main Outlet");
+      }
+      router.push(data.redirectUrl || "/dashboard");
     } catch {
-      // Fallback
+      toast.error("Failed to reach server for tenant impersonation.");
     }
-
-    if (typeof window !== "undefined") {
-      const fullPermissions = PERMISSIONS.map((p) => p.key);
-      const impersonatedUser = {
-        id: "owner-" + admin.id,
-        restaurantId: admin.id,
-        name: admin.ownerName,
-        roleId: "role-owner",
-        roleName: "OWNER",
-        permissions: fullPermissions,
-      };
-      localStorage.setItem("kivo_impersonated_user", JSON.stringify(impersonatedUser));
-      localStorage.setItem("FUTORA group_demo_user", JSON.stringify(impersonatedUser));
-      localStorage.setItem("FUTORA group_restaurant_name", admin.restaurantName);
-      localStorage.setItem("FUTORA group_branch_name", admin.branches?.[0]?.name || "Main Outlet");
-    }
-    router.push("/dashboard");
   };
 
   const filteredAdmins = admins.filter((admin) => {

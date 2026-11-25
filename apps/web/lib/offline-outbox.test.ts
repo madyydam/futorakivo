@@ -14,6 +14,7 @@ if (typeof globalThis.localStorage === "undefined") {
 
 import {
   cancelOfflineOrder,
+  flushOutbox,
   getOutboxItems,
   queueOfflineAddItems,
   queueOfflineCheckout,
@@ -199,4 +200,36 @@ test("queueOfflineAddItems queues ADD_ITEMS action for an existing server order 
   assert.equal(items[0].tempOrderId, "ord_server_999");
   assert.equal(items[0].orderSummary.itemsCount, 2);
   assert.equal(items[0].orderSummary.items?.[0].name, "Cold Coffee");
+});
+
+test("flushOutbox recovers orphaned SYNCING items from crashed tabs and prunes resolved idMap entries", async () => {
+  const initial = queueOfflineOrder("branch-1", {
+    type: "DINE_IN",
+    tableId: "table-7",
+    items: [{ menuItemId: "item-1", quantity: 1, modifierIds: [] }],
+  });
+
+  // Simulate abrupt tab crash mid-sync with stale lock expired
+  const crashed = getOutboxItems().map((item) => ({ ...item, status: "SYNCING" }));
+  localStorage.setItem("kivo.pos.outbox.v1", JSON.stringify(crashed));
+  localStorage.setItem("kivo.pos.sync_lock.v1", `dead_tab:${Date.now() - 20_000}`);
+
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ id: "srv_ord_777", orderNumber: "ORD-777" }), {
+      status: 201,
+      headers: { "content-type": "application/json" },
+    })) as typeof fetch;
+
+  try {
+    const result = await flushOutbox();
+    assert.equal(result.synced, 1);
+    assert.equal(result.failed, 0);
+    assert.equal(getOutboxItems().length, 0);
+    const idMapRaw = localStorage.getItem("kivo.pos.id_map.v1");
+    const parsedMap = idMapRaw ? JSON.parse(idMapRaw) : {};
+    assert.equal(parsedMap[initial.tempOrder.id], undefined);
+  } finally {
+    globalThis.fetch = origFetch;
+  }
 });

@@ -6,8 +6,10 @@ import {
   Patch,
   Post,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { SuperAdminGuard } from './super-admin.guard';
@@ -154,9 +156,20 @@ export class SuperAdminController {
   async impersonateTenant(
     @Param('restaurantId') restaurantId: string,
     @Req() req: any,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const adminEmail = req.superAdmin?.email || 'admin@futoragroup.in';
-    return this.superAdminService.impersonateTenant(restaurantId, adminEmail);
+    const result = await this.superAdminService.impersonateTenant(
+      restaurantId,
+      adminEmail,
+    );
+    res.cookie('nodedr_session', result.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.COOKIE_SECURE === 'true',
+      maxAge: 15 * 60 * 1000,
+    });
+    return result;
   }
 
   /**

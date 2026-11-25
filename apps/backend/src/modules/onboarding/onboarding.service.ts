@@ -140,13 +140,89 @@ export class OnboardingService {
   async completeOnboarding(restaurantId: string) {
     const allSteps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
+    const progress = await this.prisma.onboardingProgress.findUnique({
+      where: { restaurantId },
+    });
+
+    const draft = ((progress?.draftJson as Record<string, any>) || {}) as Record<
+      string,
+      any
+    >;
+
+    // Pre-hash staff PINs outside the DB transaction so bcrypt CPU cost
+    // never holds database row locks open.
+    const hashedStaff: Array<{
+      roleId: string;
+      name: string;
+      passwordHash: string;
+      pinHash: string;
+      pinLookup: string;
+    }> = [];
+    if (Array.isArray(draft.staff) && draft.staff.length > 0) {
+      const [roles, existingUsers] = await Promise.all([
+        this.prisma.role.findMany({ where: { restaurantId } }),
+        this.prisma.user.findMany({
+          where: { restaurantId },
+          select: { name: true, pinLookup: true },
+        }),
+      ]);
+      const roleMap = new Map(roles.map((r) => [r.name.toUpperCase(), r.id]));
+      const existingNames = new Set(
+        existingUsers.map((u) => u.name.toLowerCase()),
+      );
+      const existingPinLookups = new Set(
+        existingUsers
+          .map((u: any) => u.pinLookup)
+          .filter((p): p is string => Boolean(p)),
+      );
+
+      const validStaff: Array<{
+        roleId: string;
+        staffName: string;
+        pinStr: string;
+        pinLookup: string;
+      }> = [];
+      for (const st of draft.staff) {
+        if (st.role === 'OWNER') continue;
+
+        const rawRole = String(st.role || 'WAITER').trim().toUpperCase();
+        const roleName =
+          rawRole === 'MANAGER' ? 'RESTAURANT_MANAGER' : rawRole;
+        const roleId = roleMap.get(roleName);
+        const staffName = sanitizeText(st.name);
+        const pinStr = String(st.pin ?? '').trim();
+
+        if (!roleId || !staffName || !pinStr) continue;
+        if (existingNames.has(staffName.toLowerCase())) continue;
+
+        const pinLookup = this.pinHasher.computeLookup(
+          restaurantId,
+          pinStr,
+          'v1',
+        );
+        if (existingPinLookups.has(pinLookup)) continue;
+
+        validStaff.push({ roleId, staffName, pinStr, pinLookup });
+        existingNames.add(staffName.toLowerCase());
+        existingPinLookups.add(pinLookup);
+      }
+
+      const computed = await Promise.all(
+        validStaff.map(async (st) => {
+          const pinHash = await this.pinHasher.hashPin(st.pinStr);
+          return {
+            roleId: st.roleId,
+            name: st.staffName,
+            passwordHash: pinHash,
+            pinHash,
+            pinLookup: st.pinLookup,
+          };
+        }),
+      );
+      hashedStaff.push(...computed);
+    }
+
     await this.prisma.$transaction(async (tx) => {
-      const progress = await tx.onboardingProgress.findUnique({
-        where: { restaurantId },
-      });
-
-      const draft = ((progress?.draftJson as Record<string, any>) || {}) as Record<string, any>;
-
       // 1. Update Restaurant Brand Profile & Payments with XSS sanitization
       const restaurantUpdateData: Prisma.RestaurantUpdateInput = {};
       if (draft.name) restaurantUpdateData.name = sanitizeText(draft.name);
@@ -195,39 +271,53 @@ export class OnboardingService {
         }
       }
 
-      // 3. High-Performance Batch Materialization of Dining Floor & Tables
+      // 3. High-Performance Batch Materialization of Dining Floors & Tables
       if (Array.isArray(draft.tables) && draft.tables.length > 0) {
-        let floor = await tx.floor.findFirst({
-          where: { branchId: branch.id },
-        });
-        if (!floor) {
-          floor = await tx.floor.create({
-            data: {
-              branchId: branch.id,
-              name: 'Main Dining Hall',
-              sortOrder: 0,
-            },
-          });
-        }
-
-        const existingTables = await tx.table.findMany({
-          where: { floorId: floor.id },
-          select: { number: true },
-        });
-        const existingNumbers = new Set(existingTables.map((t) => t.number.toLowerCase()));
+        const floorBySection = new Map<string, { id: string; numbers: Set<string> }>();
 
         for (const tbl of draft.tables) {
+          const sectionName = sanitizeText(tbl.section) || 'Main Dining Hall';
+          const sectionKey = sectionName.toLowerCase();
+
+          let floorEntry = floorBySection.get(sectionKey);
+          if (!floorEntry) {
+            let floor =
+              sectionName === 'Main Dining Hall'
+                ? await tx.floor.findFirst({ where: { branchId: branch.id } })
+                : await tx.floor.findFirst({
+                    where: { branchId: branch.id, name: sectionName },
+                  });
+            if (!floor || (sectionName !== 'Main Dining Hall' && floor.name.toLowerCase() !== sectionKey)) {
+              floor = await tx.floor.create({
+                data: {
+                  branchId: branch.id,
+                  name: sectionName,
+                  sortOrder: floorBySection.size,
+                },
+              });
+            }
+            const existingTables = await tx.table.findMany({
+              where: { floorId: floor.id },
+              select: { number: true },
+            });
+            floorEntry = {
+              id: floor.id,
+              numbers: new Set(existingTables.map((t) => t.number.toLowerCase())),
+            };
+            floorBySection.set(sectionKey, floorEntry);
+          }
+
           const tableNum = sanitizeText(tbl.name || tbl.number);
-          if (tableNum && !existingNumbers.has(tableNum.toLowerCase())) {
+          if (tableNum && !floorEntry.numbers.has(tableNum.toLowerCase())) {
             await tx.table.create({
               data: {
-                floorId: floor.id,
+                floorId: floorEntry.id,
                 number: tableNum,
                 name: tableNum,
                 capacity: Math.max(1, Math.min(50, Number(tbl.capacity) || 4)),
               },
             });
-            existingNumbers.add(tableNum.toLowerCase());
+            floorEntry.numbers.add(tableNum.toLowerCase());
           }
         }
       }
@@ -272,6 +362,7 @@ export class OnboardingService {
                   name: itemName,
                   price: new Prisma.Decimal(Math.max(0, Number(item.price) || 100)),
                   taxRatePercent: new Prisma.Decimal(Math.max(0, Number(item.tax) || 5)),
+                  ...(typeof item.isVeg === 'boolean' ? { isVeg: item.isVeg } : {}),
                 },
               });
             }
@@ -279,53 +370,21 @@ export class OnboardingService {
         }
       }
 
-      // 5. Materialize Staff Members with Hashed PINs & Peppered Lookups
-      if (Array.isArray(draft.staff) && draft.staff.length > 0) {
-        const roles = await tx.role.findMany({ where: { restaurantId } });
-        const roleMap = new Map(roles.map((r) => [r.name.toUpperCase(), r.id]));
-
-        const existingUsers = await tx.user.findMany({
-          where: { restaurantId },
-          select: { name: true },
+      // 5. Materialize Pre-Hashed Staff Members & Bind to Primary Branch
+      for (const staffRecord of hashedStaff) {
+        await tx.user.create({
+          data: {
+            restaurantId,
+            roleId: staffRecord.roleId,
+            name: staffRecord.name,
+            passwordHash: staffRecord.passwordHash,
+            pinHash: staffRecord.pinHash,
+            pinLookup: staffRecord.pinLookup,
+            pepperKeyId: 'v1',
+            isActive: true,
+            branches: { create: { branchId: branch.id } },
+          },
         });
-        const existingNames = new Set(existingUsers.map((u) => u.name.toLowerCase()));
-
-        // Pre-filter candidate staff
-        const validStaff: Array<{ roleId: string; staffName: string; pinStr: string }> = [];
-        for (const st of draft.staff) {
-          if (st.role === 'OWNER') continue; // Master owner account is already initialized
-
-          const roleName = String(st.role || 'WAITER').trim().toUpperCase();
-          const roleId = roleMap.get(roleName);
-          const staffName = sanitizeText(st.name);
-
-          if (roleId && staffName && st.pin && !existingNames.has(staffName.toLowerCase())) {
-            validStaff.push({ roleId, staffName, pinStr: String(st.pin).trim() });
-            existingNames.add(staffName.toLowerCase());
-          }
-        }
-
-        // Parallelize bcrypt hashing across CPU threads to avoid locking DB transaction
-        const hashedStaff = await Promise.all(
-          validStaff.map(async (st) => {
-            const pinHash = await this.pinHasher.hashPin(st.pinStr);
-            const pinLookup = this.pinHasher.computeLookup(restaurantId, st.pinStr, 'v1');
-            return {
-              restaurantId,
-              roleId: st.roleId,
-              name: st.staffName,
-              passwordHash: pinHash,
-              pinHash,
-              pinLookup,
-              pepperKeyId: 'v1',
-              isActive: true,
-            };
-          }),
-        );
-
-        for (const staffRecord of hashedStaff) {
-          await tx.user.create({ data: staffRecord });
-        }
       }
 
       // 6. Complete Onboarding Progress Record

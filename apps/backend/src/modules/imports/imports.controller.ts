@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   Controller,
   ForbiddenException,
@@ -13,7 +13,7 @@
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { SessionUser } from '@futora/types';
+import { permissionSatisfied, type SessionUser } from '@futora/types';
 import type { Response } from 'express';
 import { memoryStorage } from 'multer';
 import { Auth } from '../../common/decorators/auth.decorator';
@@ -59,7 +59,7 @@ export class ImportsController {
   ) {}
 
   private allow(user: SessionUser, kind: ImportKind) {
-    if (!user.permissions.includes(PERMISSION[kind])) {
+    if (!permissionSatisfied(user.permissions, PERMISSION[kind])) {
       throw new ForbiddenException(
         `You need the ${PERMISSION[kind]} permission to import this`,
       );

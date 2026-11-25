@@ -5,7 +5,25 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+
+/**
+ * Resolves the Super Admin JWT signing/verification secret with domain isolation
+ * from restaurant-scoped tokens. When `SUPER_ADMIN_JWT_SECRET` is omitted, derives
+ * a separate domain-bound key via HMAC-SHA256 from `JWT_SECRET` so a restaurant
+ * OWNER JWT can never cross-verify against Super Admin endpoints.
+ */
+export function resolveSuperAdminJwtSecret(): string {
+  const dedicated = process.env.SUPER_ADMIN_JWT_SECRET;
+  if (dedicated) return dedicated;
+  const baseSecret = process.env.JWT_SECRET;
+  if (!baseSecret) {
+    throw new UnauthorizedException('Super Admin JWT secret is not configured');
+  }
+  return createHmac('sha256', baseSecret)
+    .update('kivoko-super-admin-domain')
+    .digest('hex');
+}
 
 @Injectable()
 export class SuperAdminGuard implements CanActivate {
@@ -46,13 +64,7 @@ export class SuperAdminGuard implements CanActivate {
 
     const token = authHeader.split(' ')[1];
     try {
-      // Super Admin tokens MUST be signed with SUPER_ADMIN_JWT_SECRET, which is
-      // cryptographically isolated from the restaurant-scoped JWT_SECRET.
-      // This prevents a restaurant-level OWNER JWT (even if its payload were
-      // somehow crafted to include role:'SUPER_ADMIN') from ever passing
-      // this guard — the two token families cannot cross-verify.
-      const superAdminSecret =
-        process.env.SUPER_ADMIN_JWT_SECRET || process.env.JWT_SECRET;
+      const superAdminSecret = resolveSuperAdminJwtSecret();
       const payload = this.jwtService.verify(token, {
         secret: superAdminSecret,
       });

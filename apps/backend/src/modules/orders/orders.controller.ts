@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -22,6 +23,7 @@ import {
   cancelOrderSchema,
   deleteOrdersSchema,
   mergeOrdersSchema,
+  permissionSatisfied,
   refundSchema,
   rejectOrderSchema,
   removeOrderItemSchema,
@@ -34,6 +36,7 @@ import {
   type UpdateOrderItemDto,
   type SessionUser,
 } from '@futora/types';
+import { ZodError, type ZodSchema } from 'zod';
 import { Auth } from '../../common/decorators/auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
@@ -170,6 +173,23 @@ function upiFor(order: ReceiptData, overrides: BillOverrides) {
   });
 }
 
+function parseOrBadRequest<T>(schema: ZodSchema<T>, raw: unknown): T {
+  try {
+    return schema.parse(raw);
+  } catch (err) {
+    if (err instanceof ZodError) {
+      throw new BadRequestException({
+        message: 'Validation failed',
+        issues: err.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      });
+    }
+    throw err;
+  }
+}
+
 // Typing a discount or coupon onto a bill needs discounts.apply, whether it is
 // being previewed, printed or charged.
 function assertMayAdjust(user: SessionUser, adj: BillPreviewDto) {
@@ -177,7 +197,7 @@ function assertMayAdjust(user: SessionUser, adj: BillPreviewDto) {
     ((adj.discountPercent ?? 0) > 0 ||
       (adj.discountFlat ?? 0) > 0 ||
       !!adj.couponCode) &&
-    !user.permissions.includes('discounts.apply')
+    !permissionSatisfied(user.permissions, 'discounts.apply')
   ) {
     throw new ForbiddenException(
       'Missing permission to apply a discount at checkout',
@@ -186,12 +206,12 @@ function assertMayAdjust(user: SessionUser, adj: BillPreviewDto) {
 }
 
 // Owners and administrators are never capped; other roles need the explicit
-// discounts.unlimited grant (roles saved before it existed do not have it).
+// discounts.unlimited grant (satisfied by canonical discount.apply_any).
 function mayExceedDiscountCap(user: SessionUser): boolean {
   return (
     user.roleName === 'OWNER' ||
     user.roleName === 'ADMINISTRATOR' ||
-    user.permissions.includes('discounts.unlimited')
+    permissionSatisfied(user.permissions, 'discounts.unlimited')
   );
 }
 
@@ -273,10 +293,17 @@ export class OrdersController {
     @Query('branchId') branchId: string,
     @Param('id') id: string,
     @Body() body: unknown,
+    @Headers('x-client-request-id') clientRequestId?: string,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
     const { items } = body as { items: never };
-    return this.ordersService.addItems(branchId, id, items, {}, user);
+    return this.ordersService.addItems(
+      branchId,
+      id,
+      items,
+      { clientRequestId },
+      user,
+    );
   }
 
   @Auth('orders.accept')
@@ -313,9 +340,10 @@ export class OrdersController {
     @Body() body?: unknown,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
-    const { reason, confirmStarted, source } = cancelOrderSchema
-      .partial()
-      .parse(body ?? {});
+    const { reason, confirmStarted, source } = parseOrBadRequest(
+      cancelOrderSchema.partial(),
+      body ?? {},
+    );
     return this.ordersService.cancelOrder(branchId, id, user.id, reason, {
       confirmStarted,
       source,
@@ -379,7 +407,7 @@ export class OrdersController {
       branchId,
       id,
       itemId,
-      user.id,
+      user,
       (body as RemoveOrderItemDto).reason,
     );
   }
@@ -395,7 +423,10 @@ export class OrdersController {
     @Body() body: { couponCode?: string },
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
-    if (body?.couponCode && !user.permissions.includes('discounts.apply')) {
+    if (
+      body?.couponCode &&
+      !permissionSatisfied(user.permissions, 'discounts.apply')
+    ) {
       throw new ForbiddenException('Missing permission to apply a coupon');
     }
     return this.ordersService.previewDiscount(branchId, id, body?.couponCode);
@@ -441,7 +472,7 @@ export class OrdersController {
       ((dto.discountPercent ?? 0) > 0 ||
         (dto.discountFlat ?? 0) > 0 ||
         !!dto.couponCode) &&
-      !user.permissions.includes('discounts.apply')
+      !permissionSatisfied(user.permissions, 'discounts.apply')
     ) {
       throw new ForbiddenException(
         'Missing permission to apply a discount at checkout',
@@ -470,7 +501,7 @@ export class OrdersController {
     @Res() res: Response,
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
-    const adj = billPreviewSchema.parse(query);
+    const adj = parseOrBadRequest(billPreviewSchema, query);
     assertMayAdjust(user, adj);
     const { order, overrides } = await this.ordersService.getBillForPrint(
       branchId,
@@ -652,7 +683,7 @@ export class OrdersController {
     @Query() query: Record<string, string> = {},
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
-    const adj = billPreviewSchema.parse(query);
+    const adj = parseOrBadRequest(billPreviewSchema, query);
     assertMayAdjust(user, adj);
     const { order, overrides } = await this.ordersService.getBillForPrint(
       branchId,
@@ -808,6 +839,6 @@ export class OrdersController {
   ) {
     await this.branchAccess.assertAccess(user.restaurantId, branchId);
     const { sourceOrderId } = body as { sourceOrderId: string };
-    return this.ordersService.mergeOrders(branchId, id, sourceOrderId);
+    return this.ordersService.mergeOrders(branchId, id, sourceOrderId, user);
   }
 }

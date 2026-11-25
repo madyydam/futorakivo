@@ -16,6 +16,7 @@ import {
   floorSchema,
   floorUpdateSchema,
   tableSchema,
+  tableStatusSchema,
   tableUpdateSchema,
   tableLayoutUpdateSchema,
   type AssignTablesDto,
@@ -198,6 +199,14 @@ export class TablesController {
 
   @Auth('tables.view', 'orders.edit')
   @Patch(':id/status')
+  @UsePipes(
+    new ZodValidationPipe(
+      z.object({
+        status: tableStatusSchema,
+        assignedWaiterId: z.string().min(1).optional(),
+      }),
+    ),
+  )
   async updateStatus(
     @CurrentUser() user: SessionUser,
     @Query('branchId') branchId: string,
@@ -210,6 +219,7 @@ export class TablesController {
       id,
       body.status,
       body.assignedWaiterId,
+      user.restaurantId,
     );
   }
 

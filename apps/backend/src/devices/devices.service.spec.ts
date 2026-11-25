@@ -120,7 +120,13 @@ describe('DevicesService', () => {
       expect(res.deviceToken).toHaveLength(64); // 32 bytes hex
       expect(res.status).toBe(DeviceStatus.APPROVED);
       expect(prisma.devicePairingCode.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'code-id-1', usedAt: null } }),
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'code-id-1',
+            usedAt: null,
+            expiresAt: { gt: expect.any(Date) },
+          }),
+        }),
       );
     });
 

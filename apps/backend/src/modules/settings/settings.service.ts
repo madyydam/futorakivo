@@ -1,4 +1,4 @@
-﻿import { randomBytes } from 'crypto';
+import { randomBytes } from 'crypto';
 import {
   BadRequestException,
   Injectable,
@@ -59,12 +59,12 @@ export class SettingsService {
       throw new NotFoundException('Restaurant or branch not found');
     }
     if (restaurant.name) {
-      restaurant.name = restaurant.name
-        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'KIVO - HORECA management simplified')
-        .replace(/nodedr/gi, 'FUTORA group')
-        .replace(/\s*\(demo\)/gi, '')
-        .replace(/bistro/gi, '')
-        .trim() || 'KIVO - HORECA management simplified';
+      restaurant.name =
+        restaurant.name
+          .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'KIVO - HORECA management simplified')
+          .replace(/nodedr/gi, 'FUTORA group')
+          .replace(/\s*\(demo\)/gi, '')
+          .trim() || 'KIVO - HORECA management simplified';
     }
     return { restaurant, branch };
   }
@@ -80,12 +80,12 @@ export class SettingsService {
       throw new NotFoundException('Restaurant or branch not found');
     }
     if (restaurant.name) {
-      restaurant.name = restaurant.name
-        .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'KIVO - HORECA management simplified')
-        .replace(/nodedr/gi, 'FUTORA group')
-        .replace(/\s*\(demo\)/gi, '')
-        .replace(/bistro/gi, '')
-        .trim() || 'KIVO - HORECA management simplified';
+      restaurant.name =
+        restaurant.name
+          .replace(/nodedr\s*bistro(\s*\(demo\))?/gi, 'KIVO - HORECA management simplified')
+          .replace(/nodedr/gi, 'FUTORA group')
+          .replace(/\s*\(demo\)/gi, '')
+          .trim() || 'KIVO - HORECA management simplified';
     }
     return { restaurant, branch };
   }

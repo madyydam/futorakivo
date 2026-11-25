@@ -176,6 +176,60 @@ describe('OrdersService - Extended Logic & Safeguards', () => {
     });
   });
 
+  describe('removeOrderItem - ownership and concurrency guards', () => {
+    it('rejects a waiter removing an item from another waiter order', async () => {
+      prisma.order.findFirst.mockResolvedValue({
+        id: 'ord-other',
+        branchId: 'branch-1',
+        status: 'OPEN',
+        waiterId: 'waiter-owner',
+        items: [
+          { id: 'item-1', nameSnapshot: 'Naan', quantity: 1, lineTotal: 50, taxRateSnapshot: 5 },
+          { id: 'item-2', nameSnapshot: 'Dal', quantity: 1, lineTotal: 200, taxRateSnapshot: 5 },
+        ],
+        payments: [],
+      });
+
+      await expect(
+        service.removeOrderItem(
+          'branch-1',
+          'ord-other',
+          'item-1',
+          {
+            id: 'waiter-intruder',
+            name: 'Intruder',
+            restaurantId: 'rest-1',
+            roleId: 'role-waiter',
+            roleName: 'WAITER',
+            permissions: ['order.modify'],
+          },
+          'Wrong item',
+        ),
+      ).rejects.toThrow(/assigned waiter or a manager can modify/i);
+    });
+
+    it('rejects removing the last item when concurrent removal reduces count to 1', async () => {
+      prisma.order.findFirst.mockResolvedValue({
+        id: 'ord-race',
+        branchId: 'branch-1',
+        status: 'OPEN',
+        orderNumber: 'ORD-002',
+        waiterId: 'waiter-1',
+        items: [
+          { id: 'item-1', nameSnapshot: 'Naan', quantity: 1, lineTotal: 50, taxRateSnapshot: 5 },
+          { id: 'item-2', nameSnapshot: 'Dal', quantity: 1, lineTotal: 200, taxRateSnapshot: 5 },
+        ],
+        payments: [],
+      });
+      prisma.order.update.mockResolvedValue({ id: 'ord-race', status: 'OPEN' });
+      (prisma.orderItem as any).count = jest.fn().mockResolvedValue(1);
+
+      await expect(
+        service.removeOrderItem('branch-1', 'ord-race', 'item-1', 'waiter-1', 'Cancel last'),
+      ).rejects.toThrow('This is the only item - cancel the order instead');
+    });
+  });
+
   describe('checkout - Acceptance validation', () => {
     it('refuses to checkout a rejected order', async () => {
       prisma.order.findFirst.mockResolvedValue({

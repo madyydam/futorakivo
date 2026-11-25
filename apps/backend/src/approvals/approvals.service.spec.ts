@@ -35,6 +35,7 @@ describe('ApprovalsService & ApprovalGuard', () => {
         create: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn(),
       },
       approvalLog: {
         create: jest.fn(),
@@ -230,11 +231,7 @@ describe('ApprovalsService & ApprovalGuard', () => {
         expiresAt: new Date(Date.now() + 60_000),
         approverId: 'u-mgr',
       });
-      prisma.approvalToken.update.mockResolvedValue({
-        id: 'tok-1',
-        consumedAt: new Date(),
-        approverId: 'u-mgr',
-      });
+      prisma.approvalToken.updateMany.mockResolvedValue({ count: 1 });
 
       const res = await service.consumeApprovalToken(
         'rest-1',
@@ -244,9 +241,76 @@ describe('ApprovalsService & ApprovalGuard', () => {
       );
 
       expect(res.approverId).toBe('u-mgr');
-      expect(prisma.approvalToken.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'tok-1' } }),
+      expect(prisma.approvalToken.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'tok-1', consumedAt: null },
+        }),
       );
+    });
+
+    it('rejects a concurrent second consume when atomic updateMany claims 0 rows', async () => {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      prisma.approvalToken.findUnique.mockResolvedValue({
+        id: 'tok-concurrent',
+        restaurantId: 'rest-1',
+        requesterId: 'u-waiter',
+        approverId: 'u-mgr',
+        permissionKey: 'order.void_item',
+        targetId: 'item-1',
+        changeHash: null,
+        expiresAt: new Date(Date.now() + 60_000),
+        consumedAt: null,
+        tokenHash,
+      });
+      prisma.approvalToken.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.consumeApprovalToken(
+          'rest-1',
+          rawToken,
+          'order.void_item',
+          'item-1',
+        ),
+      ).rejects.toThrow(/already been consumed/i);
+    });
+
+    it('accepts equivalent changePayload with different key ordering', async () => {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update('{"a":1,"nested":{"x":true,"y":2}}')
+        .digest('hex');
+      prisma.approvalToken.findUnique.mockResolvedValue({
+        id: 'tok-json',
+        restaurantId: 'rest-1',
+        requesterId: 'u-waiter',
+        approverId: 'u-mgr',
+        permissionKey: 'order.void_item',
+        targetId: 'item-1',
+        changeHash: expectedHash,
+        expiresAt: new Date(Date.now() + 60_000),
+        consumedAt: null,
+        tokenHash,
+      });
+      prisma.approvalToken.updateMany.mockResolvedValue({ count: 1 });
+
+      const res = await service.consumeApprovalToken(
+        'rest-1',
+        rawToken,
+        'order.void_item',
+        'item-1',
+        { nested: { y: 2, x: true }, a: 1 },
+      );
+
+      expect(res.approverId).toBe('u-mgr');
       expect(prisma.approvalLog.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: { outcome: ApprovalOutcome.USED },

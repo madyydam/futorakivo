@@ -128,10 +128,11 @@ export class DevicesService {
       .digest('hex');
 
     // Atomically consume code and register device in one transaction to avoid partial failure
+    const now = new Date();
     const performPair = async (client: any) => {
       const consumed = await client.devicePairingCode.updateMany({
-        where: { id: codeRecord.id, usedAt: null },
-        data: { usedAt: new Date() },
+        where: { id: codeRecord.id, usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
       });
       if (consumed.count === 0) {
         throw new BadRequestException('Invalid or expired device pairing code');

@@ -158,6 +158,41 @@ describe('PublicMenuService - DPDP Act & Privacy Shield', () => {
       );
     });
 
+    it('matches formatted or country-prefixed guest phone variants against guestBlock', async () => {
+      const { service, prisma } = buildMocks();
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { createHash } = require('crypto') as typeof import('crypto');
+      prisma.guestBlock.findFirst.mockResolvedValue({
+        id: 'block-norm',
+        phoneHash: createHash('sha256').update('9876543210').digest('hex'),
+        reason: 'Repeated fake orders',
+      });
+
+      await expect(
+        service.createOrder(
+          'test-token',
+          [{ menuItemId: 'item-1', quantity: 1, modifierIds: [] }],
+          'Spammer Variant',
+          '+91 98765-43210',
+          true,
+        ),
+      ).rejects.toThrow(
+        'This mobile number has been restricted from placing online orders.',
+      );
+
+      expect(prisma.guestBlock.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            phoneHash: {
+              in: expect.arrayContaining([
+                createHash('sha256').update('9876543210').digest('hex'),
+              ]),
+            },
+          }),
+        }),
+      );
+    });
+
     it('rejects order when QR ordering is emergency paused by outlet', async () => {
       const { service, prisma } = buildMocks();
       prisma.qrSettings.findUnique.mockResolvedValue({

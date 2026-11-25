@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCurrentUser } from "@/hooks/use-auth";
+import { hasPermission, useCurrentUser } from "@/hooks/use-auth";
 import { useDeleteStaff, useDepartments, useStaff, useUpdateStaff, type StaffMember } from "@/hooks/use-staff";
 import { api, ApiError } from "@/lib/api";
 import { useState } from "react";
@@ -33,7 +33,7 @@ export default function StaffPage() {
   const { data: departments } = useDepartments();
   const [dept, setDept] = useState<string>("all");
   const visible = staff?.filter((m) => dept === "all" || (dept === "none" ? !m.departmentId : m.departmentId === dept));
-  const canEditAccess = currentUser?.user.permissions.includes("roles.manage") ?? false;
+  const canEditAccess = hasPermission(currentUser?.user, "roles.manage");
 
   const onResetTwoFactor = (member: StaffMember) => {
     if (!confirm(`Turn off two-factor authentication for ${member.name}? They will sign in with just their password until they set it up again.`)) return;

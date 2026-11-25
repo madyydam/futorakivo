@@ -46,6 +46,10 @@ const LAST_SYNC_KEY = "kivo.pos.last_sync.v1";
 const ID_MAP_KEY = "kivo.pos.id_map.v1";
 const SYNC_LOCK_KEY = "kivo.pos.sync_lock.v1";
 const MAX_RETRIES = 5;
+const TAB_LOCK_ID =
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `tab_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 
 type OutboxSubscriber = (items: OutboxAction[], isOnline: boolean, isSyncing: boolean) => void;
 const subscribers = new Set<OutboxSubscriber>();
@@ -114,6 +118,32 @@ function saveIdMapping(tempId: string, serverId: string) {
     storage.setItem(ID_MAP_KEY, JSON.stringify(map));
   } catch (e) {
     console.error("Failed to persist ID mapping:", e);
+  }
+}
+
+function pruneIdMap(remaining: OutboxAction[]) {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    const map = getIdMap();
+    const keys = Object.keys(map);
+    if (keys.length === 0) return;
+    const activeTempIds = new Set(remaining.map((i) => i.tempOrderId));
+    let changed = false;
+    for (const k of keys) {
+      if (!activeTempIds.has(k)) {
+        delete map[k];
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    if (Object.keys(map).length === 0) {
+      storage.removeItem(ID_MAP_KEY);
+    } else {
+      storage.setItem(ID_MAP_KEY, JSON.stringify(map));
+    }
+  } catch {
+    // ignore
   }
 }
 
@@ -277,21 +307,41 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
   if (isSyncing) return { synced: 0, failed: 0 };
   const storage = getStorage();
 
-  // Multi-tab concurrency mutex (15-second TTL)
+  // Multi-tab concurrency mutex (15-second TTL, tab-owned)
   const now = Date.now();
   if (storage) {
     const lockVal = storage.getItem(SYNC_LOCK_KEY);
-    if (lockVal && now - Number(lockVal) < 15000) {
-      return { synced: 0, failed: 0 };
+    if (lockVal) {
+      const sep = lockVal.lastIndexOf(":");
+      const owner = sep > 0 ? lockVal.slice(0, sep) : "";
+      const ts = sep > 0 ? Number(lockVal.slice(sep + 1)) : Number(lockVal);
+      if (owner !== TAB_LOCK_ID && Number.isFinite(ts) && now - ts < 15000) {
+        return { synced: 0, failed: 0 };
+      }
     }
-    storage.setItem(SYNC_LOCK_KEY, String(now));
+    storage.setItem(SYNC_LOCK_KEY, `${TAB_LOCK_ID}:${now}`);
   }
 
   const items = getOutboxItems();
+  // Recover any items left stuck in SYNCING after an abrupt tab close/crash
+  let recoveredStale = false;
+  for (const item of items) {
+    if (item.status === "SYNCING") {
+      item.status = "PENDING";
+      recoveredStale = true;
+    }
+  }
+  if (recoveredStale) {
+    saveOutboxItems(items);
+  }
+
   const pending = items.filter((i) => i.status === "PENDING" || (i.status === "FAILED" && i.retries < MAX_RETRIES));
 
   if (pending.length === 0) {
-    storage?.removeItem(SYNC_LOCK_KEY);
+    const cur = storage?.getItem(SYNC_LOCK_KEY);
+    if (!cur || cur.startsWith(`${TAB_LOCK_ID}:`)) {
+      storage?.removeItem(SYNC_LOCK_KEY);
+    }
     return { synced: 0, failed: 0 };
   }
 
@@ -414,9 +464,10 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
     }
 
     if (syncedCount > 0) {
-      // Remove synced items from local outbox after successful push
+      // Remove synced items from local outbox after successful push and prune resolved temp IDs
       const remaining = items.filter((i) => i.status !== "SYNCED");
       saveOutboxItems(remaining);
+      pruneIdMap(remaining);
 
       storage?.setItem(LAST_SYNC_KEY, new Date().toISOString());
       toast.success(`☁️ Cloud Sync: ${syncedCount} offline action(s) synced to server.`);
@@ -429,7 +480,10 @@ export async function flushOutbox(qc?: any): Promise<{ synced: number; failed: n
     }
   } finally {
     isSyncing = false;
-    storage?.removeItem(SYNC_LOCK_KEY);
+    const cur = storage?.getItem(SYNC_LOCK_KEY);
+    if (!cur || cur.startsWith(`${TAB_LOCK_ID}:`)) {
+      storage?.removeItem(SYNC_LOCK_KEY);
+    }
     notify();
   }
 
@@ -582,11 +636,28 @@ if (typeof window !== "undefined") {
     }
   });
 
+  // Release tab-owned mutex on abrupt unload so another tab can resume immediately
+  window.addEventListener("beforeunload", () => {
+    const s = getStorage();
+    const cur = s?.getItem(SYNC_LOCK_KEY);
+    if (cur?.startsWith(`${TAB_LOCK_ID}:`)) {
+      s?.removeItem(SYNC_LOCK_KEY);
+    }
+  });
+
   // Periodic heartbeat / auto-flush every 20 seconds if online and pending items exist
   setInterval(() => {
     isOnline = navigator.onLine;
     const items = getOutboxItems();
-    if (isOnline && items.some((i) => i.status === "PENDING" || (i.status === "FAILED" && i.retries < MAX_RETRIES))) {
+    if (
+      isOnline &&
+      items.some(
+        (i) =>
+          i.status === "PENDING" ||
+          i.status === "SYNCING" ||
+          (i.status === "FAILED" && i.retries < MAX_RETRIES),
+      )
+    ) {
       flushOutbox().catch(console.error);
     }
   }, 20000);

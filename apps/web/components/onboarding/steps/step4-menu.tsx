@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { parseCsvLine } from "@/lib/csv";
 import type { Language } from "../onboarding-translations";
 import { ONBOARDING_I18N } from "../onboarding-translations";
 
@@ -68,6 +69,7 @@ export function Step4Menu({ data, onChange, onNext, onBack, lang }: Step4Props) 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const loadPresetMenu = () => {
@@ -85,7 +87,9 @@ export function Step4Menu({ data, onChange, onNext, onBack, lang }: Step4Props) 
       if (lines.length < 2) return;
 
       const parsed: MenuItemPreview[] = [];
-      const headerParts = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/["'\s_]/g, ""));
+      const headerParts = parseCsvLine(lines[0]).map((h) =>
+        h.trim().toLowerCase().replace(/["'\s_]/g, ""),
+      );
       const nameIdx = headerParts.findIndex((h) => h.includes("name") || h.includes("item"));
       const catIdx = headerParts.findIndex((h) => h.includes("cat"));
       const priceIdx = headerParts.findIndex((h) => h.includes("price") || h.includes("rate") || h.includes("cost") || h.includes("mrp"));
@@ -93,8 +97,7 @@ export function Step4Menu({ data, onChange, onNext, onBack, lang }: Step4Props) 
       const vegIdx = headerParts.findIndex((h) => h.includes("veg") || h.includes("diet"));
 
       for (let i = 1; i < lines.length; i++) {
-        const rawParts = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(",");
-        const parts = rawParts.map((p) => p.replace(/^"|"$/g, "").trim());
+        const parts = parseCsvLine(lines[i]);
         const itemName = (nameIdx >= 0 ? parts[nameIdx] : parts[0]) || "";
         if (itemName) {
           const rawVeg = String(vegIdx >= 0 ? parts[vegIdx] : parts[4] || "").toLowerCase();

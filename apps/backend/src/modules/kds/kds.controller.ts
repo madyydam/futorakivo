@@ -1,4 +1,4 @@
-﻿import {
+import {
   Body,
   Controller,
   Get,
@@ -11,6 +11,7 @@
 import { ApiTags } from '@nestjs/swagger';
 import {
   kotItemStatusUpdateSchema,
+  permissionSatisfied,
   rejectKotSchema,
   rejectOrderSchema,
   setPrioritySchema,
@@ -145,7 +146,7 @@ export class KdsController {
     return this.kdsService.rejectTicket(branchId, id, user.id, {
       reason,
       confirmStarted,
-      mayRejectStarted: user.permissions.includes('orders.cancel'),
+      mayRejectStarted: permissionSatisfied(user.permissions, 'orders.cancel'),
     });
   }
 

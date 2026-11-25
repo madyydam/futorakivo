@@ -48,11 +48,11 @@ function runPnpm(args, opts = {}) {
 }
 
 function parseNodeTestSummary(output) {
-  const testsMatch = output.match(/^# tests (\d+)/m);
-  const passMatch = output.match(/^# pass (\d+)/m);
-  const failMatch = output.match(/^# fail (\d+)/m);
-  const skippedMatch = output.match(/^# skipped (\d+)/m);
-  const suitesMatch = output.match(/^# suites (\d+)/m);
+  const testsMatch = output.match(/^(?:#|ℹ)\s*tests\s+(\d+)/mu);
+  const passMatch = output.match(/^(?:#|ℹ)\s*pass\s+(\d+)/mu);
+  const failMatch = output.match(/^(?:#|ℹ)\s*fail\s+(\d+)/mu);
+  const skippedMatch = output.match(/^(?:#|ℹ)\s*skipped\s+(\d+)/mu);
+  const suitesMatch = output.match(/^(?:#|ℹ)\s*suites\s+(\d+)/mu);
   return {
     suites: suitesMatch ? Number(suitesMatch[1]) : 0,
     tests: testsMatch ? Number(testsMatch[1]) : 0,

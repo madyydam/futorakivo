@@ -175,7 +175,9 @@ export class UsersService {
     }
 
     const normalizedEmail =
-      dto.email !== undefined ? dto.email.trim().toLowerCase() : undefined;
+      dto.email !== undefined
+        ? dto.email.trim().toLowerCase() || null
+        : undefined;
     if (normalizedEmail) {
       const emailConflict = await this.prisma.user.findFirst({
         where: {

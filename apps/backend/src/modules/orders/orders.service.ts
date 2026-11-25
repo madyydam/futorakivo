@@ -7,11 +7,13 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import {
   canTransitionKot,
   KOT_STARTED_STATUSES,
+  permissionSatisfied,
   type BillPreviewDto,
   type CartItemDto,
   type CheckoutDto,
@@ -96,9 +98,9 @@ export class OrdersService {
     user: SessionUser,
   ) {
     if (
-      user.permissions.includes('order.modify_any') ||
-      user.permissions.includes('orders.edit') ||
-      user.permissions.includes('tables.manage')
+      permissionSatisfied(user.permissions, 'order.modify_any') ||
+      permissionSatisfied(user.permissions, 'tables.manage') ||
+      user.permissions.includes('orders.edit')
     ) {
       return;
     }
@@ -440,107 +442,117 @@ export class OrdersService {
       }
     }
 
-    const orderNumber = await this.nextOrderNumber(branchId);
-
     let order: any;
-    try {
-      order = await this.prisma.$transaction(async (tx) => {
-        const created = await tx.order.create({
-          data: {
-            branchId,
-            orderNumber,
-            type: dto.type,
-            channel,
-            acceptance,
-            tableId: dto.tableId,
-            guestCount: dto.guestCount,
-            customerId: dto.customerId,
-            guestName: dto.guestName,
-            notes: dto.notes,
-            clientRequestId: options.clientRequestId,
-            ...(options.offlineCreatedAt
-              ? { createdAt: options.offlineCreatedAt }
-              : options.historical
-                ? { createdAt: options.historical.createdAt }
+    const MAX_ORDER_NUMBER_ATTEMPTS = 3;
+    for (let attempt = 0; attempt < MAX_ORDER_NUMBER_ATTEMPTS; attempt++) {
+      const orderNumber = await this.nextOrderNumber(branchId);
+      try {
+        order = await this.prisma.$transaction(async (tx) => {
+          const created = await tx.order.create({
+            data: {
+              branchId,
+              orderNumber,
+              type: dto.type,
+              channel,
+              acceptance,
+              tableId: dto.tableId,
+              guestCount: dto.guestCount,
+              customerId: dto.customerId,
+              guestName: dto.guestName,
+              notes: dto.notes,
+              clientRequestId: options.clientRequestId,
+              ...(options.offlineCreatedAt
+                ? { createdAt: options.offlineCreatedAt }
+                : options.historical
+                  ? { createdAt: options.historical.createdAt }
+                  : {}),
+              integrationKeyId: options.integrationKeyId,
+              clientRequestHash: options.clientRequestHash,
+              externalSource: options.externalSource,
+              externalOrderId: options.externalOrderId,
+              externalCustomerRef: options.externalCustomerRef,
+              createdById: userId,
+              subtotal: totals.subtotal,
+              taxAmount: totals.taxAmount,
+              discountAmount: 0,
+              totalAmount: totals.subtotal,
+              scheduledFor,
+              ...(delivery
+                ? {
+                    deliveryZoneId: delivery.deliveryZoneId,
+                    deliveryFee: delivery.deliveryFee,
+                    deliveryAddress: delivery.deliveryAddress,
+                    deliveryPincode: delivery.deliveryPincode,
+                    deliveryPhone: delivery.deliveryPhone,
+                    deliveryLat: delivery.deliveryLat,
+                    deliveryLng: delivery.deliveryLng,
+                    deliveryPlace: delivery.deliveryPlace,
+                    deliveryStatus: delivery.deliveryStatus,
+                    deliveryEtaAt: delivery.deliveryEtaAt,
+                  }
                 : {}),
-            integrationKeyId: options.integrationKeyId,
-            clientRequestHash: options.clientRequestHash,
-            externalSource: options.externalSource,
-            externalOrderId: options.externalOrderId,
-            externalCustomerRef: options.externalCustomerRef,
-            createdById: userId,
-            subtotal: totals.subtotal,
-            taxAmount: totals.taxAmount,
-            discountAmount: 0,
-            totalAmount: totals.subtotal,
-            scheduledFor,
-            ...(delivery
-              ? {
-                  deliveryZoneId: delivery.deliveryZoneId,
-                  deliveryFee: delivery.deliveryFee,
-                  deliveryAddress: delivery.deliveryAddress,
-                  deliveryPincode: delivery.deliveryPincode,
-                  deliveryPhone: delivery.deliveryPhone,
-                  deliveryLat: delivery.deliveryLat,
-                  deliveryLng: delivery.deliveryLng,
-                  deliveryPlace: delivery.deliveryPlace,
-                  deliveryStatus: delivery.deliveryStatus,
-                  deliveryEtaAt: delivery.deliveryEtaAt,
-                }
-              : {}),
-            items: {
-              create: lineInputs.map((line) => ({
-                menuItem: { connect: { id: line.menuItem.id } },
-                nameSnapshot: line.menuItem.name,
-                unitPriceSnapshot: line.menuItem.price,
-                taxRateSnapshot: line.menuItem.taxRatePercent,
-                quantity: line.cartItem.quantity,
-                lineTotal: line.priced.lineTotal,
-                kitchenNote: line.cartItem.kitchenNote,
-                modifiers: {
-                  create: line.selectedModifiers.map((m) => ({
-                    modifier: { connect: { id: m.id } },
-                    nameSnapshot: m.name,
-                    priceAdjSnapshot: m.priceAdjustment,
-                  })),
-                },
-              })),
+              items: {
+                create: lineInputs.map((line) => ({
+                  menuItem: { connect: { id: line.menuItem.id } },
+                  nameSnapshot: line.menuItem.name,
+                  unitPriceSnapshot: line.menuItem.price,
+                  taxRateSnapshot: line.menuItem.taxRatePercent,
+                  quantity: line.cartItem.quantity,
+                  lineTotal: line.priced.lineTotal,
+                  kitchenNote: line.cartItem.kitchenNote,
+                  modifiers: {
+                    create: line.selectedModifiers.map((m) => ({
+                      modifier: { connect: { id: m.id } },
+                      nameSnapshot: m.name,
+                      priceAdjSnapshot: m.priceAdjustment,
+                    })),
+                  },
+                })),
+              },
             },
-          },
-          include: { items: true },
-        });
-
-        if (dto.tableId && !options.historical) {
-          await tx.table.update({
-            where: { id: dto.tableId },
-            data: { status: 'OCCUPIED', statusSince: new Date() },
+            include: { items: true },
           });
-        }
 
-        // A pending online order must not reach the kitchen until accepted
-        // (acceptOrder() generates the tickets then).
-        // A scheduled order also waits: releaseDueScheduledOrders() sends it to
-        // the kitchen shortly before its time.
-        if (
-          acceptance !== 'PENDING' &&
-          !this.isDeferred(scheduledFor) &&
-          !options.historical
-        ) {
-          await this.generateKots(tx, created.id, branchId, created.items);
-        }
+          if (dto.tableId && !options.historical) {
+            await tx.table.update({
+              where: { id: dto.tableId },
+              data: { status: 'OCCUPIED', statusSince: new Date() },
+            });
+          }
 
-        return created;
-      });
-    } catch (err: any) {
-      if (err?.code === 'P2002' && options.clientRequestId) {
-        const existing = await this.prisma.order.findFirst({
-          where: { branchId, clientRequestId: options.clientRequestId },
+          // A pending online order must not reach the kitchen until accepted
+          // (acceptOrder() generates the tickets then).
+          // A scheduled order also waits: releaseDueScheduledOrders() sends it to
+          // the kitchen shortly before its time.
+          if (
+            acceptance !== 'PENDING' &&
+            !this.isDeferred(scheduledFor) &&
+            !options.historical
+          ) {
+            await this.generateKots(tx, created.id, branchId, created.items);
+          }
+
+          return created;
         });
-        if (existing) {
-          return this.getOrder(branchId, existing.id);
+        break;
+      } catch (err: any) {
+        if (err?.code === 'P2002' && options.clientRequestId) {
+          const existing = await this.prisma.order.findFirst({
+            where: { branchId, clientRequestId: options.clientRequestId },
+          });
+          if (existing) {
+            return this.getOrder(branchId, existing.id);
+          }
         }
+        // Retry if two concurrent checkouts/orders picked the same daily sequence number
+        if (
+          err?.code === 'P2002' &&
+          attempt < MAX_ORDER_NUMBER_ATTEMPTS - 1
+        ) {
+          continue;
+        }
+        throw err;
       }
-      throw err;
     }
 
     if (options.historical) return this.getOrder(branchId, order.id);
@@ -632,7 +644,11 @@ export class OrdersService {
     branchId: string,
     orderId: string,
     items: CartItemDto[],
-    options: { enforceModifierLimits?: boolean; websiteOnly?: boolean } = {},
+    options: {
+      enforceModifierLimits?: boolean;
+      websiteOnly?: boolean;
+      clientRequestId?: string;
+    } = {},
     user?: SessionUser,
   ) {
     const order = await this.prisma.order.findFirst({
@@ -686,57 +702,140 @@ export class OrdersService {
       ),
     );
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const newItems = await Promise.all(
-        lineInputs.map((line) =>
-          tx.orderItem.create({
-            data: {
-              orderId,
-              menuItemId: line.menuItem.id,
-              nameSnapshot: line.menuItem.name,
-              unitPriceSnapshot: line.menuItem.price,
-              taxRateSnapshot: line.menuItem.taxRatePercent,
-              quantity: line.cartItem.quantity,
-              lineTotal: line.priced.lineTotal,
-              kitchenNote: line.cartItem.kitchenNote,
-              modifiers: {
-                create: line.selectedModifiers.map((m) => ({
-                  modifier: { connect: { id: m.id } },
-                  nameSnapshot: m.name,
-                  priceAdjSnapshot: m.priceAdjustment,
-                })),
-              },
+    const idemScope = `add_items:${branchId}:${orderId}`;
+    const idemHash = options.clientRequestId
+      ? createHash('sha256').update(JSON.stringify(items)).digest('hex')
+      : null;
+
+    let txOutcome: { id: string; replayed: boolean };
+    try {
+      txOutcome = await this.prisma.$transaction(async (tx) => {
+        // Lock the order row first so concurrent addItems and checkouts serialize
+        await tx.order.update({
+          where: { id: orderId, status: 'OPEN' },
+          data: { updatedAt: new Date() },
+        });
+
+        if ((tx as any).payment?.count) {
+          const paymentCount = await (tx as any).payment.count({
+            where: { orderId },
+          });
+          if (paymentCount > 0) {
+            throw new ConflictException(
+              'A payment has already been taken on this bill - settle the balance, or refund, before changing the items',
+            );
+          }
+        }
+
+        if (options.clientRequestId && (tx as any).idempotencyKey) {
+          const existingKey = await (tx as any).idempotencyKey.findUnique({
+            where: {
+              scope_key: { scope: idemScope, key: options.clientRequestId },
             },
+          });
+          if (existingKey) {
+            if (existingKey.requestHash !== idemHash) {
+              throw new ConflictException(
+                'Idempotency key was already used with different items',
+              );
+            }
+            return { id: orderId, replayed: true };
+          }
+          await (tx as any).idempotencyKey.create({
+            data: {
+              scope: idemScope,
+              key: options.clientRequestId,
+              requestHash: idemHash!,
+              statusCode: 200,
+              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            },
+          });
+        }
+
+        const newItems = await Promise.all(
+          lineInputs.map((line) =>
+            tx.orderItem.create({
+              data: {
+                orderId,
+                menuItemId: line.menuItem.id,
+                nameSnapshot: line.menuItem.name,
+                unitPriceSnapshot: line.menuItem.price,
+                taxRateSnapshot: line.menuItem.taxRatePercent,
+                quantity: line.cartItem.quantity,
+                lineTotal: line.priced.lineTotal,
+                kitchenNote: line.cartItem.kitchenNote,
+                modifiers: {
+                  create: line.selectedModifiers.map((m) => ({
+                    modifier: { connect: { id: m.id } },
+                    nameSnapshot: m.name,
+                    priceAdjSnapshot: m.priceAdjustment,
+                  })),
+                },
+              },
+            }),
+          ),
+        );
+
+        const freshItems = await tx.orderItem.findMany({ where: { orderId } });
+        const sourceItems =
+          freshItems.length > 0 ? freshItems : [...order.items, ...newItems];
+        const allLines = sourceItems.map((item) =>
+          priceLine({
+            quantity: item.quantity,
+            unitPriceInclusive: Number(item.lineTotal) / item.quantity,
+            taxRatePercent: Number(item.taxRateSnapshot),
           }),
-        ),
-      );
+        );
+        const totals = computeOrderTotals(allLines);
 
-      const allLines = [...order.items, ...newItems].map((item) =>
-        priceLine({
-          quantity: item.quantity,
-          unitPriceInclusive: Number(item.lineTotal) / item.quantity,
-          taxRatePercent: Number(item.taxRateSnapshot),
-        }),
-      );
-      const totals = computeOrderTotals(allLines);
+        const result = await tx.order.update({
+          where: { id: orderId },
+          data: {
+            version: { increment: 1 },
+            subtotal: totals.subtotal,
+            taxAmount: totals.taxAmount,
+            totalAmount: totals.subtotal,
+          },
+        });
 
-      const result = await tx.order.update({
-        where: { id: orderId },
-        data: {
-          version: { increment: 1 },
-          subtotal: totals.subtotal,
-          taxAmount: totals.taxAmount,
-          totalAmount: totals.subtotal,
-        },
+        await this.generateKots(tx, orderId, branchId, newItems);
+
+        return { id: result.id, replayed: false };
       });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2025') {
+          throw new ConflictException(
+            'Order is no longer open — cannot add items',
+          );
+        }
+        if (
+          err.code === 'P2002' &&
+          options.clientRequestId &&
+          (this.prisma as any).idempotencyKey
+        ) {
+          const existingKey = await (
+            this.prisma as any
+          ).idempotencyKey.findUnique({
+            where: {
+              scope_key: { scope: idemScope, key: options.clientRequestId },
+            },
+          });
+          if (existingKey && existingKey.requestHash === idemHash) {
+            return this.getOrder(branchId, orderId);
+          }
+          throw new ConflictException(
+            'Idempotency key was already used with different items',
+          );
+        }
+      }
+      throw err;
+    }
 
-      await this.generateKots(tx, orderId, branchId, newItems);
-
-      return result;
-    });
-
-    this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
-    return this.getOrder(branchId, updated.id);
+    if (!txOutcome.replayed) {
+      this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
+    }
+    return this.getOrder(branchId, txOutcome.id);
   }
 
   // Realistic floor rule: once the kitchen has actually started cooking (or
@@ -1457,10 +1556,14 @@ export class OrdersService {
     branchId: string,
     orderId: string,
     itemId: string,
-    userId: string,
+    userOrUserId: SessionUser | string,
     reason: string,
   ) {
-    const order = await this.editableOrder(branchId, orderId);
+    const sessionUser =
+      typeof userOrUserId === 'string' ? undefined : userOrUserId;
+    const userId =
+      typeof userOrUserId === 'string' ? userOrUserId : userOrUserId.id;
+    const order = await this.editableOrder(branchId, orderId, sessionUser);
     const item = order.items.find((i) => i.id === itemId);
     if (!item) throw new NotFoundException('Item not found on this bill');
     if (order.items.length === 1) {
@@ -1469,22 +1572,56 @@ export class OrdersService {
       );
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await this.assertLineNotStarted(tx, itemId);
-      await tx.orderItem.delete({ where: { id: itemId } });
-      // A ticket left with nothing on it is cancelled, not left dangling.
-      const empty = await tx.kot.findMany({
-        where: { orderId, items: { none: {} }, status: { not: 'CANCELLED' } },
-        select: { id: true },
-      });
-      if (empty.length > 0) {
-        await tx.kot.updateMany({
-          where: { id: { in: empty.map((k) => k.id) } },
-          data: { status: 'CANCELLED' },
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.order.update({
+          where: { id: orderId, status: 'OPEN' },
+          data: { updatedAt: new Date() },
         });
+        if ((tx as any).payment?.count) {
+          const paymentCount = await (tx as any).payment.count({
+            where: { orderId },
+          });
+          if (paymentCount > 0) {
+            throw new ConflictException(
+              'A payment has already been taken on this bill - settle the balance, or refund, before changing the items',
+            );
+          }
+        }
+        const remainingCount = (tx as any).orderItem?.count
+          ? await (tx as any).orderItem.count({ where: { orderId } })
+          : order.items.length;
+        if (remainingCount <= 1) {
+          throw new BadRequestException(
+            'This is the only item - cancel the order instead',
+          );
+        }
+        await this.assertLineNotStarted(tx, itemId);
+        await tx.orderItem.delete({ where: { id: itemId } });
+        // A ticket left with nothing on it is cancelled, not left dangling.
+        const empty = await tx.kot.findMany({
+          where: { orderId, items: { none: {} }, status: { not: 'CANCELLED' } },
+          select: { id: true },
+        });
+        if (empty.length > 0) {
+          await tx.kot.updateMany({
+            where: { id: { in: empty.map((k) => k.id) } },
+            data: { status: 'CANCELLED' },
+          });
+        }
+        await this.recomputeTotals(tx, orderId);
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        throw new ConflictException(
+          'Order or item changed concurrently — please refresh and retry',
+        );
       }
-      await this.recomputeTotals(tx, orderId);
-    });
+      throw err;
+    }
 
     this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
     this.realtime.emitToBranch(branchId, 'kot.updated', { orderId });
@@ -1848,8 +1985,77 @@ export class OrdersService {
     let stockSkipped: { menuItemId: string; name: string; reason: string }[] =
       [];
     let settlement!: ReturnType<typeof settlePayments>;
+    let replayed = false;
     try {
       await this.prisma.$transaction(async (tx) => {
+        // Lock the order row first so concurrent checkouts or addItems serialize.
+        const lockedOrder = await tx.order.update({
+          where: { id: orderId, status: { in: ['OPEN', 'BILLED'] } },
+          data: { updatedAt: new Date() },
+        });
+
+        if (dto.requestId && (tx as any).payment?.findFirst) {
+          const dupPayment = await (tx as any).payment.findFirst({
+            where: { orderId, clientRequestId: dto.requestId },
+            select: { id: true },
+          });
+          if (dupPayment) {
+            replayed = true;
+            return;
+          }
+        }
+
+        if (
+          typeof (lockedOrder as any)?.version === 'number' &&
+          typeof (order as any).version === 'number' &&
+          (lockedOrder as any).version !== (order as any).version
+        ) {
+          throw new ConflictException(
+            'Order changed concurrently — please refresh bill and retry checkout',
+          );
+        }
+
+        if (
+          (lockedOrder as any)?.subtotal != null &&
+          (order as any).subtotal != null &&
+          Number((lockedOrder as any).subtotal) !== Number((order as any).subtotal)
+        ) {
+          throw new ConflictException(
+            'Order total changed concurrently — please refresh bill and retry checkout',
+          );
+        }
+
+        if ((tx as any).orderItem?.findMany) {
+          const freshItems = await tx.orderItem.findMany({
+            where: { orderId },
+          });
+          if (
+            freshItems.length > 0 &&
+            freshItems.length !== order.items.length
+          ) {
+            throw new ConflictException(
+              'Order items changed concurrently — please refresh bill and retry checkout',
+            );
+          }
+        }
+
+        if ((tx as any).payment?.findMany) {
+          const freshPayments = await (tx as any).payment.findMany({
+            where: { orderId },
+          });
+          const freshPaid = round2(
+            freshPayments.reduce((s: number, p: any) => s + Number(p.amount), 0),
+          );
+          if (
+            freshPayments.length !== order.payments.length ||
+            freshPaid !== paid
+          ) {
+            throw new ConflictException(
+              'A concurrent payment was already recorded on this bill — please refresh and retry',
+            );
+          }
+        }
+
         let actualPointsRedeemed = order.loyaltyPointsRedeemed;
         let loyaltyDiscountAmount = Number(order.loyaltyDiscountAmount);
 
@@ -2069,6 +2275,8 @@ export class OrdersService {
       }
       throw err;
     }
+
+    if (replayed) return this.checkoutResult(branchId, orderId);
 
     const updated = await this.prisma.order.findUniqueOrThrow({
       where: { id: orderId },
@@ -2377,6 +2585,7 @@ export class OrdersService {
     branchId: string,
     targetOrderId: string,
     sourceOrderId: string,
+    user?: SessionUser,
   ) {
     if (targetOrderId === sourceOrderId) {
       throw new BadRequestException('Cannot merge an order into itself');
@@ -2392,6 +2601,10 @@ export class OrdersService {
       }),
     ]);
     if (!target || !source) throw new NotFoundException('Order not found');
+    if (user) {
+      await this.assertOrderOwnership(target, user);
+      await this.assertOrderOwnership(source, user);
+    }
     if (
       !['OPEN', 'BILLED'].includes(target.status) ||
       !['OPEN', 'BILLED'].includes(source.status)
@@ -2401,59 +2614,99 @@ export class OrdersService {
     this.assertNoPayments(target);
     this.assertNoPayments(source);
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      await tx.orderItem.updateMany({
-        where: { orderId: sourceOrderId },
-        data: { orderId: targetOrderId },
-      });
-      await tx.kot.updateMany({
-        where: { orderId: sourceOrderId },
-        data: { orderId: targetOrderId },
-      });
+    let updated: { id: string };
+    try {
+      updated = await this.prisma.$transaction(async (tx) => {
+        // Lock both orders in deterministic ID order to avoid deadlocks
+        const [firstId, secondId] =
+          targetOrderId < sourceOrderId
+            ? [targetOrderId, sourceOrderId]
+            : [sourceOrderId, targetOrderId];
+        for (const id of [firstId, secondId]) {
+          await tx.order.update({
+            where: { id, branchId, status: { in: ['OPEN', 'BILLED'] } },
+            data: { updatedAt: new Date() },
+          });
+        }
 
-      const items = await tx.orderItem.findMany({
-        where: { orderId: targetOrderId },
-      });
-      const lines = items.map((item) =>
-        priceLine({
-          quantity: item.quantity,
-          unitPriceInclusive: Number(item.lineTotal) / item.quantity,
-          taxRatePercent: Number(item.taxRateSnapshot),
-        }),
-      );
-      // Discount is intentionally not recomputed here — it's re-entered at
-      // checkout time for the merged bill, same as any other order.
-      const totals = computeOrderTotals(lines);
-      const combinedGuests = Math.max(
-        1,
-        (target.guestCount ?? 0) + (source.guestCount ?? 0),
-      );
+        if ((tx as any).payment?.count) {
+          const payCount = await (tx as any).payment.count({
+            where: { orderId: { in: [targetOrderId, sourceOrderId] } },
+          });
+          if (payCount > 0) {
+            throw new ConflictException(
+              'A payment has already been taken on one of these bills - cannot merge',
+            );
+          }
+        }
 
-      const result = await tx.order.update({
-        where: { id: targetOrderId },
-        data: {
-          subtotal: totals.subtotal,
-          taxAmount: totals.taxAmount,
-          totalAmount: totals.subtotal,
-          guestCount: combinedGuests,
-        },
-        include: { items: true },
-      });
+        await tx.orderItem.updateMany({
+          where: { orderId: sourceOrderId },
+          data: { orderId: targetOrderId },
+        });
+        await tx.kot.updateMany({
+          where: { orderId: sourceOrderId },
+          data: { orderId: targetOrderId },
+        });
 
-      await tx.order.update({
-        where: { id: sourceOrderId },
-        data: {
-          status: 'CANCELLED',
-          notes: `Merged into order ${target.orderNumber}`,
-        },
-      });
+        const items = await tx.orderItem.findMany({
+          where: { orderId: targetOrderId },
+        });
+        const lines = items.map((item) =>
+          priceLine({
+            quantity: item.quantity,
+            unitPriceInclusive: Number(item.lineTotal) / item.quantity,
+            taxRatePercent: Number(item.taxRateSnapshot),
+          }),
+        );
+        // Discount is intentionally not recomputed here — it's re-entered at
+        // checkout time for the merged bill, same as any other order.
+        const totals = computeOrderTotals(lines);
+        const combinedGuests = Math.max(
+          1,
+          (target.guestCount ?? 0) + (source.guestCount ?? 0),
+        );
 
-      if (source.tableId && source.tableId !== target.tableId) {
-        await this.releaseTableIfIdle(tx, source.tableId, sourceOrderId);
+        const result = await tx.order.update({
+          where: { id: targetOrderId },
+          data: {
+            version: { increment: 1 },
+            subtotal: totals.subtotal,
+            taxAmount: totals.taxAmount,
+            totalAmount: totals.subtotal,
+            guestCount: combinedGuests,
+          },
+          include: { items: true },
+        });
+
+        await tx.order.update({
+          where: {
+            id: sourceOrderId,
+            status: { in: ['OPEN', 'BILLED'] },
+          },
+          data: {
+            status: 'CANCELLED',
+            notes: `Merged into order ${target.orderNumber}`,
+          },
+        });
+
+        if (source.tableId && source.tableId !== target.tableId) {
+          await this.releaseTableIfIdle(tx, source.tableId, sourceOrderId);
+        }
+
+        return result;
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        throw new ConflictException(
+          'One of the orders changed concurrently and cannot be merged',
+        );
       }
-
-      return result;
-    });
+      throw err;
+    }
 
     this.realtime.emitToBranch(branchId, 'order.updated', {
       id: targetOrderId,

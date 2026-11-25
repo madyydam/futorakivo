@@ -22,7 +22,7 @@ import { ONBOARDING_I18N } from "../onboarding-translations";
 export interface StaffMember {
   id: string;
   name: string;
-  role: "OWNER" | "MANAGER" | "CAPTAIN" | "WAITER" | "CASHIER" | "CHEF";
+  role: "OWNER" | "RESTAURANT_MANAGER" | "MANAGER" | "CAPTAIN" | "WAITER" | "CASHIER" | "CHEF";
   pin: string;
 }
 
@@ -108,7 +108,7 @@ export function Step8Staff({ data, onChange, onNext, onBack, lang }: Step8Props)
               onChange={(e) => setNewRole(e.target.value as any)}
               className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-xs font-medium"
             >
-              <option value="MANAGER">Manager</option>
+              <option value="RESTAURANT_MANAGER">Manager</option>
               <option value="CAPTAIN">Floor Captain</option>
               <option value="WAITER">Waiter / Server</option>
               <option value="CASHIER">Billing Cashier</option>

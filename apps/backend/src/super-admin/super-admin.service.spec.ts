@@ -564,4 +564,39 @@ describe('SuperAdminService & Guard', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('Security & Prototype Pollution Hardening', () => {
+    it('signs Super Admin JWT with domain-isolated HMAC secret when SUPER_ADMIN_JWT_SECRET is unset', async () => {
+      delete process.env.SUPER_ADMIN_JWT_SECRET;
+      await service.login('admin@futoragroup.in', 'KivokoRoot@2026!');
+      const signCall = mockJwt.sign.mock.calls.at(-1);
+      expect(signCall?.[1]?.secret).toBeTruthy();
+      expect(signCall?.[1]?.secret).not.toBe(process.env.JWT_SECRET);
+      expect(signCall?.[1]?.secret).toHaveLength(64);
+    });
+
+    it('refuses hardcoded fallback password in production when SUPER_ADMIN_PASSWORD is unset', async () => {
+      const prevEnv = process.env.NODE_ENV;
+      const prevPw = process.env.SUPER_ADMIN_PASSWORD;
+      process.env.NODE_ENV = 'production';
+      delete process.env.SUPER_ADMIN_PASSWORD;
+      try {
+        await expect(
+          service.login('admin@futoragroup.in', 'KivokoRoot@2026!'),
+        ).rejects.toThrow(UnauthorizedException);
+      } finally {
+        process.env.NODE_ENV = prevEnv;
+        process.env.SUPER_ADMIN_PASSWORD = prevPw;
+      }
+    });
+
+    it('rejects prototype property names in updateTenantPlan', async () => {
+      await expect(
+        service.updateTenantPlan('rest_1', 'constructor', 'admin@futoragroup.in'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.updateTenantPlan('rest_1', 'toString', 'admin@futoragroup.in'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
 });

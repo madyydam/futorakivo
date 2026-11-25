@@ -5,12 +5,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { createHash, randomInt, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import { DEFAULT_ROLE_PERMISSIONS, STAFF_ROLES } from '@futora/types';
 import { verifyTotp } from '../auth/totp';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveSuperAdminJwtSecret } from './super-admin.guard';
 
 function safeCompare(a: string, b: string): boolean {
   const hashA = createHash('sha256').update(a).digest();
@@ -81,8 +82,13 @@ export class SuperAdminService {
   async login(email: string, password: string, totpCode?: string) {
     const expectedEmail =
       process.env.SUPER_ADMIN_EMAIL || 'admin@futoragroup.in';
-    const expectedPassword =
-      process.env.SUPER_ADMIN_PASSWORD || 'KivokoRoot@2026!';
+    const configuredPassword = process.env.SUPER_ADMIN_PASSWORD;
+    if (!configuredPassword && process.env.NODE_ENV === 'production') {
+      throw new UnauthorizedException(
+        'SUPER_ADMIN_PASSWORD must be configured in production',
+      );
+    }
+    const expectedPassword = configuredPassword || 'KivokoRoot@2026!';
 
     const isEmailValid = safeCompare(
       email.trim().toLowerCase(),
@@ -129,12 +135,11 @@ export class SuperAdminService {
       iss: 'kivoko-super-admin',
     };
 
-    // Sign with SUPER_ADMIN_JWT_SECRET so Super Admin tokens are
-    // cryptographically isolated from restaurant-scoped tokens.
-    // Falls back to JWT_SECRET only if the env var is absent (dev mode).
+    // Sign with SUPER_ADMIN_JWT_SECRET (or HMAC-derived domain-isolated key)
+    // so Super Admin tokens can never cross-verify with restaurant tokens.
     const token = this.jwtService.sign(payload, {
       expiresIn: '24h',
-      secret: process.env.SUPER_ADMIN_JWT_SECRET || process.env.JWT_SECRET,
+      secret: resolveSuperAdminJwtSecret(),
     });
 
     await this.audit.record({
@@ -247,7 +252,8 @@ export class SuperAdminService {
       Enterprise: 100,
     };
 
-    const plan = dto.plan || 'Growth';
+    const plan =
+      dto.plan && Object.hasOwn(branchLimits, dto.plan) ? dto.plan : 'Growth';
     const initialStatus = dto.autoApprove ? 'APPROVED' : 'PENDING_APPROVAL';
     const activationCode = dto.autoApprove
       ? await this.generateUniqueActivationCode()
@@ -603,7 +609,7 @@ export class SuperAdminService {
       Enterprise: 100,
     };
 
-    if (!branchLimits[plan]) {
+    if (!Object.hasOwn(branchLimits, plan)) {
       throw new BadRequestException(
         `Invalid plan '${plan}'. Allowed: ${Object.keys(branchLimits).join(', ')}`,
       );
@@ -918,6 +924,7 @@ export class SuperAdminService {
       where: {
         id: restaurant.id,
         isActivated: false,
+        status: { not: 'SUSPENDED' },
       },
       data: {
         status: 'ACTIVE',

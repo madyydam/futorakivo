@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterDto } from "@futora/types";
@@ -17,7 +17,7 @@ import { useRegister } from "@/hooks/use-auth";
 export default function SignupPage() {
   const router = useRouter();
   const register = useRegister();
-  const { note, clear } = useNoteToast();
+  const { note, clear, toast } = useNoteToast();
   const prefersReducedMotion = useReducedMotion();
   const {
     register: field,
@@ -26,11 +26,15 @@ export default function SignupPage() {
   } = useForm<RegisterDto>({ resolver: zodResolver(registerSchema) });
 
   const onSubmit = (dto: RegisterDto) => {
+    clear();
     register.mutate(dto, {
       onSuccess: () => router.push("/onboarding"),
-      onError: () => {
-        // Fallback to onboarding in demo mode
-        router.push("/onboarding");
+      onError: (err) => {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Could not create your account. Please try again.",
+        );
       },
     });
   };

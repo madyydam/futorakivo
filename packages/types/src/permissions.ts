@@ -91,6 +91,7 @@ export const PERMISSION_IMPLIES: Partial<Record<PermissionKey, PermissionKey[]>>
   "table.view": ["tables.view"],
   "table.transfer_merge": ["tables.manage"],
   "table.assign": ["tables.manage"],
+  "bill.generate_settle": ["bills.print"],
   "bill.reprint": ["bills.print"],
   "discount.apply_small": ["discounts.apply"],
   "discount.apply_any": ["discount.apply_small", "discounts.apply", "discounts.unlimited"],

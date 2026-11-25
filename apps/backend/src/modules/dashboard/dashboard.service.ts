@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { permissionSatisfied } from '@futora/types';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { sanitizePrefs, type DashboardPrefs } from './dashboard-prefs';
@@ -58,7 +59,7 @@ export class DashboardService {
       }),
     ]);
 
-    const has = (p: string) => permissions.includes(p);
+    const has = (p: string) => permissionSatisfied(permissions, p);
     const attention = await this.attention(branchId, has);
 
     const tableStatusMap = Object.fromEntries(

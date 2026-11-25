@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TableSessionStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type {
   AssignTablesDto,
   BulkTableCreateDto,
@@ -112,9 +113,27 @@ export class TablesService {
 
   async updateTable(branchId: string, id: string, dto: TableUpdateDto) {
     await this.assertTableInBranch(branchId, id);
-    const table = await this.prisma.table.update({ where: { id }, data: dto });
-    this.realtime.emitToBranch(branchId, 'table.updated', table);
-    return table;
+    try {
+      const table = await this.prisma.table.update({
+        where: { id },
+        data: {
+          ...dto,
+          ...(dto.number !== undefined ? { number: dto.number.trim() } : {}),
+        },
+      });
+      this.realtime.emitToBranch(branchId, 'table.updated', table);
+      return table;
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new BadRequestException(
+          `Table number "${dto.number?.trim()}" already exists on this floor.`,
+        );
+      }
+      throw err;
+    }
   }
 
   async updateTableLayout(branchId: string, updates: TableLayoutUpdateDto[]) {
@@ -142,8 +161,24 @@ export class TablesService {
     id: string,
     status: TableStatusDto,
     assignedWaiterId?: string,
+    restaurantId?: string,
   ) {
     await this.assertTableInBranch(branchId, id);
+    if (assignedWaiterId) {
+      const staff = await this.prisma.user.findFirst({
+        where: {
+          id: assignedWaiterId,
+          isActive: true,
+          ...(restaurantId ? { restaurantId } : {}),
+        },
+        select: { id: true },
+      });
+      if (!staff) {
+        throw new BadRequestException(
+          'Assigned waiter is not an active staff member of this restaurant',
+        );
+      }
+    }
     // A table with an unpaid bill cannot be marked free/reserved/cleaning by
     // hand - that is how a live order ended up hidden behind an "Available"
     // tile. Pay or cancel the bill first (both release the table themselves).

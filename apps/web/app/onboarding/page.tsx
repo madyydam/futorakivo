@@ -45,9 +45,12 @@ export default function OnboardingPage() {
   const draftRef = useRef<Record<string, any>>(draft);
   const currentStepRef = useRef<number>(currentStep);
   const updateMutateRef = useRef(updateMutation.mutate);
-  draftRef.current = draft;
-  currentStepRef.current = currentStep;
-  updateMutateRef.current = updateMutation.mutate;
+
+  useEffect(() => {
+    draftRef.current = draft;
+    currentStepRef.current = currentStep;
+    updateMutateRef.current = updateMutation.mutate;
+  }, [draft, currentStep, updateMutation.mutate]);
 
   // Sync state once fetched from backend, or handle 401 unauthorized & local recovery
   useEffect(() => {
